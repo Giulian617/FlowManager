@@ -24,5 +24,9 @@ Aplicatia contine mai multe roluri:
 - Sistem de notificari, cand se creeaza un task/issue, se lasa un comentariu, etc
 
 # Arhitectura aplicatiei
+![Please contact a contributor of this project!](https://github.com/Giulian617/FlowManager/blob/main/architecture_diagram.png)
+
+Pentru realizarea aplicatiei vom face legatura intre frontend si backend printr-un api gateway care va tine rutele catre celelate microservicii si care va oferi acces utilizatorului daca ii este validat tokenul, acesta este integrat cu keycloak si va verifica daca utilizatorul se afla in realmul specific. Dupa parcurgerea acestuia ajungem la partea de backend care va contine nomenclatorul aplicatiei, un microserviciu care se ocupa cu gestionarea taskurilor, dar si 2 microservicii pentru citire si scriere, acestea sunt separate deoarece folosim cqrs impreuna cu ddd si respectam principiile lor. Am ales sa utilizam kafka care va comunica cu frontend-ul, dar si cu backend-ul. Va exista un serviciu de notificari push cu o baza de date mongo in care se vor salva notificarile daca in kafka se regasesc cu flagul persistent=true. Va exista de asemenea un al doilea modul de notificari care va comunica cu kafka si care va avea scopul de a intercepta mesajele care ajung in acesta si le va emite mai departe catre frontend/backend.
 
 # Diagram Entitate-Relatie
+![Please contact a contributor of this project!](https://github.com/Giulian617/FlowManager/blob/main/entity_relationship_diagram.png)
