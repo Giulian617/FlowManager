@@ -1,5 +1,6 @@
 package flowmanager.nomenclator.dto;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import org.hibernate.validator.constraints.Length;
@@ -9,6 +10,7 @@ import org.hibernate.validator.constraints.Length;
 @NoArgsConstructor
 public class UserCreateDto {
     @NotBlank(message = "email is required and cannot be blank")
+    @Email(message = "The email is not valid")
     private String email;
 
     @NotBlank(message = "password is required and cannot be blank")

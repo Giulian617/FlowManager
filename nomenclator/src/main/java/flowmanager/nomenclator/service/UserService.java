@@ -1,13 +1,12 @@
 package flowmanager.nomenclator.service;
 
-import flowmanager.nomenclator.dto.UserCreateDto;
-import flowmanager.nomenclator.dto.UserResponseDto;
-import flowmanager.nomenclator.dto.UserSummaryDto;
-import flowmanager.nomenclator.dto.UserUpdateDto;
+import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.DuplicateAttributeException;
 import flowmanager.nomenclator.exception.NotFoundException;
+import flowmanager.nomenclator.mapper.CommentMapper;
 import flowmanager.nomenclator.mapper.UserMapper;
 import flowmanager.nomenclator.model.User;
+import flowmanager.nomenclator.repository.CommentRepository;
 import flowmanager.nomenclator.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,7 +17,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
     private final UserMapper userMapper;
+    private final CommentMapper commentMapper;
 
     public List<UserSummaryDto> findAllUsers() {
         return userRepository
@@ -27,6 +28,13 @@ public class UserService {
                 .map(userMapper::toSummaryDto)
                 .toList();
     }
+    public List<CommentSummaryDto> findAllCommentsByUserId(Integer userId) {
+        return commentRepository.findAllCommentsByUserId(userId)
+                .stream()
+                .map(commentMapper::toSummaryDto)
+                .toList();
+    }
+
 
     public UserResponseDto findUserById(Integer userId) {
         return userMapper.toResponseDto(userRepository.findById(userId).orElseThrow(

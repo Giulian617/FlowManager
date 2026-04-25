@@ -23,7 +23,7 @@ public class UserMapper {
                 .lastName(dto.getLastName())
                 .phoneNumber(dto.getPhoneNumber())
                 .active(Boolean.FALSE)
-                .creationDate(LocalDateTime.now())
+                .createdAt(LocalDateTime.now())
                 .build();
     }
 
@@ -40,8 +40,6 @@ public class UserMapper {
         return UserSummaryDto.builder()
                 .id(user.getId())
                 .username(user.getUsername())
-                .active(user.getActive())
-                .lastLogin(user.getLastLogin())
                 .build();
     }
 
@@ -54,7 +52,7 @@ public class UserMapper {
                 .lastName(user.getLastName())
                 .phoneNumber(user.getPhoneNumber())
                 .active(user.getActive())
-                .creationDate(user.getCreationDate())
+                .createdAt(user.getCreatedAt())
                 .lastLogin(user.getLastLogin())
                 .build();
     }

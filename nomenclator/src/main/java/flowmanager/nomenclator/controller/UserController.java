@@ -1,9 +1,6 @@
 package flowmanager.nomenclator.controller;
 
-import flowmanager.nomenclator.dto.UserCreateDto;
-import flowmanager.nomenclator.dto.UserResponseDto;
-import flowmanager.nomenclator.dto.UserSummaryDto;
-import flowmanager.nomenclator.dto.UserUpdateDto;
+import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +21,15 @@ public class UserController {
     public ResponseEntity<List<UserSummaryDto>> getAllUsers() {
         return ResponseEntity.ok(userService.findAllUsers());
     }
-    
+
+    @GetMapping("/{userId}/comments")
+    @ResponseBody
+    public ResponseEntity<List<CommentSummaryDto>> getAllCommentsByUserId(
+            @PathVariable Integer userId
+    ) {
+        return ResponseEntity.ok(userService.findAllCommentsByUserId(userId));
+    }
+
     @GetMapping("/{userId}")
     @ResponseBody
     public ResponseEntity<UserResponseDto> getUserById(

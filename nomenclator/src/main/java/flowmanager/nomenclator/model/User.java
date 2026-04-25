@@ -3,8 +3,8 @@ package flowmanager.nomenclator.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -40,8 +40,11 @@ public class User {
     private Boolean active;
 
     @Column(nullable = false)
-    private LocalDateTime creationDate;
+    private LocalDateTime createdAt;
 
     @Column
     private LocalDateTime lastLogin;
+
+    @OneToMany(mappedBy = "user")
+    private List<Comment> comments;
 }

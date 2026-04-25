@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
     "email",
     "phoneNumber",
     "active",
-    "creationDate",
+    "createdAt",
     "lastLogin"
 })
 public class UserResponseDto {
@@ -31,6 +31,6 @@ public class UserResponseDto {
     private String lastName;
     private String phoneNumber;
     private Boolean active;
-    private LocalDateTime creationDate;
+    private LocalDateTime createdAt;
     private LocalDateTime lastLogin;
 }

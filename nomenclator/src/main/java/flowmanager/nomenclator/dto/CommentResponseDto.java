@@ -14,9 +14,15 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @JsonPropertyOrder({
     "id",
-    "username"
+    "content",
+    "createdAt",
+    "updatedAt",
+    "user"
 })
-public class UserSummaryDto {
+public class CommentResponseDto {
     private Integer id;
-    private String username;
+    private String content;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private UserSummaryDto user;
 }
