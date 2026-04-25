@@ -45,6 +45,9 @@ public class User {
     @Column
     private LocalDateTime lastLogin;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "author")
     private List<Comment> comments;
+
+    @OneToMany(mappedBy = "manager")
+    private List<Project> projects;
 }

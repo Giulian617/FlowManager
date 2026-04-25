@@ -30,6 +30,14 @@ public class UserController {
         return ResponseEntity.ok(userService.findAllCommentsByUserId(userId));
     }
 
+    @GetMapping("/{userId}/projects")
+    @ResponseBody
+    public ResponseEntity<List<ProjectSummaryDto>> getAllProjectsByUserId(
+            @PathVariable Integer userId
+    ) {
+        return ResponseEntity.ok(userService.findAllProjectsByUserId(userId));
+    }
+
     @GetMapping("/{userId}")
     @ResponseBody
     public ResponseEntity<UserResponseDto> getUserById(

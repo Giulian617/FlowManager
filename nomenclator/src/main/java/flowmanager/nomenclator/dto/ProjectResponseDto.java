@@ -5,7 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.springframework.cglib.core.Local;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -14,15 +16,17 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @JsonPropertyOrder({
         "id",
-        "content",
-        "createdAt",
-        "updatedAt",
-        "author"
+        "name",
+        "description",
+        "startDate",
+        "endDate",
+        "manager"
 })
-public class CommentResponseDto {
+public class ProjectResponseDto {
     private Integer id;
-    private String content;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private UserSummaryDto author;
+    private String name;
+    private String description;
+    private LocalDate startDate;
+    private LocalDate endDate;
+    private UserSummaryDto manager;
 }

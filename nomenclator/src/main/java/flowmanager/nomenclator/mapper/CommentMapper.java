@@ -23,7 +23,7 @@ public class CommentMapper {
         return Comment.builder()
                 .content(dto.getContent())
                 .createdAt(LocalDateTime.now())
-                .user(userRepository.findById(1).orElseThrow(
+                .author(userRepository.findById(1).orElseThrow(
                         () -> new NotFoundException(String.format("User with id %d not found", 1)))) //TODO: get the user from the context here
                 .build();
     }
@@ -43,10 +43,10 @@ public class CommentMapper {
     }
 
     public CommentResponseDto toResponseDto(Comment comment) {
-        User user = comment.getUser();
-        UserSummaryDto userDto = new UserSummaryDto(
-                user.getId(),
-                user.getUsername()
+        User author = comment.getAuthor();
+        UserSummaryDto authorDto = new UserSummaryDto(
+                author.getId(),
+                author.getUsername()
         );
 
         return CommentResponseDto.builder()
@@ -54,7 +54,7 @@ public class CommentMapper {
                 .content(comment.getContent())
                 .createdAt(comment.getCreatedAt())
                 .updatedAt(comment.getUpdatedAt())
-                .user(userDto)
+                .author(authorDto)
                 .build();
     }
 }
