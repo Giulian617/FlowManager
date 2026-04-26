@@ -1,0 +1,22 @@
+meta {
+  name: Update work item
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{url}}/work-items/2
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "title": "Actualizare"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Remove parent
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{url}}/work-items/{{childId}}/parent
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

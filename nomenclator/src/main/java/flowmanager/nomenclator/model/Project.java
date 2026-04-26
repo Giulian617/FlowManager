@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -33,4 +34,7 @@ public class Project {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User manager;
+
+    @OneToMany(mappedBy = "project")
+    private List<WorkItem> workItems;
 }

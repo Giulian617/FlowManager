@@ -1,0 +1,15 @@
+meta {
+  name: Set parent
+  type: http
+  seq: 4
+}
+
+put {
+  url: /{{childId}}/parent/{{parentId}}
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

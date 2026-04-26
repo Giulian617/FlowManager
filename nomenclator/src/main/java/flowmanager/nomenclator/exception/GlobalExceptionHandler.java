@@ -1,5 +1,6 @@
 package flowmanager.nomenclator.exception;
 
+import tools.jackson.databind.exc.InvalidFormatException;
 import flowmanager.nomenclator.dto.ErrorResponseDto;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
@@ -25,9 +26,40 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponseDto handleMalformedJson() {
+    public ErrorResponseDto handleMalformedJson(HttpMessageNotReadableException ex) {
+        System.out.println("CAUSE: " + ex.getCause());
+        System.out.println("CAUSE CLASS: " + ex.getCause().getClass().getName());
+
+        if (ex.getCause() instanceof InvalidFormatException invalidFormatException
+                && invalidFormatException.getTargetType().isEnum()) {
+
+            String fieldName = invalidFormatException.getPath().get(0).getPropertyName();
+            System.out.println("FIELD NAME: " + fieldName);
+
+            if ("type".equals(fieldName)) {
+                return new ErrorResponseDto(
+                        "Accepted values for type: Task, Bug, Epic, User_Story"
+                );
+            }
+
+            if ("status".equals(fieldName)) {
+                return new ErrorResponseDto(
+                        "Accepted values for status: To_do, In_Progress, Testing, Done, Closed"
+                );
+            }
+
+            if ("severity".equals(fieldName)) {
+                return new ErrorResponseDto(
+                        "Accepted values for severity: Low, Medium, High, Critical, Blocker"
+                );
+            }
+
+            return new ErrorResponseDto("Invalid value for field " + fieldName);
+        }
+
         return new ErrorResponseDto("Malformed JSON request");
     }
+
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -41,4 +73,11 @@ public class GlobalExceptionHandler {
 
         return new ErrorResponseDto(defaultMessage);
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponseDto handleIllegalArgument(IllegalArgumentException ex) {
+        return new ErrorResponseDto(ex.getMessage());
+    }
+
 }
