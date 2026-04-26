@@ -40,6 +40,27 @@ public class WorkItemService {
         );
     }
 
+
+    public List<WorkItemSummaryDto> findAllWorkItemsByReporter(Integer userId) {
+        userRepository.findById(userId).orElseThrow(
+                () -> new NotFoundException(String.format("User with id %d not found", userId))
+        );
+        return workItemRepository.findAllByReporterId(userId)
+                .stream()
+                .map(workItemMapper::toSummaryDto)
+                .toList();
+    }
+
+    public List<WorkItemSummaryDto> findAllWorkItemsAssignedToUser(Integer userId) {
+        userRepository.findById(userId).orElseThrow(
+                () -> new NotFoundException(String.format("User with id %d not found", userId))
+        );
+        return workItemRepository.findAllAssignedToUser(userId)
+                .stream()
+                .map(workItemMapper::toSummaryDto)
+                .toList();
+    }
+
     @Transactional
     public WorkItemResponseDto createWorkItem(WorkItemCreateDto dto, Integer projectId) {
         Project project = projectRepository.findById(projectId).orElseThrow(

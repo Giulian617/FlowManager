@@ -14,4 +14,10 @@ import java.util.Optional;
 public interface WorkItemRepository extends JpaRepository<WorkItem, Integer> {
     @Query("SELECT w FROM WorkItem w LEFT JOIN FETCH w.assignees WHERE w.id = :id")
     Optional<WorkItem> findByIdWithAssignees(@Param("id") Integer id);
+
+    @Query("SELECT w FROM WorkItem w WHERE w.reporter.id = :userId")
+    List<WorkItem> findAllByReporterId(@Param("userId") Integer userId);
+
+    @Query("SELECT w FROM WorkItem w JOIN w.assignees a WHERE a.user.id = :userId")
+    List<WorkItem> findAllAssignedToUser(@Param("userId") Integer userId);
 }

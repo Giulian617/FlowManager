@@ -32,6 +32,21 @@ public class WorkItemController {
     }
 
 
+    @GetMapping("/reporter/{userId}")
+    public ResponseEntity<List<WorkItemSummaryDto>> getWorkItemsByReporter(
+            @PathVariable Integer userId
+    ) {
+        return ResponseEntity.ok(workItemService.findAllWorkItemsByReporter(userId));
+    }
+
+    @GetMapping("/assignee/{userId}")
+    public ResponseEntity<List<WorkItemSummaryDto>> getWorkItemsAssignedToUser(
+            @PathVariable Integer userId
+    ) {
+        return ResponseEntity.ok(workItemService.findAllWorkItemsAssignedToUser(userId));
+    }
+
+
     @PostMapping("/project/{projectId}")
     @ResponseBody
     public ResponseEntity<WorkItemResponseDto> createWorkItem(

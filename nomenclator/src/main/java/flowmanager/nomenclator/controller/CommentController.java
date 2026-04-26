@@ -1,6 +1,7 @@
 package flowmanager.nomenclator.controller;
 
 import flowmanager.nomenclator.dto.CommentDto;
+import flowmanager.nomenclator.dto.CommentListDto;
 import flowmanager.nomenclator.dto.CommentResponseDto;
 import flowmanager.nomenclator.dto.CommentSummaryDto;
 import flowmanager.nomenclator.service.CommentService;
@@ -24,20 +25,29 @@ public class CommentController {
         return ResponseEntity.ok(commentService.findAllComments());
     }
 
-    @GetMapping("/{commentId}")
-    @ResponseBody
-    public ResponseEntity<CommentResponseDto> getCommentById(
-            @PathVariable Integer commentId
+//    @GetMapping("/{commentId}")
+//    @ResponseBody
+//    public ResponseEntity<CommentResponseDto> getCommentById(
+//            @PathVariable Integer commentId
+//    ) {
+//        return ResponseEntity.ok(commentService.findCommentById(commentId));
+//    }
+
+
+    @GetMapping("/work-item/{workItemId}")
+    public ResponseEntity<List<CommentListDto>> getCommentsByWorkItemId(
+            @PathVariable Integer workItemId
     ) {
-        return ResponseEntity.ok(commentService.findCommentById(commentId));
+        return ResponseEntity.ok(commentService.findCommentsByWorkItemId(workItemId));
     }
 
-    @PostMapping("")
-    @ResponseBody
+    @PostMapping("/work-item/{workItemId}")
     public ResponseEntity<CommentResponseDto> createComment(
+            @PathVariable Integer workItemId,
             @RequestBody @Valid CommentDto commentDto
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(commentService.createComment(commentDto));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(commentService.createComment(commentDto, workItemId));
     }
 
     @PutMapping("/{commentId}")

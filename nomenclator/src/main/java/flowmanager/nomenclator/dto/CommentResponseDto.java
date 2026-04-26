@@ -17,7 +17,8 @@ import java.time.LocalDateTime;
         "content",
         "createdAt",
         "updatedAt",
-        "author"
+        "author",
+        "workItemId"
 })
 public class CommentResponseDto {
     private Integer id;
@@ -25,4 +26,5 @@ public class CommentResponseDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private UserSummaryDto author;
+    private Integer workItemId;
 }

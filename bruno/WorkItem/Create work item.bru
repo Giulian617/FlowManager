@@ -5,11 +5,24 @@ meta {
 }
 
 post {
-  url: {{url}}/work-items/project/{{projectId}}
-  body: none
+  url: {{url}}/work-items/project/1
+  body: json
   auth: inherit
+}
+
+body:json {
+  {
+    "title": "exemplu",
+    "description": "exemplu",
+    "type": "Bug",
+    "assigneesId": [1, 2],
+    "severity": "Low",
+    "dueDate": "2026-07-01"
+    
+  }
 }
 
 settings {
   encodeUrl: true
+  timeout: 0
 }

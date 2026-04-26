@@ -1,0 +1,24 @@
+meta {
+  name: Create organization
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{url}}/organizations
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Exemplu",
+    "description": "Exemplu",
+    "industry": "Exemplu"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

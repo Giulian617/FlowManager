@@ -1,12 +1,12 @@
 meta {
-  name: Remove parent
+  name: Delete organization
   type: http
   seq: 5
 }
 
 delete {
-  url: {{url}}/work-items/2/parent
-  body: none
+  url: {{url}}/organizations/1
+  body: json
   auth: inherit
 }
 

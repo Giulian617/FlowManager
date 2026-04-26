@@ -50,4 +50,8 @@ public class User {
 
     @OneToMany(mappedBy = "manager")
     private List<Project> projects;
+
+    @ManyToOne
+    @JoinColumn(name = "organization_id")
+    private Organization organization;
 }

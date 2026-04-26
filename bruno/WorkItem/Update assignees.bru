@@ -5,14 +5,14 @@ meta {
 }
 
 put {
-  url: {{url}}/work-items/2
+  url: {{url}}/work-items/2/assignees
   body: json
   auth: inherit
 }
 
 body:json {
   {
-    "title": "Actualizare"
+    "assigneesId": [1]
   }
 }
 

@@ -16,11 +16,13 @@ import java.time.LocalDateTime;
     "id",
     "content",
     "createdAt",
-    "updatedAt"
+    "updatedAt",
+    "workItemId"
 })
 public class CommentSummaryDto {
     private Integer id;
     private String content;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Integer workItemId;
 }

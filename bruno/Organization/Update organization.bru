@@ -1,18 +1,18 @@
 meta {
-  name: Update work item
+  name: Update organization
   type: http
-  seq: 6
+  seq: 4
 }
 
 put {
-  url: {{url}}/work-items/2
+  url: {{url}}/organizations/1
   body: json
   auth: inherit
 }
 
 body:json {
   {
-    "status": "In_Progress"
+    "description": "Actualizare"
   }
 }
 

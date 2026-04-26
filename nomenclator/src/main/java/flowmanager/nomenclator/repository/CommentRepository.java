@@ -16,4 +16,6 @@ public interface CommentRepository extends JpaRepository<Comment, Integer> {
                 WHERE c.author.id = :userId
             """)
     List<Comment> findAllCommentsByUserId(@Param("userId") Integer userId);
+
+    List<Comment> findByWorkItemId(Integer workItemId);
 }
