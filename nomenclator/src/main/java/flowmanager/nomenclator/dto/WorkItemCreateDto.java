@@ -9,7 +9,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -23,12 +22,17 @@ public class WorkItemCreateDto {
     private String description;
 
     @NotNull(message = "type is required and cannot be blank")
-    private ItemType type;
+    private ItemType itemType;
 
     @NotNull(message = "severity is required and cannot be blank")
     private Severity severity;
 
-    private List<Integer> assigneesId;
+    @NotNull(message = "projectId is required and cannot be null")
+    private Integer projectId;
+
+    private Integer parentId;
 
     private LocalDate dueDate;
+
+    private List<Integer> assigneesIds;
 }

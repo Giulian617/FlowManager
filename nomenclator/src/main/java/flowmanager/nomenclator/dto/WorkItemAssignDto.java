@@ -1,16 +1,12 @@
 package flowmanager.nomenclator.dto;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import flowmanager.nomenclator.model.Severity;
-import flowmanager.nomenclator.model.Status;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.springframework.cglib.core.Local;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -18,9 +14,9 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonPropertyOrder({
-        "assigneesId",
-
+        "assigneesIds",
 })
 public class WorkItemAssignDto {
-    private List<Integer> assigneesId;
+    @NotNull(message = "assigneesId is required and cannot be null")
+    private List<Integer> assigneesIds;
 }

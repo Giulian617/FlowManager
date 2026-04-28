@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode(exclude = {"manager"})
+@EqualsAndHashCode()
 @Builder
 @Entity
 @Table(name = "organization")
@@ -20,10 +20,10 @@ public class Organization {
     @Column(nullable = false)
     private String name;
 
-    @Column
+    @Column(nullable = false)
     private String description;
 
-    @Column
+    @Column(nullable = false)
     private String industry;
 
     @Column(nullable = false)
@@ -33,6 +33,6 @@ public class Organization {
     private LocalDateTime updatedAt;
 
     @ManyToOne
-    @JoinColumn(name = "id_manager")
+    @JoinColumn(name = "manager_id")
     private User manager;
 }

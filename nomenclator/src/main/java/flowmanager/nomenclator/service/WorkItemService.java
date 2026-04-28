@@ -2,13 +2,12 @@ package flowmanager.nomenclator.service;
 
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
+import flowmanager.nomenclator.mapper.CommentMapper;
 import flowmanager.nomenclator.mapper.WorkItemMapper;
 import flowmanager.nomenclator.model.*;
-import flowmanager.nomenclator.repository.ProjectRepository;
-import flowmanager.nomenclator.repository.UserRepository;
-import flowmanager.nomenclator.repository.WorkItemAssignmentRepository;
-import flowmanager.nomenclator.repository.WorkItemRepository;
-import org.springframework.transaction.annotation.Transactional;
+import flowmanager.nomenclator.model.WorkItemAssignment.WorkItemAssignmentId;
+import flowmanager.nomenclator.repository.*;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,9 +18,11 @@ import java.util.List;
 public class WorkItemService {
     private final WorkItemRepository workItemRepository;
     private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
     private final ProjectRepository projectRepository;
     private final WorkItemMapper workItemMapper;
     private final WorkItemAssignmentRepository workItemAssignmentRepository;
+    private final CommentMapper commentMapper;
 
     public List<WorkItemSummaryDto> findAllWorkItems() {
         return workItemRepository
@@ -31,83 +32,111 @@ public class WorkItemService {
                 .toList();
     }
 
-    @Transactional
+    public List<CommentResponseWorkItemDto> findAllCommentsByWorkItemId(Integer workItemId) {
+        workItemRepository.findById(workItemId).orElseThrow(
+                () -> new NotFoundException(String.format("WorkItem with id %d not found", workItemId))
+        );
+        return commentRepository.findAllByWorkItemId(workItemId)
+                .stream()
+                .map(commentMapper::toResponseWorkItemDto)
+                .toList();
+    }
+
     public WorkItemResponseDto findWorkItemById(Integer workItemId) {
         return workItemMapper.toResponseDto(
-                workItemRepository.findByIdWithAssignees(workItemId).orElseThrow(
+                workItemRepository.findById(workItemId).orElseThrow(
                         () -> new NotFoundException(String.format("Work Item with id %d not found", workItemId))
                 )
         );
     }
 
+    @Transactional
+    protected List<WorkItemAssignment> createAssignments(WorkItem workItem, List<Integer> assigneesIds) {
+        return assigneesIds.stream()
+                .distinct()
+                .map(userId -> {
+                    User user = userRepository.findById(userId).orElseThrow(
+                            () -> new NotFoundException(String.format("User with id %d not found", userId))
+                    );
 
-    public List<WorkItemSummaryDto> findAllWorkItemsByReporter(Integer userId) {
-        userRepository.findById(userId).orElseThrow(
-                () -> new NotFoundException(String.format("User with id %d not found", userId))
-        );
-        return workItemRepository.findAllByReporterId(userId)
-                .stream()
-                .map(workItemMapper::toSummaryDto)
-                .toList();
-    }
+                    WorkItemAssignmentId id = new WorkItemAssignmentId();
+                    id.setWorkItemId(workItem.getId());
+                    id.setUserId(userId);
 
-    public List<WorkItemSummaryDto> findAllWorkItemsAssignedToUser(Integer userId) {
-        userRepository.findById(userId).orElseThrow(
-                () -> new NotFoundException(String.format("User with id %d not found", userId))
-        );
-        return workItemRepository.findAllAssignedToUser(userId)
-                .stream()
-                .map(workItemMapper::toSummaryDto)
+                    return (WorkItemAssignment) WorkItemAssignment.builder()
+                            .workItemAssignmentId(id)
+                            .workItem(workItem)
+                            .user(user)
+                            .build();
+                })
                 .toList();
     }
 
     @Transactional
-    public WorkItemResponseDto createWorkItem(WorkItemCreateDto dto, Integer projectId) {
-        Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new NotFoundException(String.format("Project with id %d not found", projectId))
+    public WorkItemResponseDto createWorkItem(WorkItemCreateDto workItemCreateDto) {
+        Project project = projectRepository.findById(workItemCreateDto.getProjectId()).orElseThrow(
+                () -> new NotFoundException(String.format("Project with id %d not found", workItemCreateDto.getProjectId()))
         );
 
-        WorkItem workItem = workItemMapper.toEntity(dto, project);
+        WorkItem workItem = workItemMapper.toEntity(workItemCreateDto, project);
+
+        if (workItemCreateDto.getAssigneesIds() != null && !workItemCreateDto.getAssigneesIds().isEmpty()) {
+            List<WorkItemAssignment> assignments = createAssignments(workItem, workItemCreateDto.getAssigneesIds());
+            workItem.setAssignees(assignments);
+        }
         workItemRepository.save(workItem);
 
-        if (dto.getAssigneesId() != null && !dto.getAssigneesId().isEmpty()) {
-            List<WorkItemAssignment> assignments = dto.getAssigneesId().stream()
-                    .map(userId -> {
-                        User user = userRepository.findById(userId).orElseThrow(
-                                () -> new NotFoundException(String.format("User with id %d not found", userId))
-                        );
-                        return WorkItemAssignment.builder()
-                                .workItem(workItem)
-                                .user(user)
-                                .build();
-                    })
-                    .toList();
-            workItemAssignmentRepository.saveAll(assignments);
-            workItemAssignmentRepository.flush();
-            workItem.setAssignees(new java.util.LinkedHashSet<>(assignments));
+        if(workItemCreateDto.getParentId() != null) {
+            setParent(workItem.getId(), workItemCreateDto.getParentId());
         }
 
         return workItemMapper.toResponseDto(workItem);
     }
 
+    public WorkItemResponseDto updateWorkItem(Integer workItemId, WorkItemUpdateDto workItemUpdateDto) {
+        WorkItem workItem = workItemRepository.findById(workItemId).orElseThrow(
+                () -> new NotFoundException(String.format("WorkItem with id %d not found", workItemId))
+        );
+        workItemMapper.updateEntityFromDto(workItemUpdateDto, workItem);
+
+        return workItemMapper.toResponseDto(workItemRepository.save(workItem));
+    }
+
     @Transactional
+    public WorkItemResponseDto assignUsers(Integer workItemId, WorkItemAssignDto workItemAssignDto) {
+        WorkItem workItem = workItemRepository.findById(workItemId).orElseThrow(
+                () -> new NotFoundException(String.format("WorkItem with id %d not found", workItemId))
+        );
+
+        workItemAssignmentRepository.deleteByWorkItemId(workItemId);
+        workItemAssignmentRepository.flush();
+
+        List<WorkItemAssignment> assignments = createAssignments(workItem, workItemAssignDto.getAssigneesIds());
+
+        workItemAssignmentRepository.saveAll(assignments);
+        workItemAssignmentRepository.flush();
+        workItem.setAssignees(assignments);
+
+        return workItemMapper.toResponseDto(workItem);
+    }
+
     public WorkItemResponseDto setParent(Integer childId, Integer parentId) {
-        WorkItem child = workItemRepository.findByIdWithAssignees(childId).orElseThrow(
+        WorkItem child = workItemRepository.findById(childId).orElseThrow(
                 () -> new NotFoundException(String.format("WorkItem with id %d not found", childId))
         );
-        WorkItem parent = workItemRepository.findByIdWithAssignees(parentId).orElseThrow(
+        WorkItem parent = workItemRepository.findById(parentId).orElseThrow(
                 () -> new NotFoundException(String.format("WorkItem with id %d not found", parentId))
         );
 
-        if (parent.getType() == ItemType.Task) {
+        if (parent.getItemType() == ItemType.Task) {
             throw new IllegalArgumentException("A Task cannot have children");
         }
 
-        if (parent.getType() == ItemType.Bug) {
+        if (parent.getItemType() == ItemType.Bug) {
             throw new IllegalArgumentException("A Bug cannot have children");
         }
 
-        if (child.getType() == ItemType.Epic) {
+        if (child.getItemType() == ItemType.Epic) {
             throw new IllegalArgumentException("An Epic cannot have a parent");
         }
 
@@ -115,10 +144,8 @@ public class WorkItemService {
         return workItemMapper.toResponseDto(workItemRepository.save(child));
     }
 
-
-    @Transactional
     public WorkItemResponseDto removeParent(Integer childId) {
-        WorkItem child = workItemRepository.findByIdWithAssignees(childId).orElseThrow(
+        WorkItem child = workItemRepository.findById(childId).orElseThrow(
                 () -> new NotFoundException(String.format("WorkItem with id %d not found", childId))
         );
 
@@ -127,50 +154,13 @@ public class WorkItemService {
     }
 
     @Transactional
-    public WorkItemResponseDto updateWorkItem(Integer workItemId, WorkItemUpdateDto dto) {
-        WorkItem workItem = workItemRepository.findByIdWithAssignees(workItemId).orElseThrow(
-                () -> new NotFoundException(String.format("WorkItem with id %d not found", workItemId))
-        );
-
-        workItemMapper.updateEntityFromDto(dto, workItem);
-        return workItemMapper.toResponseDto(workItemRepository.save(workItem));
-    }
-
-    @Transactional
-    public WorkItemResponseDto assignUsers(Integer workItemId, WorkItemAssignDto dto) {
-        WorkItem workItem = workItemRepository.findByIdWithAssignees(workItemId).orElseThrow(
-                () -> new NotFoundException(String.format("WorkItem with id %d not found", workItemId))
-        );
-
-        workItemAssignmentRepository.deleteByWorkItemId(workItemId);
-        workItemAssignmentRepository.flush();
-
-        List<WorkItemAssignment> assignments = dto.getAssigneesId().stream()
-                .map(userId -> {
-                    User user = userRepository.findById(userId).orElseThrow(
-                            () -> new NotFoundException(String.format("User with id %d not found", userId))
-                    );
-                    return WorkItemAssignment.builder()
-                            .workItem(workItem)
-                            .user(user)
-                            .build();
-                })
-                .toList();
-
-        workItemAssignmentRepository.saveAll(assignments);
-        workItemAssignmentRepository.flush();
-
-        workItem.getAssignees().clear();
-        workItem.getAssignees().addAll(assignments);
-
-        return workItemMapper.toResponseDto(workItem);
-    }
-
-    @Transactional
     public void deleteWorkItem(Integer workItemId) {
-        workItemRepository.findById(workItemId).orElseThrow(
+        WorkItem workItem = workItemRepository.findById(workItemId).orElseThrow(
                 () -> new NotFoundException(String.format("WorkItem with id %d not found", workItemId))
         );
+        for (WorkItem child : workItem.getChildren()) {
+            child.setParent(null);
+        }
         workItemAssignmentRepository.deleteByWorkItemId(workItemId);
         workItemRepository.deleteById(workItemId);
     }

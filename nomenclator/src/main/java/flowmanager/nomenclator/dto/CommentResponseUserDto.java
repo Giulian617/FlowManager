@@ -13,16 +13,16 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonPropertyOrder({
-    "id",
-    "content",
-    "createdAt",
-    "updatedAt",
-    "workItemId"
+        "id",
+        "content",
+        "createdAt",
+        "updatedAt",
+        "workItem"
 })
-public class CommentSummaryDto {
+public class CommentResponseUserDto {
     private Integer id;
     private String content;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private Integer workItemId;
+    private WorkItemSummaryDto workItem;
 }

@@ -7,11 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.springframework.cglib.core.Local;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @SuperBuilder
@@ -22,9 +19,7 @@ import java.util.List;
         "description",
         "status",
         "severity",
-        "dueDate",
-        //"assignees",
-
+        "dueDate"
 })
 public class WorkItemUpdateDto {
     private String title;
@@ -32,5 +27,4 @@ public class WorkItemUpdateDto {
     private Status status;
     private Severity severity;
     private LocalDate dueDate;
-   // private List<Long> assigneeIds;
 }

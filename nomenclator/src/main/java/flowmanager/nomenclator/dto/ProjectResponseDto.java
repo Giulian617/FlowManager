@@ -5,10 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.springframework.cglib.core.Local;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @SuperBuilder
@@ -20,7 +19,8 @@ import java.time.LocalDateTime;
         "description",
         "startDate",
         "endDate",
-        "manager"
+        "manager",
+        "workItems"
 })
 public class ProjectResponseDto {
     private Integer id;
@@ -29,4 +29,5 @@ public class ProjectResponseDto {
     private LocalDate startDate;
     private LocalDate endDate;
     private UserSummaryDto manager;
+    private List<WorkItemSummaryDto> workItems;
 }

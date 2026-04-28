@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
         "updatedAt",
         "author",
 })
-public class CommentListDto {
+public class CommentResponseWorkItemDto {
     private Integer id;
     private String content;
     private LocalDateTime createdAt;

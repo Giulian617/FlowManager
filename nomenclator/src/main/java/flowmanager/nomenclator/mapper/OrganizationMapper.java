@@ -1,7 +1,6 @@
 package flowmanager.nomenclator.mapper;
 
 import flowmanager.nomenclator.dto.*;
-import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.model.Organization;
 import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.UserRepository;
@@ -16,14 +15,13 @@ import java.util.Optional;
 public class OrganizationMapper {
     private final UserRepository userRepository;
 
-    public Organization toEntity(OrganizationCreateDto dto) {
+    public Organization toEntity(OrganizationCreateDto dto, User manager) {
         return Organization.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())
                 .industry(dto.getIndustry())
                 .createdAt(LocalDateTime.now())
-                .manager(userRepository.findById(1).orElseThrow(
-                        () -> new NotFoundException(String.format("User with id %d not found", 1)))) // TODO: get from context
+                .manager(manager)
                 .build();
     }
 
@@ -31,8 +29,8 @@ public class OrganizationMapper {
         Optional.ofNullable(dto.getName()).ifPresent(organization::setName);
         Optional.ofNullable(dto.getDescription()).ifPresent(organization::setDescription);
         Optional.ofNullable(dto.getIndustry()).ifPresent(organization::setIndustry);
-        organization.setManager(manager);
         organization.setUpdatedAt(LocalDateTime.now());
+        organization.setManager(manager);
     }
 
     public OrganizationSummaryDto toSummaryDto(Organization organization) {
@@ -55,9 +53,9 @@ public class OrganizationMapper {
                 .name(organization.getName())
                 .description(organization.getDescription())
                 .industry(organization.getIndustry())
-                .manager(managerDto)
                 .createdAt(organization.getCreatedAt())
                 .updatedAt(organization.getUpdatedAt())
+                .manager(managerDto)
                 .build();
     }
 }

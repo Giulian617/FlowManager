@@ -1,6 +1,5 @@
 package flowmanager.nomenclator.exception;
 
-import tools.jackson.databind.exc.InvalidFormatException;
 import flowmanager.nomenclator.dto.ErrorResponseDto;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
@@ -9,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import tools.jackson.databind.exc.InvalidFormatException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -27,18 +27,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponseDto handleMalformedJson(HttpMessageNotReadableException ex) {
-        System.out.println("CAUSE: " + ex.getCause());
-        System.out.println("CAUSE CLASS: " + ex.getCause().getClass().getName());
-
         if (ex.getCause() instanceof InvalidFormatException invalidFormatException
                 && invalidFormatException.getTargetType().isEnum()) {
 
-            String fieldName = invalidFormatException.getPath().get(0).getPropertyName();
-            System.out.println("FIELD NAME: " + fieldName);
+            String fieldName = invalidFormatException.getPath().getFirst().getPropertyName();
 
-            if ("type".equals(fieldName)) {
+            if ("itemType".equals(fieldName)) {
                 return new ErrorResponseDto(
-                        "Accepted values for type: Task, Bug, Epic, User_Story"
+                        "Accepted values for itemType: Task, Bug, Epic, User_Story"
                 );
             }
 
@@ -60,7 +56,6 @@ public class GlobalExceptionHandler {
         return new ErrorResponseDto("Malformed JSON request");
     }
 
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponseDto handleValidation(MethodArgumentNotValidException ex) {
@@ -79,5 +74,4 @@ public class GlobalExceptionHandler {
     public ErrorResponseDto handleIllegalArgument(IllegalArgumentException ex) {
         return new ErrorResponseDto(ex.getMessage());
     }
-
 }

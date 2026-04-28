@@ -1,22 +1,17 @@
 meta {
   name: Update assignees
   type: http
-  seq: 7
+  seq: 6
 }
 
 put {
   url: {{url}}/work-items/2/assignees
   body: json
-  auth: inherit
+  auth: none
 }
 
 body:json {
   {
-    "assigneesId": [1]
+    "assigneesIds": [1]
   }
-}
-
-settings {
-  encodeUrl: true
-  timeout: 0
 }

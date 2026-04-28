@@ -4,11 +4,13 @@ import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.model.Project;
 import flowmanager.nomenclator.model.User;
+import flowmanager.nomenclator.model.WorkItem;
 import flowmanager.nomenclator.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -50,6 +52,20 @@ public class ProjectMapper {
                 manager.getUsername()
         );
 
+        List<WorkItem> workItems = project.getWorkItems();
+        List<WorkItemSummaryDto> workItemsDto = new ArrayList<>();
+        if(workItems != null) {
+            workItemsDto = workItems.stream()
+                    .map(workItem -> new WorkItemSummaryDto(
+                            workItem.getId(),
+                            workItem.getItemType(),
+                            workItem.getTitle(),
+                            workItem.getStatus(),
+                            workItem.getSeverity()
+                    ))
+                    .toList();
+        }
+
         return ProjectResponseDto.builder()
                 .id(project.getId())
                 .name(project.getName())
@@ -57,6 +73,7 @@ public class ProjectMapper {
                 .startDate(project.getStartDate())
                 .endDate(project.getEndDate())
                 .manager(managerDto)
+                .workItems(workItemsDto)
                 .build();
     }
 }

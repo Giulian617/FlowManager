@@ -24,7 +24,7 @@ public class UserController {
 
     @GetMapping("/{userId}/comments")
     @ResponseBody
-    public ResponseEntity<List<CommentSummaryDto>> getAllCommentsByUserId(
+    public ResponseEntity<List<CommentResponseUserDto>> getAllCommentsByUserId(
             @PathVariable Integer userId
     ) {
         return ResponseEntity.ok(userService.findAllCommentsByUserId(userId));
@@ -36,6 +36,30 @@ public class UserController {
             @PathVariable Integer userId
     ) {
         return ResponseEntity.ok(userService.findAllProjectsByUserId(userId));
+    }
+
+    @GetMapping("/{userId}/organizations")
+    @ResponseBody
+    public ResponseEntity<List<OrganizationSummaryDto>> getAllOrganizationsByUserId(
+            @PathVariable Integer userId
+    ) {
+        return ResponseEntity.ok(userService.findAllOrganizationsByUserId(userId));
+    }
+
+    @GetMapping("/{userId}/work-items/reporter")
+    @ResponseBody
+    public ResponseEntity<List<WorkItemSummaryDto>> getAllWorkItemsByUserIdWhereReporter(
+            @PathVariable Integer userId
+    ) {
+        return ResponseEntity.ok(userService.findAllWorkItemsByUserIdWhereReporter(userId));
+    }
+
+    @GetMapping("/{userId}/work-items/assignee")
+    @ResponseBody
+    public ResponseEntity<List<WorkItemSummaryDto>> getAllWorkItemsByUserIdWhereAssignee(
+            @PathVariable Integer userId
+    ) {
+        return ResponseEntity.ok(userService.findAllWorkItemsByUserIdWhereAssignee(userId));
     }
 
     @GetMapping("/{userId}")

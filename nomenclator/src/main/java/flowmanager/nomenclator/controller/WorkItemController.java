@@ -22,6 +22,12 @@ public class WorkItemController {
         return ResponseEntity.ok(workItemService.findAllWorkItems());
     }
 
+    @GetMapping("/comments/{workItemId}")
+    public ResponseEntity<List<CommentResponseWorkItemDto>> getAllCommentsByWorkItemId(
+            @PathVariable Integer workItemId
+    ) {
+        return ResponseEntity.ok(workItemService.findAllCommentsByWorkItemId(workItemId));
+    }
 
     @GetMapping("/{workItemId}")
     @ResponseBody
@@ -31,32 +37,32 @@ public class WorkItemController {
         return ResponseEntity.ok(workItemService.findWorkItemById(workItemId));
     }
 
-
-    @GetMapping("/reporter/{userId}")
-    public ResponseEntity<List<WorkItemSummaryDto>> getWorkItemsByReporter(
-            @PathVariable Integer userId
-    ) {
-        return ResponseEntity.ok(workItemService.findAllWorkItemsByReporter(userId));
-    }
-
-    @GetMapping("/assignee/{userId}")
-    public ResponseEntity<List<WorkItemSummaryDto>> getWorkItemsAssignedToUser(
-            @PathVariable Integer userId
-    ) {
-        return ResponseEntity.ok(workItemService.findAllWorkItemsAssignedToUser(userId));
-    }
-
-
-    @PostMapping("/project/{projectId}")
+    @PostMapping("")
     @ResponseBody
     public ResponseEntity<WorkItemResponseDto> createWorkItem(
-            @PathVariable Integer projectId,
             @RequestBody @Valid WorkItemCreateDto workItemCreateDto
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(workItemService.createWorkItem(workItemCreateDto, projectId));
+                .body(workItemService.createWorkItem(workItemCreateDto));
     }
 
+    @PutMapping("/{workItemId}")
+    @ResponseBody
+    public ResponseEntity<WorkItemResponseDto> updateWorkItem(
+            @PathVariable Integer workItemId,
+            @RequestBody @Valid WorkItemUpdateDto workItemUpdateDto
+    ) {
+        return ResponseEntity.ok(workItemService.updateWorkItem(workItemId, workItemUpdateDto));
+    }
+
+    @PutMapping("/{workItemId}/assignees")
+    @ResponseBody
+    public ResponseEntity<WorkItemResponseDto> assignUsers(
+            @PathVariable Integer workItemId,
+            @RequestBody @Valid WorkItemAssignDto workItemAssignDto
+    ) {
+        return ResponseEntity.ok(workItemService.assignUsers(workItemId, workItemAssignDto));
+    }
 
     @PutMapping("/{childId}/parent/{parentId}")
     @ResponseBody
@@ -74,28 +80,6 @@ public class WorkItemController {
     ) {
         return ResponseEntity.ok(workItemService.removeParent(childId));
     }
-
-
-    @PutMapping("/{workItemId}")
-    @ResponseBody
-    public ResponseEntity<WorkItemResponseDto> updateWorkItem(
-            @PathVariable Integer workItemId,
-            @RequestBody @Valid WorkItemUpdateDto workItemUpdateDto
-    ) {
-        return ResponseEntity.ok(workItemService.updateWorkItem(workItemId, workItemUpdateDto));
-    }
-
-
-    @PutMapping("/{workItemId}/assignees")
-    @ResponseBody
-    public ResponseEntity<WorkItemResponseDto> assignUsers(
-            @PathVariable Integer workItemId,
-            @RequestBody @Valid WorkItemAssignDto workItemAssignDto
-    ) {
-        return ResponseEntity.ok(workItemService.assignUsers(workItemId, workItemAssignDto));
-    }
-
-
     @DeleteMapping("/{workItemId}")
     @ResponseBody
     public ResponseEntity<Void> deleteWorkItem(
@@ -104,4 +88,5 @@ public class WorkItemController {
         workItemService.deleteWorkItem(workItemId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
+
 }

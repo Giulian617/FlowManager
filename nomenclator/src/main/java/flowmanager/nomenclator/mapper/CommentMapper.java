@@ -17,7 +17,7 @@ import java.util.Optional;
 public class CommentMapper {
     private final UserRepository userRepository;
 
-    public Comment toEntity(CommentDto dto, WorkItem workItem) {
+    public Comment toEntity(CommentCreateDto dto, WorkItem workItem) {
         return Comment.builder()
                 .content(dto.getContent())
                 .createdAt(LocalDateTime.now())
@@ -27,51 +27,54 @@ public class CommentMapper {
                 .build();
     }
 
-    public void updateEntityFromDto(CommentDto dto, Comment comment) {
+    public void updateEntityFromDto(CommentUpdateDto dto, Comment comment) {
         Optional.ofNullable(dto.getContent()).ifPresent(comment::setContent);
         comment.setUpdatedAt(LocalDateTime.now());
     }
 
-    public CommentSummaryDto toSummaryDto(Comment comment) {
-        return CommentSummaryDto.builder()
+    private WorkItemSummaryDto getWorkItemSummaryDto(Comment comment) {
+        WorkItem workItem = comment.getWorkItem();
+        return new WorkItemSummaryDto(
+                workItem.getId(),
+                workItem.getItemType(),
+                workItem.getTitle(),
+                workItem.getStatus(),
+                workItem.getSeverity()
+        );
+    }
+
+    private UserSummaryDto getAuthorSummaryDto(Comment comment) {
+        User author = comment.getAuthor();
+        return new UserSummaryDto(
+                author.getId(),
+                author.getUsername()
+        );
+    }
+
+    public CommentResponseUserDto toResponseUserDto(Comment comment) {
+        return CommentResponseUserDto.builder()
                 .id(comment.getId())
                 .content(comment.getContent())
-                .createdAt(comment.getCreatedAt())
-                .updatedAt(comment.getUpdatedAt())
-                .workItemId(comment.getWorkItem().getId())
+                .workItem(getWorkItemSummaryDto(comment))
+                .build();
+    }
+
+    public CommentResponseWorkItemDto toResponseWorkItemDto(Comment comment) {
+        return CommentResponseWorkItemDto.builder()
+                .id(comment.getId())
+                .content(comment.getContent())
+                .author(getAuthorSummaryDto(comment))
                 .build();
     }
 
     public CommentResponseDto toResponseDto(Comment comment) {
-        User author = comment.getAuthor();
-        UserSummaryDto authorDto = new UserSummaryDto(
-                author.getId(),
-                author.getUsername()
-        );
-
         return CommentResponseDto.builder()
                 .id(comment.getId())
                 .content(comment.getContent())
                 .createdAt(comment.getCreatedAt())
                 .updatedAt(comment.getUpdatedAt())
-                .author(authorDto)
-                .workItemId(comment.getWorkItem().getId())
-                .build();
-    }
-
-    public CommentListDto toListDto(Comment comment) {
-        User author = comment.getAuthor();
-        UserSummaryDto authorDto = new UserSummaryDto(
-                author.getId(),
-                author.getUsername()
-        );
-
-        return CommentListDto.builder()
-                .id(comment.getId())
-                .content(comment.getContent())
-                .createdAt(comment.getCreatedAt())
-                .updatedAt(comment.getUpdatedAt())
-                .author(authorDto)
+                .author(getAuthorSummaryDto(comment))
+                .workItem(getWorkItemSummaryDto(comment))
                 .build();
     }
 }

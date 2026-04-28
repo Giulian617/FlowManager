@@ -1,9 +1,8 @@
 package flowmanager.nomenclator.service;
 
-import flowmanager.nomenclator.dto.CommentDto;
-import flowmanager.nomenclator.dto.CommentListDto;
+import flowmanager.nomenclator.dto.CommentCreateDto;
 import flowmanager.nomenclator.dto.CommentResponseDto;
-import flowmanager.nomenclator.dto.CommentSummaryDto;
+import flowmanager.nomenclator.dto.CommentUpdateDto;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.CommentMapper;
 import flowmanager.nomenclator.model.Comment;
@@ -12,7 +11,6 @@ import flowmanager.nomenclator.repository.CommentRepository;
 import flowmanager.nomenclator.repository.WorkItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -23,47 +21,27 @@ public class CommentService {
     private final CommentMapper commentMapper;
     private final WorkItemRepository workItemRepository;
 
-    @Transactional
-    public List<CommentSummaryDto> findAllComments() {
+    public List<CommentResponseDto> findAllComments() {
         return commentRepository
                 .findAll()
                 .stream()
-                .map(commentMapper::toSummaryDto)
+                .map(commentMapper::toResponseDto)
                 .toList();
     }
 
-//    public CommentResponseDto findCommentById(Integer commentId) {
-//        return commentMapper.toResponseDto(commentRepository.findById(commentId).orElseThrow(
-//                () -> new NotFoundException(String.format("Comment with id %d not found", commentId))
-//        ));
-//    }
-
-
-    @Transactional
-    public List<CommentListDto> findCommentsByWorkItemId(Integer workItemId) {
-        workItemRepository.findById(workItemId).orElseThrow(
-                () -> new NotFoundException(String.format("WorkItem with id %d not found", workItemId))
+    public CommentResponseDto createComment(CommentCreateDto commentCreateDto) {
+        WorkItem workItem = workItemRepository.findById(commentCreateDto.getWorkItemId()).orElseThrow(
+                () -> new NotFoundException(String.format("WorkItem with id %d not found", commentCreateDto.getWorkItemId()))
         );
-        return commentRepository.findByWorkItemId(workItemId)
-                .stream()
-                .map(commentMapper::toListDto)
-                .toList();
-    }
-
-
-    public CommentResponseDto createComment(CommentDto commentDto, Integer workItemId) {
-        WorkItem workItem = workItemRepository.findById(workItemId).orElseThrow(
-                () -> new NotFoundException(String.format("WorkItem with id %d not found", workItemId))
-        );
-        Comment comment = commentMapper.toEntity(commentDto, workItem);
+        Comment comment = commentMapper.toEntity(commentCreateDto, workItem);
         return commentMapper.toResponseDto(commentRepository.save(comment));
     }
 
-    public CommentResponseDto updateComment(Integer commentId, CommentDto commentDto) {
+    public CommentResponseDto updateComment(Integer commentId, CommentUpdateDto commentUpdateDto) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(
                 () -> new NotFoundException(String.format("Comment with id %d not found", commentId))
         );
-        commentMapper.updateEntityFromDto(commentDto, comment);
+        commentMapper.updateEntityFromDto(commentUpdateDto, comment);
 
         return commentMapper.toResponseDto(commentRepository.save(comment));
     }

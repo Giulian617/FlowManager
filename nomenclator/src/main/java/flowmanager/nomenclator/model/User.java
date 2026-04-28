@@ -21,9 +21,6 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(nullable = false)
-    private String password;
-
     @Column(unique = true, nullable = false)
     private String username;
 
@@ -51,7 +48,9 @@ public class User {
     @OneToMany(mappedBy = "manager")
     private List<Project> projects;
 
-    @ManyToOne
-    @JoinColumn(name = "organization_id")
-    private Organization organization;
+    @OneToMany(mappedBy = "manager")
+    private List<Organization> organization;
+
+    @OneToMany(mappedBy = "user")
+    private List<WorkItemAssignment> workItems;
 }

@@ -17,16 +17,16 @@ import java.time.LocalDateTime;
         "name",
         "description",
         "industry",
-        "manager",
         "createdAt",
-        "updatedAt"
+        "updatedAt",
+        "manager"
 })
 public class OrganizationResponseDto {
     private Integer id;
     private String name;
     private String description;
     private String industry;
-    private UserSummaryDto manager;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private UserSummaryDto manager;
 }

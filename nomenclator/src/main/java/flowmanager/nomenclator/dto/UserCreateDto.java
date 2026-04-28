@@ -15,10 +15,6 @@ public class UserCreateDto {
     @Email(message = "The email is not valid")
     private String email;
 
-    @NotBlank(message = "password is required and cannot be blank")
-    @Length(min = 8, max = 32, message = "The length of the password should be between 8 and 32 characters")
-    private String password;
-
     @NotBlank(message = "username is required and cannot be blank")
     private String username;
 

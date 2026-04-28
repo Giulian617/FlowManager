@@ -1,16 +1,11 @@
 meta {
   name: Delete work item
   type: http
-  seq: 8
+  seq: 9
 }
 
 delete {
-  url: {{url}}/work-items/4
+  url: {{url}}/work-items/3
   body: json
-  auth: inherit
-}
-
-settings {
-  encodeUrl: true
-  timeout: 0
+  auth: none
 }

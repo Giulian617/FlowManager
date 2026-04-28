@@ -1,13 +1,13 @@
 package flowmanager.nomenclator.service;
 
-import flowmanager.nomenclator.dto.*;
-import flowmanager.nomenclator.exception.DuplicateAttributeException;
+import flowmanager.nomenclator.dto.ProjectCreateDto;
+import flowmanager.nomenclator.dto.ProjectResponseDto;
+import flowmanager.nomenclator.dto.ProjectSummaryDto;
+import flowmanager.nomenclator.dto.ProjectUpdateDto;
 import flowmanager.nomenclator.exception.NotFoundException;
-import flowmanager.nomenclator.mapper.CommentMapper;
 import flowmanager.nomenclator.mapper.ProjectMapper;
 import flowmanager.nomenclator.model.Project;
 import flowmanager.nomenclator.model.User;
-import flowmanager.nomenclator.repository.CommentRepository;
 import flowmanager.nomenclator.repository.ProjectRepository;
 import flowmanager.nomenclator.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

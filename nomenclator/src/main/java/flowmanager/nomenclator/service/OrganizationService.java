@@ -1,6 +1,9 @@
 package flowmanager.nomenclator.service;
 
-import flowmanager.nomenclator.dto.*;
+import flowmanager.nomenclator.dto.OrganizationCreateDto;
+import flowmanager.nomenclator.dto.OrganizationResponseDto;
+import flowmanager.nomenclator.dto.OrganizationSummaryDto;
+import flowmanager.nomenclator.dto.OrganizationUpdateDto;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.OrganizationMapper;
 import flowmanager.nomenclator.model.Organization;
@@ -34,24 +37,28 @@ public class OrganizationService {
         );
     }
 
-    public OrganizationResponseDto createOrganization(OrganizationCreateDto dto) {
-        Organization organization = organizationMapper.toEntity(dto);
+    public OrganizationResponseDto createOrganization(OrganizationCreateDto organizationCreateDto) {
+        User manager = userRepository.findById(organizationCreateDto.getManagerId()).orElseThrow(
+                () -> new NotFoundException(String.format("User with id %d not found", organizationCreateDto.getManagerId()))
+        );
+        Organization organization = organizationMapper.toEntity(organizationCreateDto, manager);
+
         return organizationMapper.toResponseDto(organizationRepository.save(organization));
     }
 
-    public OrganizationResponseDto updateOrganization(Integer organizationId, OrganizationUpdateDto dto) {
+    public OrganizationResponseDto updateOrganization(Integer organizationId, OrganizationUpdateDto organizationUpdateDto) {
         Organization organization = organizationRepository.findById(organizationId).orElseThrow(
                 () -> new NotFoundException(String.format("Organization with id %d not found", organizationId))
         );
 
         User manager = organization.getManager();
-        if (dto.getManagerId() != null) {
-            manager = userRepository.findById(dto.getManagerId()).orElseThrow(
-                    () -> new NotFoundException(String.format("User with id %d not found", dto.getManagerId()))
+        if (organizationUpdateDto.getManagerId() != null) {
+            manager = userRepository.findById(organizationUpdateDto.getManagerId()).orElseThrow(
+                    () -> new NotFoundException(String.format("User with id %d not found", organizationUpdateDto.getManagerId()))
             );
         }
 
-        organizationMapper.updateEntityFromDto(dto, manager, organization);
+        organizationMapper.updateEntityFromDto(organizationUpdateDto, manager, organization);
         return organizationMapper.toResponseDto(organizationRepository.save(organization));
     }
 

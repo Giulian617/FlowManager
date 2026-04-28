@@ -1,9 +1,8 @@
 package flowmanager.nomenclator.controller;
 
-import flowmanager.nomenclator.dto.CommentDto;
-import flowmanager.nomenclator.dto.CommentListDto;
+import flowmanager.nomenclator.dto.CommentCreateDto;
 import flowmanager.nomenclator.dto.CommentResponseDto;
-import flowmanager.nomenclator.dto.CommentSummaryDto;
+import flowmanager.nomenclator.dto.CommentUpdateDto;
 import flowmanager.nomenclator.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,42 +20,24 @@ public class CommentController {
 
     @GetMapping("")
     @ResponseBody
-    public ResponseEntity<List<CommentSummaryDto>> getAllComments() {
+    public ResponseEntity<List<CommentResponseDto>> getAllComments() {
         return ResponseEntity.ok(commentService.findAllComments());
     }
 
-//    @GetMapping("/{commentId}")
-//    @ResponseBody
-//    public ResponseEntity<CommentResponseDto> getCommentById(
-//            @PathVariable Integer commentId
-//    ) {
-//        return ResponseEntity.ok(commentService.findCommentById(commentId));
-//    }
-
-
-    @GetMapping("/work-item/{workItemId}")
-    public ResponseEntity<List<CommentListDto>> getCommentsByWorkItemId(
-            @PathVariable Integer workItemId
-    ) {
-        return ResponseEntity.ok(commentService.findCommentsByWorkItemId(workItemId));
-    }
-
-    @PostMapping("/work-item/{workItemId}")
+    @PostMapping("")
     public ResponseEntity<CommentResponseDto> createComment(
-            @PathVariable Integer workItemId,
-            @RequestBody @Valid CommentDto commentDto
+            @RequestBody @Valid CommentCreateDto commentCreateDto
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(commentService.createComment(commentDto, workItemId));
+        return ResponseEntity.status(HttpStatus.CREATED).body(commentService.createComment(commentCreateDto));
     }
 
     @PutMapping("/{commentId}")
     @ResponseBody
     public ResponseEntity<CommentResponseDto> updateComment(
             @PathVariable Integer commentId,
-            @RequestBody @Valid CommentDto commentDto
+            @RequestBody @Valid CommentUpdateDto commentUpdateDto
     ) {
-        return ResponseEntity.ok(commentService.updateComment(commentId, commentDto));
+        return ResponseEntity.ok(commentService.updateComment(commentId, commentUpdateDto));
     }
 
     @DeleteMapping("/{commentId}")

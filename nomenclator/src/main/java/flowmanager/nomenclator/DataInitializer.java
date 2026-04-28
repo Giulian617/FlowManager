@@ -17,7 +17,6 @@ public class DataInitializer {
                 User user = new User();
                 user.setEmail("admin@gmail.com");
                 user.setUsername("admin");
-                user.setPassword("12345678");
                 user.setFirstName("admin");
                 user.setLastName("admin");
                 user.setPhoneNumber("+407777777777");

@@ -1,22 +1,18 @@
 meta {
   name: Update work item
   type: http
-  seq: 6
+  seq: 5
 }
 
 put {
-  url: {{url}}/work-items/2
+  url: {{url}}/work-items/1
   body: json
-  auth: inherit
+  auth: none
 }
 
 body:json {
   {
+    "itemType": "Epic",
     "status": "In_Progress"
   }
-}
-
-settings {
-  encodeUrl: true
-  timeout: 0
 }

@@ -17,7 +17,6 @@ public class UserMapper {
     public User toEntity(UserCreateDto dto) {
         return User.builder()
                 .email(dto.getEmail())
-                .password(dto.getPassword())
                 .username(dto.getUsername())
                 .firstName(dto.getFirstName())
                 .lastName(dto.getLastName())
@@ -29,7 +28,6 @@ public class UserMapper {
 
     public void updateEntityFromDto(UserUpdateDto dto, User user) {
         Optional.ofNullable(dto.getEmail()).ifPresent(user::setEmail);
-        Optional.ofNullable(dto.getPassword()).ifPresent(user::setPassword);
         Optional.ofNullable(dto.getUsername()).ifPresent(user::setUsername);
         Optional.ofNullable(dto.getFirstName()).ifPresent(user::setFirstName);
         Optional.ofNullable(dto.getLastName()).ifPresent(user::setLastName);

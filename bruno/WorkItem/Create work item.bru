@@ -1,28 +1,23 @@
 meta {
   name: Create work item
   type: http
-  seq: 3
+  seq: 4
 }
 
 post {
-  url: {{url}}/work-items/project/1
+  url: {{url}}/work-items
   body: json
-  auth: inherit
+  auth: none
 }
 
 body:json {
   {
     "title": "exemplu",
     "description": "exemplu",
-    "type": "Bug",
-    "assigneesId": [1, 2],
+    "itemType": "Epic",
     "severity": "Low",
-    "dueDate": "2026-07-01"
-    
+    "projectId": 1,
+    "dueDate": "2026-07-01",
+    "assigneesIds": [1, 2]
   }
-}
-
-settings {
-  encodeUrl: true
-  timeout: 0
 }

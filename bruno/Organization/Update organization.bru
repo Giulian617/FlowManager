@@ -7,16 +7,11 @@ meta {
 put {
   url: {{url}}/organizations/1
   body: json
-  auth: inherit
+  auth: none
 }
 
 body:json {
   {
     "description": "Actualizare"
   }
-}
-
-settings {
-  encodeUrl: true
-  timeout: 0
 }

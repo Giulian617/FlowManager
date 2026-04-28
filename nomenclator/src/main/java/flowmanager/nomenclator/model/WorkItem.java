@@ -3,10 +3,9 @@ package flowmanager.nomenclator.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.List;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Set;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -20,17 +19,6 @@ public class WorkItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne
-    @JoinColumn(name = "project_id", nullable = false)
-    private Project project;
-
-    @ManyToOne
-    @JoinColumn(name = "reporter_id")
-    private User reporter;
-
-    @OneToMany(mappedBy = "workItem")
-    private Set<WorkItemAssignment> assignees;
-
     @Column(nullable = false)
     private String title;
 
@@ -39,11 +27,11 @@ public class WorkItem {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ItemType type;
+    private ItemType itemType;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Status status = Status.To_do;
+    private Status status;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -55,8 +43,19 @@ public class WorkItem {
     @Column
     private LocalDate dueDate;
 
+    @ManyToOne
+    @JoinColumn(name = "project_id")
+    private Project project;
+
     @OneToMany(mappedBy = "workItem")
     private List<Comment> comments;
+
+    @ManyToOne
+    @JoinColumn(name = "reporter_id")
+    private User reporter;
+
+    @OneToMany(mappedBy = "workItem", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<WorkItemAssignment> assignees;
 
     @ManyToOne
     @JoinColumn(name = "parent_id")
@@ -64,5 +63,4 @@ public class WorkItem {
 
     @OneToMany(mappedBy = "parent")
     private List<WorkItem> children;
-
 }
