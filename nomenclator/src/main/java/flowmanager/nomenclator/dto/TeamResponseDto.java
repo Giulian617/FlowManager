@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -17,19 +17,19 @@ import java.util.List;
         "id",
         "name",
         "description",
-        "startDate",
-        "endDate",
+        "createdAt",
+        "organization",
         "manager",
-        "workItems",
-        "teams"
+        "projects",
+        "users"
 })
-public class ProjectResponseDto {
+public class TeamResponseDto {
     private Integer id;
     private String name;
     private String description;
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private LocalDateTime createdAt;
+    private OrganizationSummaryDto organization;
     private UserSummaryDto manager;
-    private List<WorkItemSummaryDto> workItems;
-    private List<TeamSummaryDto> teams;
+    private List<ProjectSummaryDto> projects;
+    private List<UserSummaryDto> users;
 }

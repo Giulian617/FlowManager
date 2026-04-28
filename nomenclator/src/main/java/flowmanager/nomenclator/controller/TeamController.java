@@ -1,0 +1,58 @@
+package flowmanager.nomenclator.controller;
+
+import flowmanager.nomenclator.dto.*;
+import flowmanager.nomenclator.service.TeamService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("teams")
+@RequiredArgsConstructor
+public class TeamController {
+    private final TeamService teamService;
+
+    @GetMapping("")
+    @ResponseBody
+    public ResponseEntity<List<TeamResponseDto>> getAllTeams() {
+        return ResponseEntity.ok(teamService.findAllTeams());
+    }
+
+    @PostMapping("")
+    public ResponseEntity<TeamResponseDto> createTeam(
+            @RequestBody @Valid TeamCreateDto teamCreateDto
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(teamService.createTeam(teamCreateDto));
+    }
+
+    @PutMapping("/{teamId}")
+    @ResponseBody
+    public ResponseEntity<TeamResponseDto> updateTeam(
+            @PathVariable Integer teamId,
+            @RequestBody @Valid TeamUpdateDto teamUpdateDto
+    ) {
+        return ResponseEntity.ok(teamService.updateTeam(teamId, teamUpdateDto));
+    }
+
+    @PutMapping("/{teamId}/assignees")
+    @ResponseBody
+    public ResponseEntity<TeamResponseDto> assignUsers(
+            @PathVariable Integer teamId,
+            @RequestBody @Valid TeamAssignDto teamAssignDto
+    ) {
+        return ResponseEntity.ok(teamService.assignUsers(teamId, teamAssignDto));
+    }
+
+    @DeleteMapping("/{teamId}")
+    @ResponseBody
+    public ResponseEntity<Void> deleteTeam(
+            @PathVariable Integer teamId
+    ) {
+        teamService.deleteTeam(teamId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+}

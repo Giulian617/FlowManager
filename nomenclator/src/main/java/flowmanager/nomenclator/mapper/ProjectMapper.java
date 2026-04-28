@@ -2,9 +2,7 @@ package flowmanager.nomenclator.mapper;
 
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
-import flowmanager.nomenclator.model.Project;
-import flowmanager.nomenclator.model.User;
-import flowmanager.nomenclator.model.WorkItem;
+import flowmanager.nomenclator.model.*;
 import flowmanager.nomenclator.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -17,6 +15,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ProjectMapper {
     private final UserRepository userRepository;
+    private final WorkItemMapper workItemMapper;
 
     public Project toEntity(ProjectCreateDto dto) {
         return Project.builder()
@@ -45,6 +44,29 @@ public class ProjectMapper {
                 .build();
     }
 
+    private TeamSummaryDto mapTeamSummary(Team team) {
+        Organization organization = team.getOrganization();
+        OrganizationSummaryDto organizationSummaryDto =  new OrganizationSummaryDto(
+                organization.getId(),
+                organization.getName(),
+                organization.getDescription()
+        );
+
+        User manager = team.getManager();
+        UserSummaryDto managerSummaryDto = new UserSummaryDto(
+                manager.getId(),
+                manager.getUsername()
+        );
+
+        return TeamSummaryDto.builder()
+                .id(team.getId())
+                .name(team.getName())
+                .description(team.getDescription())
+                .organization(organizationSummaryDto)
+                .manager(managerSummaryDto)
+                .build();
+    }
+
     public ProjectResponseDto toResponseDto(Project project) {
         User manager = project.getManager();
         UserSummaryDto managerDto = new UserSummaryDto(
@@ -56,13 +78,15 @@ public class ProjectMapper {
         List<WorkItemSummaryDto> workItemsDto = new ArrayList<>();
         if(workItems != null) {
             workItemsDto = workItems.stream()
-                    .map(workItem -> new WorkItemSummaryDto(
-                            workItem.getId(),
-                            workItem.getItemType(),
-                            workItem.getTitle(),
-                            workItem.getStatus(),
-                            workItem.getSeverity()
-                    ))
+                    .map(workItemMapper::toSummaryDto)
+                    .toList();
+        }
+
+        List<Team> teams = project.getTeams();
+        List<TeamSummaryDto> teamsDto = new ArrayList<>();
+        if(teams != null) {
+            teamsDto = teams.stream()
+                    .map(this::mapTeamSummary)
                     .toList();
         }
 
@@ -74,6 +98,7 @@ public class ProjectMapper {
                 .endDate(project.getEndDate())
                 .manager(managerDto)
                 .workItems(workItemsDto)
+                .teams(teamsDto)
                 .build();
     }
 }

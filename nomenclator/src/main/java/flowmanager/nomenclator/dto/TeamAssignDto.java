@@ -16,7 +16,7 @@ import java.util.List;
 @JsonPropertyOrder({
         "assigneesIds",
 })
-public class WorkItemAssignDto {
+public class TeamAssignDto {
     @NotNull(message = "assigneesIds is required and cannot be null")
     private List<Integer> assigneesIds;
 }

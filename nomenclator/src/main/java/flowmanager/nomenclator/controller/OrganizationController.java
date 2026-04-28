@@ -1,9 +1,6 @@
 package flowmanager.nomenclator.controller;
 
-import flowmanager.nomenclator.dto.OrganizationCreateDto;
-import flowmanager.nomenclator.dto.OrganizationResponseDto;
-import flowmanager.nomenclator.dto.OrganizationSummaryDto;
-import flowmanager.nomenclator.dto.OrganizationUpdateDto;
+import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.service.OrganizationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +19,14 @@ public class OrganizationController {
     @GetMapping("")
     public ResponseEntity<List<OrganizationSummaryDto>> getAllOrganizations() {
         return ResponseEntity.ok(organizationService.findAllOrganizations());
+    }
+
+    @GetMapping("/{organizationId}/teams")
+    @ResponseBody
+    public ResponseEntity<List<TeamSummaryOrganizationDto>> getAllTeamsByUserId(
+            @PathVariable Integer organizationId
+    ) {
+        return ResponseEntity.ok(organizationService.findAllTeamsByOrganizationId(organizationId));
     }
 
     @GetMapping("/{organizationId}")

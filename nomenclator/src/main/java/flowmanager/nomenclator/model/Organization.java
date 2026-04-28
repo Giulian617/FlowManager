@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -29,10 +30,10 @@ public class Organization {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    @Column
-    private LocalDateTime updatedAt;
-
     @ManyToOne
     @JoinColumn(name = "manager_id")
     private User manager;
+
+    @OneToMany(mappedBy = "organization")
+    private List<Team> teams;
 }

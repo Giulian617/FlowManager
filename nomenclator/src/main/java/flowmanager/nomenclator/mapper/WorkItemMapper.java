@@ -69,7 +69,6 @@ public class WorkItemMapper {
                 .description(workItem.getProject().getDescription())
                 .build();
 
-        // add comments
         List<CommentResponseWorkItemDto> commentsDtos = new ArrayList<>();
         if(workItem.getComments() != null) {
             commentsDtos = workItem.getComments().stream()

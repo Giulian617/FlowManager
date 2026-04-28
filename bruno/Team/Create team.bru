@@ -1,11 +1,11 @@
 meta {
-  name: Create organization
+  name: Create team
   type: http
-  seq: 4
+  seq: 2
 }
 
 post {
-  url: {{url}}/organizations
+  url: {{url}}/teams
   body: json
   auth: none
 }
@@ -14,7 +14,6 @@ body:json {
   {
     "name": "Exemplu",
     "description": "Exemplu",
-    "industry": "Exemplu",
-    "managerId": 1
+    "organizationId": 1
   }
 }

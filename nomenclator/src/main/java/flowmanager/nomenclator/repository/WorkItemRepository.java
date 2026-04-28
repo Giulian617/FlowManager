@@ -10,4 +10,5 @@ import java.util.List;
 public interface WorkItemRepository extends JpaRepository<WorkItem, Integer> {
     List<WorkItem> findAllByReporterId(Integer reporterId);
     void deleteByReporterId(Integer reporterId);
+    void deleteByProjectId(Integer projectId);
 }

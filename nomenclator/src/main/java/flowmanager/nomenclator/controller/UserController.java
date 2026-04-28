@@ -46,6 +46,22 @@ public class UserController {
         return ResponseEntity.ok(userService.findAllOrganizationsByUserId(userId));
     }
 
+    @GetMapping("/{userId}/teams/manager")
+    @ResponseBody
+    public ResponseEntity<List<TeamSummaryUserDto>> getAllTeamsByUserIdWhereManager(
+            @PathVariable Integer userId
+    ) {
+        return ResponseEntity.ok(userService.findAllTeamsByUserIdWhereManager(userId));
+    }
+
+    @GetMapping("/{userId}/teams/assignee")
+    @ResponseBody
+    public ResponseEntity<List<TeamSummaryUserDto>> getAllTeamsByUserIdWhereAssignee(
+            @PathVariable Integer userId
+    ) {
+        return ResponseEntity.ok(userService.findAllTeamsByUserIdWhereAssignee(userId));
+    }
+
     @GetMapping("/{userId}/work-items/reporter")
     @ResponseBody
     public ResponseEntity<List<WorkItemSummaryDto>> getAllWorkItemsByUserIdWhereReporter(

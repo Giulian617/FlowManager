@@ -20,13 +20,21 @@ public class UserService {
     private final CommentRepository commentRepository;
     private final ProjectRepository projectRepository;
     private final OrganizationRepository organizationRepository;
+    private final TeamRepository teamRepository;
     private final WorkItemAssignmentRepository workItemAssignmentRepository;
     private final WorkItemRepository workItemRepository;
     private final UserMapper userMapper;
     private final CommentMapper commentMapper;
     private final ProjectMapper projectMapper;
     private final OrganizationMapper organizationMapper;
+    private final TeamMapper teamMapper;
     private final WorkItemMapper workItemMapper;
+
+    private User getUser(Integer userId) {
+        return userRepository.findById(userId).orElseThrow(
+                () -> new NotFoundException(String.format("User with id %d not found", userId))
+        );
+    }
 
     public List<UserSummaryDto> findAllUsers() {
         return userRepository
@@ -37,43 +45,47 @@ public class UserService {
     }
 
     public List<CommentResponseUserDto> findAllCommentsByUserId(Integer userId) {
-        userRepository.findById(userId).orElseThrow(
-                () -> new NotFoundException(String.format("User with id %d not found", userId))
-        );
-
-        return commentRepository.findAllByAuthorId(userId)
+        return getUser(userId)
+                .getComments()
                 .stream()
                 .map(commentMapper::toResponseUserDto)
                 .toList();
     }
 
     public List<ProjectSummaryDto> findAllProjectsByUserId(Integer userId) {
-        userRepository.findById(userId).orElseThrow(
-                () -> new NotFoundException(String.format("User with id %d not found", userId))
-        );
-
-        return projectRepository.findALlByManagerId(userId)
+        return getUser(userId)
+                .getProjects()
                 .stream()
                 .map(projectMapper::toSummaryDto)
                 .toList();
     }
 
     public List<OrganizationSummaryDto> findAllOrganizationsByUserId(Integer userId) {
-        userRepository.findById(userId).orElseThrow(
-                () -> new NotFoundException(String.format("User with id %d not found", userId))
-        );
-
-        return organizationRepository.findAllByManagerId(userId)
+        return getUser(userId)
+                .getOrganizations()
                 .stream()
                 .map(organizationMapper::toSummaryDto)
                 .toList();
     }
 
+    public List<TeamSummaryUserDto> findAllTeamsByUserIdWhereManager(Integer userId) {
+        return getUser(userId)
+                .getManagedTeams()
+                .stream()
+                .map(teamMapper::toSummaryUserDto)
+                .toList();
+    }
+
+    public List<TeamSummaryUserDto> findAllTeamsByUserIdWhereAssignee(Integer userId) {
+        return getUser(userId)
+                .getTeams()
+                .stream()
+                .map(teamMapper::toSummaryUserDto)
+                .toList();
+    }
 
     public List<WorkItemSummaryDto> findAllWorkItemsByUserIdWhereReporter(Integer userId) {
-        userRepository.findById(userId).orElseThrow(
-                () -> new NotFoundException(String.format("User with id %d not found", userId))
-        );
+        getUser(userId);
         return workItemRepository.findAllByReporterId(userId)
                 .stream()
                 .map(workItemMapper::toSummaryDto)
@@ -81,9 +93,7 @@ public class UserService {
     }
 
     public List<WorkItemSummaryDto> findAllWorkItemsByUserIdWhereAssignee(Integer userId) {
-        userRepository.findById(userId).orElseThrow(
-                () -> new NotFoundException(String.format("User with id %d not found", userId))
-        );
+        getUser(userId);
         return workItemAssignmentRepository.findAllByUserId(userId)
                 .stream()
                 .map(item -> {
@@ -93,9 +103,7 @@ public class UserService {
     }
 
     public UserResponseDto findUserById(Integer userId) {
-        return userMapper.toResponseDto(userRepository.findById(userId).orElseThrow(
-                () -> new NotFoundException(String.format("User with id %d not found", userId))
-        ));
+        return userMapper.toResponseDto(getUser(userId));
     }
 
     public UserResponseDto createUser(UserCreateDto userCreateDto) {
@@ -110,9 +118,7 @@ public class UserService {
     }
 
     public UserResponseDto updateUser(Integer userId, UserUpdateDto userUpdateDto) {
-        User user = userRepository.findById(userId).orElseThrow(
-                () -> new NotFoundException(String.format("User with id %d not found", userId))
-        );
+        User user = getUser(userId);
         userMapper.updateEntityFromDto(userUpdateDto, user);
 
         if (userUpdateDto.getEmail() != null && !userUpdateDto.getEmail().equals(user.getEmail()) &&
@@ -135,7 +141,6 @@ public class UserService {
         workItemAssignmentRepository.flush();
 
         List<WorkItem> userWorkItems = workItemRepository.findAllByReporterId(userId);
-
         for (WorkItem parent : userWorkItems) {
             for (WorkItem child : parent.getChildren()) {
                 child.setParent(null);
@@ -143,7 +148,9 @@ public class UserService {
         }
         workItemRepository.flush();
         workItemRepository.deleteByReporterId(userId);
+
         projectRepository.deleteByManagerId(userId);
+        teamRepository.deleteByManagerId(userId);
         organizationRepository.deleteByManagerId(userId);
         userRepository.deleteById(userId);
     }

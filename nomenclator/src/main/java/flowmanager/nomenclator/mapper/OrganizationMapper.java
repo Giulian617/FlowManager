@@ -29,7 +29,6 @@ public class OrganizationMapper {
         Optional.ofNullable(dto.getName()).ifPresent(organization::setName);
         Optional.ofNullable(dto.getDescription()).ifPresent(organization::setDescription);
         Optional.ofNullable(dto.getIndustry()).ifPresent(organization::setIndustry);
-        organization.setUpdatedAt(LocalDateTime.now());
         organization.setManager(manager);
     }
 
@@ -54,7 +53,6 @@ public class OrganizationMapper {
                 .description(organization.getDescription())
                 .industry(organization.getIndustry())
                 .createdAt(organization.getCreatedAt())
-                .updatedAt(organization.getUpdatedAt())
                 .manager(managerDto)
                 .build();
     }

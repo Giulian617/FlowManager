@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -49,8 +50,14 @@ public class User {
     private List<Project> projects;
 
     @OneToMany(mappedBy = "manager")
-    private List<Organization> organization;
+    private List<Organization> organizations;
+
+    @OneToMany(mappedBy = "manager")
+    private List<Team> managedTeams;
 
     @OneToMany(mappedBy = "user")
     private List<WorkItemAssignment> workItems;
+
+    @ManyToMany(mappedBy = "users")
+    private List<Team> teams = new ArrayList<>();
 }

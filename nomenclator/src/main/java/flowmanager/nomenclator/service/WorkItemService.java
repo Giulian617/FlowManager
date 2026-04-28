@@ -24,6 +24,12 @@ public class WorkItemService {
     private final WorkItemAssignmentRepository workItemAssignmentRepository;
     private final CommentMapper commentMapper;
 
+    private WorkItem getWorkItem(Integer workItemId) {
+        return workItemRepository.findById(workItemId).orElseThrow(
+                () -> new NotFoundException(String.format("WorkItem with id %d not found", workItemId))
+        );
+    }
+
     public List<WorkItemSummaryDto> findAllWorkItems() {
         return workItemRepository
                 .findAll()
@@ -33,21 +39,15 @@ public class WorkItemService {
     }
 
     public List<CommentResponseWorkItemDto> findAllCommentsByWorkItemId(Integer workItemId) {
-        workItemRepository.findById(workItemId).orElseThrow(
-                () -> new NotFoundException(String.format("WorkItem with id %d not found", workItemId))
-        );
-        return commentRepository.findAllByWorkItemId(workItemId)
+        return getWorkItem(workItemId)
+                .getComments()
                 .stream()
                 .map(commentMapper::toResponseWorkItemDto)
                 .toList();
     }
 
     public WorkItemResponseDto findWorkItemById(Integer workItemId) {
-        return workItemMapper.toResponseDto(
-                workItemRepository.findById(workItemId).orElseThrow(
-                        () -> new NotFoundException(String.format("Work Item with id %d not found", workItemId))
-                )
-        );
+        return workItemMapper.toResponseDto(getWorkItem(workItemId));
     }
 
     @Transactional
@@ -77,7 +77,6 @@ public class WorkItemService {
         Project project = projectRepository.findById(workItemCreateDto.getProjectId()).orElseThrow(
                 () -> new NotFoundException(String.format("Project with id %d not found", workItemCreateDto.getProjectId()))
         );
-
         WorkItem workItem = workItemMapper.toEntity(workItemCreateDto, project);
 
         if (workItemCreateDto.getAssigneesIds() != null && !workItemCreateDto.getAssigneesIds().isEmpty()) {
@@ -94,9 +93,7 @@ public class WorkItemService {
     }
 
     public WorkItemResponseDto updateWorkItem(Integer workItemId, WorkItemUpdateDto workItemUpdateDto) {
-        WorkItem workItem = workItemRepository.findById(workItemId).orElseThrow(
-                () -> new NotFoundException(String.format("WorkItem with id %d not found", workItemId))
-        );
+        WorkItem workItem = getWorkItem(workItemId);
         workItemMapper.updateEntityFromDto(workItemUpdateDto, workItem);
 
         return workItemMapper.toResponseDto(workItemRepository.save(workItem));
@@ -104,9 +101,7 @@ public class WorkItemService {
 
     @Transactional
     public WorkItemResponseDto assignUsers(Integer workItemId, WorkItemAssignDto workItemAssignDto) {
-        WorkItem workItem = workItemRepository.findById(workItemId).orElseThrow(
-                () -> new NotFoundException(String.format("WorkItem with id %d not found", workItemId))
-        );
+        WorkItem workItem = getWorkItem(workItemId);
 
         workItemAssignmentRepository.deleteByWorkItemId(workItemId);
         workItemAssignmentRepository.flush();
@@ -121,12 +116,8 @@ public class WorkItemService {
     }
 
     public WorkItemResponseDto setParent(Integer childId, Integer parentId) {
-        WorkItem child = workItemRepository.findById(childId).orElseThrow(
-                () -> new NotFoundException(String.format("WorkItem with id %d not found", childId))
-        );
-        WorkItem parent = workItemRepository.findById(parentId).orElseThrow(
-                () -> new NotFoundException(String.format("WorkItem with id %d not found", parentId))
-        );
+        WorkItem child = getWorkItem(childId);
+        WorkItem parent = getWorkItem(parentId);
 
         if (parent.getItemType() == ItemType.Task) {
             throw new IllegalArgumentException("A Task cannot have children");
@@ -145,9 +136,7 @@ public class WorkItemService {
     }
 
     public WorkItemResponseDto removeParent(Integer childId) {
-        WorkItem child = workItemRepository.findById(childId).orElseThrow(
-                () -> new NotFoundException(String.format("WorkItem with id %d not found", childId))
-        );
+        WorkItem child = getWorkItem(childId);
 
         child.setParent(null);
         return workItemMapper.toResponseDto(workItemRepository.save(child));
@@ -155,13 +144,13 @@ public class WorkItemService {
 
     @Transactional
     public void deleteWorkItem(Integer workItemId) {
-        WorkItem workItem = workItemRepository.findById(workItemId).orElseThrow(
-                () -> new NotFoundException(String.format("WorkItem with id %d not found", workItemId))
-        );
+        WorkItem workItem = getWorkItem(workItemId);
         for (WorkItem child : workItem.getChildren()) {
             child.setParent(null);
         }
+
         workItemAssignmentRepository.deleteByWorkItemId(workItemId);
+        commentRepository.deleteByWorkItemId(workItemId);
         workItemRepository.deleteById(workItemId);
     }
 }

@@ -1,9 +1,6 @@
 package flowmanager.nomenclator.controller;
 
-import flowmanager.nomenclator.dto.ProjectCreateDto;
-import flowmanager.nomenclator.dto.ProjectResponseDto;
-import flowmanager.nomenclator.dto.ProjectSummaryDto;
-import flowmanager.nomenclator.dto.ProjectUpdateDto;
+import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +45,15 @@ public class ProjectController {
             @RequestBody @Valid ProjectUpdateDto projectUpdateDto
     ) {
         return ResponseEntity.ok(projectService.updateProject(projectId, projectUpdateDto));
+    }
+
+    @PutMapping("/{projectId}/assign")
+    @ResponseBody
+    public ResponseEntity<ProjectResponseDto> assignTeams(
+            @PathVariable Integer projectId,
+            @RequestBody @Valid ProjectAssignDto projectAssignDto
+    ) {
+        return ResponseEntity.ok(projectService.assignTeams(projectId, projectAssignDto));
     }
 
     @DeleteMapping("/{projectId}")

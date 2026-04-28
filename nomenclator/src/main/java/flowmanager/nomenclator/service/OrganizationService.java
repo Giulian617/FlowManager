@@ -1,17 +1,17 @@
 package flowmanager.nomenclator.service;
 
-import flowmanager.nomenclator.dto.OrganizationCreateDto;
-import flowmanager.nomenclator.dto.OrganizationResponseDto;
-import flowmanager.nomenclator.dto.OrganizationSummaryDto;
-import flowmanager.nomenclator.dto.OrganizationUpdateDto;
+import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.OrganizationMapper;
+import flowmanager.nomenclator.mapper.TeamMapper;
 import flowmanager.nomenclator.model.Organization;
 import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.OrganizationRepository;
+import flowmanager.nomenclator.repository.TeamRepository;
 import flowmanager.nomenclator.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -19,13 +19,26 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrganizationService {
     private final OrganizationRepository organizationRepository;
+    private final TeamRepository teamRepository;
     private final UserRepository userRepository;
     private final OrganizationMapper organizationMapper;
+    private final TeamMapper teamMapper;
 
     public List<OrganizationSummaryDto> findAllOrganizations() {
         return organizationRepository.findAll()
                 .stream()
                 .map(organizationMapper::toSummaryDto)
+                .toList();
+    }
+
+    public List<TeamSummaryOrganizationDto> findAllTeamsByOrganizationId(Integer organizationId) {
+        Organization organization = organizationRepository.findById(organizationId).orElseThrow(
+                () -> new NotFoundException(String.format("Organization with id %d not found", organizationId))
+        );
+
+        return organization.getTeams()
+                .stream()
+                .map(teamMapper::toSummaryOrganizationDto)
                 .toList();
     }
 
@@ -62,10 +75,9 @@ public class OrganizationService {
         return organizationMapper.toResponseDto(organizationRepository.save(organization));
     }
 
+    @Transactional
     public void deleteOrganization(Integer organizationId) {
-        organizationRepository.findById(organizationId).orElseThrow(
-                () -> new NotFoundException(String.format("Organization with id %d not found", organizationId))
-        );
+        teamRepository.deleteByOrganizationId(organizationId);
         organizationRepository.deleteById(organizationId);
     }
 }

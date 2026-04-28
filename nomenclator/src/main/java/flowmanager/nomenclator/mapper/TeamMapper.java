@@ -1,0 +1,127 @@
+package flowmanager.nomenclator.mapper;
+
+import flowmanager.nomenclator.dto.*;
+import flowmanager.nomenclator.exception.NotFoundException;
+import flowmanager.nomenclator.model.Organization;
+import flowmanager.nomenclator.model.Project;
+import flowmanager.nomenclator.model.Team;
+import flowmanager.nomenclator.model.User;
+import flowmanager.nomenclator.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+@Component
+@RequiredArgsConstructor
+public class TeamMapper {
+    private final UserRepository userRepository;
+
+    public Team toEntity(TeamCreateDto dto, Organization organization) {
+        return Team.builder()
+                .name(dto.getName())
+                .description(dto.getDescription())
+                .createdAt(LocalDateTime.now())
+                .organization(organization)
+                .manager(userRepository.findById(1).orElseThrow(
+                        () -> new NotFoundException(String.format("User with id %d not found", 1)))) // TODO: get from context
+                .build();
+    }
+
+    public void updateEntityFromDto(TeamUpdateDto dto, Organization organization, User manager, Team team) {
+        Optional.ofNullable(dto.getName()).ifPresent(team::setName);
+        Optional.ofNullable(dto.getDescription()).ifPresent(team::setDescription);
+        team.setOrganization(organization);
+        team.setManager(manager);
+    }
+
+    private OrganizationSummaryDto getOrganizationSummaryDto(Team team) {
+        Organization organization = team.getOrganization();
+        return new OrganizationSummaryDto(
+                organization.getId(),
+                organization.getName(),
+                organization.getDescription()
+        );
+    }
+
+    private UserSummaryDto getManagerSummaryDto(Team team) {
+        User manager = team.getManager();
+        return new UserSummaryDto(
+                manager.getId(),
+                manager.getUsername()
+        );
+    }
+
+    public TeamSummaryUserDto toSummaryUserDto(Team team) {
+        return TeamSummaryUserDto.builder()
+                .id(team.getId())
+                .name(team.getName())
+                .organization(getOrganizationSummaryDto(team))
+                .build();
+    }
+
+    public TeamSummaryOrganizationDto toSummaryOrganizationDto(Team team) {
+        return TeamSummaryOrganizationDto.builder()
+                .id(team.getId())
+                .name(team.getName())
+                .manager(getManagerSummaryDto(team))
+                .build();
+    }
+
+    public TeamSummaryDto toSummaryDto(Team team) {
+        return TeamSummaryDto.builder()
+                .id(team.getId())
+                .name(team.getName())
+                .description(team.getDescription())
+                .organization(getOrganizationSummaryDto(team))
+                .manager(getManagerSummaryDto(team))
+                .build();
+    }
+
+    private ProjectSummaryDto mapProjectSummary(Project project) {
+        return ProjectSummaryDto.builder()
+                .id(project.getId())
+                .name(project.getName())
+                .description(project.getDescription())
+                .build();
+    }
+
+    private UserSummaryDto mapUserSummary(User user) {
+        return UserSummaryDto.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .build();
+    }
+
+    public TeamResponseDto toResponseDto(Team team) {
+        List<Project> projects = team.getProjects();
+        List<ProjectSummaryDto> projectsDto = new ArrayList<>();
+        if(projects != null) {
+            projectsDto = projects.stream()
+                    .map(this::mapProjectSummary)
+                    .toList();
+        }
+
+        List<User> users = team.getUsers();
+        List<UserSummaryDto> usersDto = new ArrayList<>();
+        if(users != null) {
+            usersDto = users.stream()
+                    .map(this::mapUserSummary)
+                    .toList();
+        }
+
+        return TeamResponseDto.builder()
+                .id(team.getId())
+                .name(team.getName())
+                .description(team.getDescription())
+                .createdAt(team.getCreatedAt())
+                .organization(getOrganizationSummaryDto(team))
+                .manager(getManagerSummaryDto(team))
+                .projects(projectsDto)
+                .users(usersDto)
+                .build();
+    }
+}

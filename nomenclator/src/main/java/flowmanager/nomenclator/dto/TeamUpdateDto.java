@@ -6,30 +6,19 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDate;
-import java.util.List;
-
 @Data
 @SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonPropertyOrder({
-        "id",
         "name",
         "description",
-        "startDate",
-        "endDate",
-        "manager",
-        "workItems",
-        "teams"
+        "organizationId",
+        "managerId"
 })
-public class ProjectResponseDto {
-    private Integer id;
+public class TeamUpdateDto {
     private String name;
     private String description;
-    private LocalDate startDate;
-    private LocalDate endDate;
-    private UserSummaryDto manager;
-    private List<WorkItemSummaryDto> workItems;
-    private List<TeamSummaryDto> teams;
+    private Integer organizationId;
+    private Integer managerId;
 }

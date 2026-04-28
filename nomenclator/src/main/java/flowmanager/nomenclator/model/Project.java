@@ -4,12 +4,13 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode()
+@EqualsAndHashCode(exclude = "teams")
 @Builder
 @Entity
 @Table(name = "project")
@@ -36,4 +37,7 @@ public class Project {
 
     @OneToMany(mappedBy = "project")
     private List<WorkItem> workItems;
+
+    @ManyToMany(mappedBy = "projects")
+    private List<Team> teams = new ArrayList<>();
 }
