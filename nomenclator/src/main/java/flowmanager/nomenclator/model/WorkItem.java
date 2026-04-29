@@ -56,9 +56,9 @@ public class WorkItem {
 
     @ManyToMany
     @JoinTable(
-            name = "work_item_assignments",
+            name = "work_item_assignment",
             joinColumns = @JoinColumn(name = "work_item_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id9")
+            inverseJoinColumns = @JoinColumn(name = "user_id")
     )
     private List<User> assignees;
 
