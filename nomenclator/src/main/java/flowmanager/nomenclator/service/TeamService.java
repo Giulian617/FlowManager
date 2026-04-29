@@ -3,7 +3,9 @@ package flowmanager.nomenclator.service;
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.TeamMapper;
-import flowmanager.nomenclator.model.*;
+import flowmanager.nomenclator.model.Organization;
+import flowmanager.nomenclator.model.Team;
+import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.OrganizationRepository;
 import flowmanager.nomenclator.repository.TeamRepository;
 import flowmanager.nomenclator.repository.UserRepository;
@@ -21,12 +23,18 @@ public class TeamService {
     private final OrganizationRepository organizationRepository;
     private final TeamMapper teamMapper;
 
-    public List<TeamResponseDto> findAllTeams() {
+    public List<TeamSummaryDto> findAllTeams() {
         return teamRepository
                 .findAll()
                 .stream()
-                .map(teamMapper::toResponseDto)
+                .map(teamMapper::toSummaryDto)
                 .toList();
+    }
+
+    public TeamResponseDto findTeamById(Integer teamId) {
+        return teamMapper.toResponseDto(teamRepository.findById(teamId).orElseThrow(
+                () -> new NotFoundException(String.format("Team with id %d not found", teamId))
+        ));
     }
 
     public TeamResponseDto createTeam(TeamCreateDto teamCreateDto) {
@@ -53,7 +61,7 @@ public class TeamService {
                     () -> new NotFoundException(String.format("Manager with id %d not found", teamUpdateDto.getManagerId()))
             );
         }
-        teamMapper.updateEntityFromDto(teamUpdateDto, organization, manager, team);
+        teamMapper.updateEntityFromDto(teamUpdateDto, team, organization, manager);
 
         return teamMapper.toResponseDto(teamRepository.save(team));
     }
@@ -71,8 +79,8 @@ public class TeamService {
 
         team.setUsers(users);
         users.forEach(user -> {
-            if(!user.getTeams().contains(team)) {
-                user.getTeams().add(team);
+            if(!user.getAssignedTeams().contains(team)) {
+                user.getAssignedTeams().add(team);
             }
         });
 

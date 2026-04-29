@@ -54,8 +54,13 @@ public class WorkItem {
     @JoinColumn(name = "reporter_id")
     private User reporter;
 
-    @OneToMany(mappedBy = "workItem", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<WorkItemAssignment> assignees;
+    @ManyToMany
+    @JoinTable(
+            name = "work_item_assignments",
+            joinColumns = @JoinColumn(name = "work_item_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id9")
+    )
+    private List<User> assignees;
 
     @ManyToOne
     @JoinColumn(name = "parent_id")

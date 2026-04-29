@@ -1,6 +1,9 @@
 package flowmanager.nomenclator.controller;
 
 import flowmanager.nomenclator.dto.*;
+import flowmanager.nomenclator.model.ItemType;
+import flowmanager.nomenclator.model.Severity;
+import flowmanager.nomenclator.model.Status;
 import flowmanager.nomenclator.service.WorkItemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,8 +21,12 @@ public class WorkItemController {
 
     @GetMapping("")
     @ResponseBody
-    public ResponseEntity<List<WorkItemSummaryDto>> getAllWorkItems() {
-        return ResponseEntity.ok(workItemService.findAllWorkItems());
+    public ResponseEntity<List<WorkItemSummaryDto>> getAllWorkItems(
+            @RequestParam(required = false) ItemType itemType,
+            @RequestParam(required = false) Status status,
+            @RequestParam(required = false) Severity severity
+            ) {
+        return ResponseEntity.ok(workItemService.findAllWorkItems(itemType, status, severity));
     }
 
     @GetMapping("/comments/{workItemId}")

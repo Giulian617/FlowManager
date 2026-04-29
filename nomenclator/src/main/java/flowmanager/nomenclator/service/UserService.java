@@ -21,7 +21,6 @@ public class UserService {
     private final ProjectRepository projectRepository;
     private final OrganizationRepository organizationRepository;
     private final TeamRepository teamRepository;
-    private final WorkItemAssignmentRepository workItemAssignmentRepository;
     private final WorkItemRepository workItemRepository;
     private final UserMapper userMapper;
     private final CommentMapper commentMapper;
@@ -78,27 +77,25 @@ public class UserService {
 
     public List<TeamSummaryUserDto> findAllTeamsByUserIdWhereAssignee(Integer userId) {
         return getUser(userId)
-                .getTeams()
+                .getAssignedTeams()
                 .stream()
                 .map(teamMapper::toSummaryUserDto)
                 .toList();
     }
 
     public List<WorkItemSummaryDto> findAllWorkItemsByUserIdWhereReporter(Integer userId) {
-        getUser(userId);
-        return workItemRepository.findAllByReporterId(userId)
+        return getUser(userId)
+                .getReportedWorkItems()
                 .stream()
                 .map(workItemMapper::toSummaryDto)
                 .toList();
     }
 
     public List<WorkItemSummaryDto> findAllWorkItemsByUserIdWhereAssignee(Integer userId) {
-        getUser(userId);
-        return workItemAssignmentRepository.findAllByUserId(userId)
+        return getUser(userId)
+                .getAssignedWorkItems()
                 .stream()
-                .map(item -> {
-                    return workItemMapper.toSummaryDto(item.getWorkItem());
-                })
+                .map(workItemMapper::toSummaryDto)
                 .toList();
     }
 
@@ -137,8 +134,6 @@ public class UserService {
     @Transactional
     public void deleteUser(Integer userId) {
         commentRepository.deleteByAuthorId(userId);
-        workItemAssignmentRepository.deleteByUserId(userId);
-        workItemAssignmentRepository.flush();
 
         List<WorkItem> userWorkItems = workItemRepository.findAllByReporterId(userId);
         for (WorkItem parent : userWorkItems) {

@@ -11,8 +11,8 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonPropertyOrder({
-    "id",
-    "username"
+        "id",
+        "username"
 })
 public class UserSummaryDto {
     private Integer id;

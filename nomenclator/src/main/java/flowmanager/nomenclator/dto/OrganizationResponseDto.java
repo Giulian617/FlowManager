@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @SuperBuilder
@@ -18,8 +19,8 @@ import java.time.LocalDateTime;
         "description",
         "industry",
         "createdAt",
-        "updatedAt",
-        "manager"
+        "manager",
+        "teams"
 })
 public class OrganizationResponseDto {
     private Integer id;
@@ -27,6 +28,6 @@ public class OrganizationResponseDto {
     private String description;
     private String industry;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
     private UserSummaryDto manager;
+    private List<TeamSummaryOrganizationDto> teams;
 }

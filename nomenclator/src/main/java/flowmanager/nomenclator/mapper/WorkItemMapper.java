@@ -2,7 +2,10 @@ package flowmanager.nomenclator.mapper;
 
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
-import flowmanager.nomenclator.model.*;
+import flowmanager.nomenclator.model.Project;
+import flowmanager.nomenclator.model.Status;
+import flowmanager.nomenclator.model.User;
+import flowmanager.nomenclator.model.WorkItem;
 import flowmanager.nomenclator.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -29,7 +32,7 @@ public class WorkItemMapper {
                 .dueDate(dto.getDueDate())
                 .project(project)
                 .reporter(userRepository.findById(1).orElseThrow(
-                        () -> new NotFoundException(String.format("User with id %d not found", 1)))) // TODO: get the user from the context here
+                        () -> new NotFoundException(String.format("User with id %d not found", 1)))) // TODO: get from context
                 .build();
     }
 
@@ -51,13 +54,13 @@ public class WorkItemMapper {
                 .build();
     }
 
-    private List<UserSummaryDto> mapAssignees(List<WorkItemAssignment> assignments) {
-        if (assignments == null) return new ArrayList<>();
+    private List<UserSummaryDto> mapAssignees(List<User> assignedUsers) {
+        if (assignedUsers == null) return new ArrayList<>();
 
-        return assignments.stream()
-                .map(assignment -> new UserSummaryDto(
-                        assignment.getUser().getId(),
-                        assignment.getUser().getUsername()
+        return assignedUsers.stream()
+                .map(assignedUser -> new UserSummaryDto(
+                        assignedUser.getId(),
+                        assignedUser.getUsername()
                 ))
                 .toList();
     }
@@ -69,9 +72,9 @@ public class WorkItemMapper {
                 .description(workItem.getProject().getDescription())
                 .build();
 
-        List<CommentResponseWorkItemDto> commentsDtos = new ArrayList<>();
+        List<CommentResponseWorkItemDto> commentsDto = new ArrayList<>();
         if(workItem.getComments() != null) {
-            commentsDtos = workItem.getComments().stream()
+            commentsDto = workItem.getComments().stream()
                     .map(commentMapper::toResponseWorkItemDto)
                     .toList();
         }
@@ -82,16 +85,16 @@ public class WorkItemMapper {
                 reporter.getUsername()
         );
 
-        List<UserSummaryDto> assigneeDtos = mapAssignees(workItem.getAssignees());
+        List<UserSummaryDto> assigneesDto = mapAssignees(workItem.getAssignees());
 
         WorkItemSummaryDto parentDto = null;
         if (workItem.getParent() != null) {
             parentDto = toSummaryDto(workItem.getParent());
         }
 
-        List<WorkItemSummaryDto> childrenDtos = new ArrayList<>();
+        List<WorkItemSummaryDto> childrenDto = new ArrayList<>();
         if (workItem.getChildren() != null) {
-            childrenDtos = workItem.getChildren().stream()
+            childrenDto = workItem.getChildren().stream()
                     .map(this::toSummaryDto)
                     .toList();
         }
@@ -106,11 +109,11 @@ public class WorkItemMapper {
                 .createdAt(workItem.getCreatedAt())
                 .dueDate(workItem.getDueDate())
                 .project(projectDto)
-                .comments(commentsDtos)
+                .comments(commentsDto)
                 .reporter(reporterDto)
-                .assignees(assigneeDtos)
+                .assignees(assigneesDto)
                 .parent(parentDto)
-                .children(childrenDtos)
+                .children(childrenDto)
                 .build();
     }
 }

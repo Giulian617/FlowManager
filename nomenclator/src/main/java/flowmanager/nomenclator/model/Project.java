@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -39,5 +38,5 @@ public class Project {
     private List<WorkItem> workItems;
 
     @ManyToMany(mappedBy = "projects")
-    private List<Team> teams = new ArrayList<>();
+    private List<Team> teams;
 }

@@ -5,10 +5,13 @@ import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.CommentMapper;
 import flowmanager.nomenclator.mapper.WorkItemMapper;
 import flowmanager.nomenclator.model.*;
-import flowmanager.nomenclator.model.WorkItemAssignment.WorkItemAssignmentId;
-import flowmanager.nomenclator.repository.*;
+import flowmanager.nomenclator.repository.CommentRepository;
+import flowmanager.nomenclator.repository.ProjectRepository;
+import flowmanager.nomenclator.repository.UserRepository;
+import flowmanager.nomenclator.repository.WorkItemRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,7 +24,6 @@ public class WorkItemService {
     private final CommentRepository commentRepository;
     private final ProjectRepository projectRepository;
     private final WorkItemMapper workItemMapper;
-    private final WorkItemAssignmentRepository workItemAssignmentRepository;
     private final CommentMapper commentMapper;
 
     private WorkItem getWorkItem(Integer workItemId) {
@@ -30,9 +32,26 @@ public class WorkItemService {
         );
     }
 
-    public List<WorkItemSummaryDto> findAllWorkItems() {
+    public List<WorkItemSummaryDto> findAllWorkItems(ItemType itemType, Status status, Severity severity) {
+        Specification<WorkItem> specs = Specification.allOf();
+
+        if (itemType != null) {
+            specs = specs.and((root, query, cb) ->
+                    cb.equal(root.get("itemType"), itemType));
+        }
+
+        if (status != null) {
+            specs = specs.and((root, query, cb) ->
+                    cb.equal(root.get("status"), status));
+        }
+
+        if (severity != null) {
+            specs = specs.and((root, query, cb) ->
+                    cb.equal(root.get("severity"), severity));
+        }
+
         return workItemRepository
-                .findAll()
+                .findAll(specs)
                 .stream()
                 .map(workItemMapper::toSummaryDto)
                 .toList();
@@ -51,24 +70,14 @@ public class WorkItemService {
     }
 
     @Transactional
-    protected List<WorkItemAssignment> createAssignments(WorkItem workItem, List<Integer> assigneesIds) {
-        return assigneesIds.stream()
+    protected List<User> getAssignedUsers(List<Integer> assigneesIds) {
+        return assigneesIds
+                .stream()
                 .distinct()
-                .map(userId -> {
-                    User user = userRepository.findById(userId).orElseThrow(
-                            () -> new NotFoundException(String.format("User with id %d not found", userId))
-                    );
-
-                    WorkItemAssignmentId id = new WorkItemAssignmentId();
-                    id.setWorkItemId(workItem.getId());
-                    id.setUserId(userId);
-
-                    return (WorkItemAssignment) WorkItemAssignment.builder()
-                            .workItemAssignmentId(id)
-                            .workItem(workItem)
-                            .user(user)
-                            .build();
-                })
+                .map(userId -> userRepository.findById(userId).orElseThrow(
+                        () -> new NotFoundException(String.format("User with id %d not found", userId))
+                    )
+                )
                 .toList();
     }
 
@@ -80,8 +89,8 @@ public class WorkItemService {
         WorkItem workItem = workItemMapper.toEntity(workItemCreateDto, project);
 
         if (workItemCreateDto.getAssigneesIds() != null && !workItemCreateDto.getAssigneesIds().isEmpty()) {
-            List<WorkItemAssignment> assignments = createAssignments(workItem, workItemCreateDto.getAssigneesIds());
-            workItem.setAssignees(assignments);
+            List<User> assignedUsers = getAssignedUsers(workItemCreateDto.getAssigneesIds());
+            workItem.setAssignees(assignedUsers);
         }
         workItemRepository.save(workItem);
 
@@ -102,15 +111,8 @@ public class WorkItemService {
     @Transactional
     public WorkItemResponseDto assignUsers(Integer workItemId, WorkItemAssignDto workItemAssignDto) {
         WorkItem workItem = getWorkItem(workItemId);
-
-        workItemAssignmentRepository.deleteByWorkItemId(workItemId);
-        workItemAssignmentRepository.flush();
-
-        List<WorkItemAssignment> assignments = createAssignments(workItem, workItemAssignDto.getAssigneesIds());
-
-        workItemAssignmentRepository.saveAll(assignments);
-        workItemAssignmentRepository.flush();
-        workItem.setAssignees(assignments);
+        List<User> assignedUsers = getAssignedUsers(workItemAssignDto.getAssigneesIds());
+        workItem.setAssignees(assignedUsers);
 
         return workItemMapper.toResponseDto(workItem);
     }
@@ -149,7 +151,6 @@ public class WorkItemService {
             child.setParent(null);
         }
 
-        workItemAssignmentRepository.deleteByWorkItemId(workItemId);
         commentRepository.deleteByWorkItemId(workItemId);
         workItemRepository.deleteById(workItemId);
     }

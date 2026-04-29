@@ -31,7 +31,7 @@ public class TeamMapper {
                 .build();
     }
 
-    public void updateEntityFromDto(TeamUpdateDto dto, Organization organization, User manager, Team team) {
+    public void updateEntityFromDto(TeamUpdateDto dto, Team team, Organization organization, User manager) {
         Optional.ofNullable(dto.getName()).ifPresent(team::setName);
         Optional.ofNullable(dto.getDescription()).ifPresent(team::setDescription);
         team.setOrganization(organization);
@@ -97,18 +97,18 @@ public class TeamMapper {
     }
 
     public TeamResponseDto toResponseDto(Team team) {
-        List<Project> projects = team.getProjects();
         List<ProjectSummaryDto> projectsDto = new ArrayList<>();
-        if(projects != null) {
-            projectsDto = projects.stream()
+        if(team.getProjects() != null) {
+            projectsDto = team.getProjects()
+                    .stream()
                     .map(this::mapProjectSummary)
                     .toList();
         }
 
-        List<User> users = team.getUsers();
         List<UserSummaryDto> usersDto = new ArrayList<>();
-        if(users != null) {
-            usersDto = users.stream()
+        if(team.getUsers() != null) {
+            usersDto = team.getUsers()
+                    .stream()
                     .map(this::mapUserSummary)
                     .toList();
         }

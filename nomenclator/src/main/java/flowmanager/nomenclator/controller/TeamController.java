@@ -18,8 +18,16 @@ public class TeamController {
 
     @GetMapping("")
     @ResponseBody
-    public ResponseEntity<List<TeamResponseDto>> getAllTeams() {
+    public ResponseEntity<List<TeamSummaryDto>> getAllTeams() {
         return ResponseEntity.ok(teamService.findAllTeams());
+    }
+
+    @GetMapping("/{teamId}")
+    @ResponseBody
+    public ResponseEntity<TeamResponseDto> getTeamById(
+            @PathVariable Integer teamId
+    ) {
+        return ResponseEntity.ok(teamService.findTeamById(teamId));
     }
 
     @PostMapping("")

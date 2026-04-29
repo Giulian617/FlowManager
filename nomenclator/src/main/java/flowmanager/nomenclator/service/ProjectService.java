@@ -3,7 +3,9 @@ package flowmanager.nomenclator.service;
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.ProjectMapper;
-import flowmanager.nomenclator.model.*;
+import flowmanager.nomenclator.model.Project;
+import flowmanager.nomenclator.model.Team;
+import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.ProjectRepository;
 import flowmanager.nomenclator.repository.TeamRepository;
 import flowmanager.nomenclator.repository.UserRepository;
@@ -53,7 +55,7 @@ public class ProjectService {
                     () -> new NotFoundException(String.format("Manager with id %d not found", projectUpdateDto.getManagerId()))
             );
         }
-        projectMapper.updateEntityFromDto(projectUpdateDto, manager, project);
+        projectMapper.updateEntityFromDto(projectUpdateDto, project, manager);
 
         return projectMapper.toResponseDto(projectRepository.save(project));
     }

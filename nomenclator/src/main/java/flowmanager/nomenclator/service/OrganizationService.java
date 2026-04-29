@@ -71,7 +71,7 @@ public class OrganizationService {
             );
         }
 
-        organizationMapper.updateEntityFromDto(organizationUpdateDto, manager, organization);
+        organizationMapper.updateEntityFromDto(organizationUpdateDto, organization, manager);
         return organizationMapper.toResponseDto(organizationRepository.save(organization));
     }
 

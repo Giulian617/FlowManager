@@ -2,7 +2,10 @@ package flowmanager.nomenclator.mapper;
 
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
-import flowmanager.nomenclator.model.*;
+import flowmanager.nomenclator.model.Organization;
+import flowmanager.nomenclator.model.Project;
+import flowmanager.nomenclator.model.Team;
+import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -24,11 +27,11 @@ public class ProjectMapper {
                 .startDate(dto.getStartDate())
                 .endDate(dto.getEndDate())
                 .manager(userRepository.findById(1).orElseThrow(
-                        () -> new NotFoundException(String.format("User with id %d not found", 1)))) //TODO: get the user from the context here
+                        () -> new NotFoundException(String.format("User with id %d not found", 1)))) // TODO: get from context
                 .build();
     }
 
-    public void updateEntityFromDto(ProjectUpdateDto dto, User manager, Project project) {
+    public void updateEntityFromDto(ProjectUpdateDto dto, Project project, User manager) {
         Optional.ofNullable(dto.getName()).ifPresent(project::setName);
         Optional.ofNullable(dto.getDescription()).ifPresent(project::setDescription);
         Optional.ofNullable(dto.getStartDate()).ifPresent(project::setStartDate);
@@ -74,18 +77,18 @@ public class ProjectMapper {
                 manager.getUsername()
         );
 
-        List<WorkItem> workItems = project.getWorkItems();
         List<WorkItemSummaryDto> workItemsDto = new ArrayList<>();
-        if(workItems != null) {
-            workItemsDto = workItems.stream()
+        if(project.getWorkItems() != null) {
+            workItemsDto = project.getWorkItems()
+                    .stream()
                     .map(workItemMapper::toSummaryDto)
                     .toList();
         }
 
-        List<Team> teams = project.getTeams();
         List<TeamSummaryDto> teamsDto = new ArrayList<>();
-        if(teams != null) {
-            teamsDto = teams.stream()
+        if(project.getTeams() != null) {
+            teamsDto = project.getTeams()
+                    .stream()
                     .map(this::mapTeamSummary)
                     .toList();
         }

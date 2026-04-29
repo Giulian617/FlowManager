@@ -55,6 +55,8 @@ public class CommentMapper {
         return CommentResponseUserDto.builder()
                 .id(comment.getId())
                 .content(comment.getContent())
+                .createdAt(comment.getCreatedAt())
+                .updatedAt(comment.getUpdatedAt())
                 .workItem(getWorkItemSummaryDto(comment))
                 .build();
     }
@@ -63,6 +65,8 @@ public class CommentMapper {
         return CommentResponseWorkItemDto.builder()
                 .id(comment.getId())
                 .content(comment.getContent())
+                .createdAt(comment.getCreatedAt())
+                .updatedAt(comment.getUpdatedAt())
                 .author(getAuthorSummaryDto(comment))
                 .build();
     }

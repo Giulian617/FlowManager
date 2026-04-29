@@ -1,11 +1,11 @@
 meta {
-  name: Delete team
+  name: Read by Id
   type: http
-  seq: 6
+  seq: 2
 }
 
-delete {
+get {
   url: {{url}}/teams/1
-  body: json
+  body: none
   auth: none
 }
