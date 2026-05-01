@@ -15,8 +15,6 @@ import java.util.Optional;
 @Component
 @RequiredArgsConstructor
 public class OrganizationMapper {
-    private final UserRepository userRepository;
-
     public Organization toEntity(OrganizationCreateDto dto, User manager) {
         return Organization.builder()
                 .name(dto.getName())

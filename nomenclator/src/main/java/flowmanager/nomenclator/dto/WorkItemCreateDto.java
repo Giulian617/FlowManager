@@ -15,16 +15,16 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class WorkItemCreateDto {
-    @NotBlank(message = "name is required and cannot be blank")
+    @NotBlank(message = "title is required and cannot be blank")
     private String title;
 
     @NotBlank(message = "description is required and cannot be blank")
     private String description;
 
-    @NotNull(message = "type is required and cannot be blank")
+    @NotNull(message = "itemType is required and cannot be null")
     private ItemType itemType;
 
-    @NotNull(message = "severity is required and cannot be blank")
+    @NotNull(message = "severity is required and cannot be null")
     private Severity severity;
 
     @NotNull(message = "projectId is required and cannot be null")

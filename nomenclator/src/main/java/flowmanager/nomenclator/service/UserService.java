@@ -28,6 +28,10 @@ public class UserService {
     private final OrganizationMapper organizationMapper;
     private final TeamMapper teamMapper;
     private final WorkItemMapper workItemMapper;
+    private final ProjectService projectService;
+    private final TeamService teamService;
+    private final OrganizationService organizationService;
+    private final WorkItemService workItemService;
 
     private User getUser(Integer userId) {
         return userRepository.findById(userId).orElseThrow(
@@ -116,7 +120,6 @@ public class UserService {
 
     public UserResponseDto updateUser(Integer userId, UserUpdateDto userUpdateDto) {
         User user = getUser(userId);
-        userMapper.updateEntityFromDto(userUpdateDto, user);
 
         if (userUpdateDto.getEmail() != null && !userUpdateDto.getEmail().equals(user.getEmail()) &&
                 userRepository.existsByEmail(userUpdateDto.getEmail())) {
@@ -128,25 +131,31 @@ public class UserService {
             throw new DuplicateAttributeException("Username already exists");
         }
 
+        userMapper.updateEntityFromDto(userUpdateDto, user);
         return userMapper.toResponseDto(userRepository.save(user));
     }
 
     @Transactional
     public void deleteUser(Integer userId) {
-        commentRepository.deleteByAuthorId(userId);
+        User user = userRepository.findById(userId).orElse(null);
+        if(user == null) {
+            return;
+        };
 
-        List<WorkItem> userWorkItems = workItemRepository.findAllByReporterId(userId);
-        for (WorkItem parent : userWorkItems) {
-            for (WorkItem child : parent.getChildren()) {
-                child.setParent(null);
-            }
-        }
-        workItemRepository.flush();
-        workItemRepository.deleteByReporterId(userId);
+        user.getAssignedWorkItems()
+                .forEach(workItem -> workItem.getAssignees().remove(user));
+        user.getAssignedTeams()
+                .forEach(team -> team.getMembers().remove(user));
+        user.getReportedWorkItems()
+                .forEach(workItem -> workItemService.deleteWorkItem(workItem.getId()));
+        user.getProjects()
+                .forEach(project -> projectService.deleteProject(project.getId()));
+        user.getManagedTeams()
+                .forEach(team -> teamService.deleteTeam(team.getId()));
+        user.getOrganizations()
+                .forEach(organization -> organizationService.deleteOrganization(organization.getId()));
 
-        projectRepository.deleteByManagerId(userId);
-        teamRepository.deleteByManagerId(userId);
-        organizationRepository.deleteByManagerId(userId);
+        commentRepository.deleteAll(user.getComments());
         userRepository.deleteById(userId);
     }
 }

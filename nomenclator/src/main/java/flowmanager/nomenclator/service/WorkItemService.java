@@ -71,14 +71,11 @@ public class WorkItemService {
 
     @Transactional
     protected List<User> getAssignedUsers(List<Integer> assigneesIds) {
-        return assigneesIds
-                .stream()
-                .distinct()
-                .map(userId -> userRepository.findById(userId).orElseThrow(
-                        () -> new NotFoundException(String.format("User with id %d not found", userId))
-                    )
-                )
-                .toList();
+        List<User> users = userRepository.findAllById(assigneesIds);
+        if(users.size() != assigneesIds.size()) {
+            throw new NotFoundException("One or more users were not found");
+        }
+        return users;
     }
 
     @Transactional
@@ -146,12 +143,16 @@ public class WorkItemService {
 
     @Transactional
     public void deleteWorkItem(Integer workItemId) {
-        WorkItem workItem = getWorkItem(workItemId);
+        WorkItem workItem = workItemRepository.findById(workItemId).orElse(null);
+        if(workItem == null) {
+            return;
+        }
+
         for (WorkItem child : workItem.getChildren()) {
             child.setParent(null);
         }
-
-        commentRepository.deleteByWorkItemId(workItemId);
+        workItem.getAssignees().clear();
+        commentRepository.deleteAll(workItem.getComments());
         workItemRepository.deleteById(workItemId);
     }
 }

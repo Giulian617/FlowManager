@@ -9,10 +9,18 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode()
+@EqualsAndHashCode(exclude = {
+        "comments",
+        "projects",
+        "organizations",
+        "managedTeams",
+        "assignedTeams",
+        "reportedWorkItems",
+        "assignedWorkItems"
+})
 @Builder
 @Entity
-@Table(name = "user")
+@Table(name = "app_user")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -54,7 +62,7 @@ public class User {
     @OneToMany(mappedBy = "manager")
     private List<Team> managedTeams;
 
-    @ManyToMany(mappedBy = "users")
+    @ManyToMany(mappedBy = "members")
     private List<Team> assignedTeams;
 
     @OneToMany(mappedBy = "reporter")

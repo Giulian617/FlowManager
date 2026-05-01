@@ -19,10 +19,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrganizationService {
     private final OrganizationRepository organizationRepository;
-    private final TeamRepository teamRepository;
     private final UserRepository userRepository;
     private final OrganizationMapper organizationMapper;
     private final TeamMapper teamMapper;
+    private final TeamService teamService;
+
+    private Organization getOrganization(Integer organizationId) {
+        return organizationRepository.findById(organizationId).orElseThrow(
+                () -> new NotFoundException(String.format("Organization with id %d not found", organizationId))
+        );
+    }
 
     public List<OrganizationSummaryDto> findAllOrganizations() {
         return organizationRepository.findAll()
@@ -43,11 +49,7 @@ public class OrganizationService {
     }
 
     public OrganizationResponseDto findOrganizationById(Integer organizationId) {
-        return organizationMapper.toResponseDto(
-                organizationRepository.findById(organizationId).orElseThrow(
-                        () -> new NotFoundException(String.format("Organization with id %d not found", organizationId))
-                )
-        );
+        return organizationMapper.toResponseDto(getOrganization(organizationId));
     }
 
     public OrganizationResponseDto createOrganization(OrganizationCreateDto organizationCreateDto) {
@@ -60,9 +62,7 @@ public class OrganizationService {
     }
 
     public OrganizationResponseDto updateOrganization(Integer organizationId, OrganizationUpdateDto organizationUpdateDto) {
-        Organization organization = organizationRepository.findById(organizationId).orElseThrow(
-                () -> new NotFoundException(String.format("Organization with id %d not found", organizationId))
-        );
+        Organization organization = getOrganization(organizationId);
 
         User manager = organization.getManager();
         if (organizationUpdateDto.getManagerId() != null) {
@@ -77,7 +77,13 @@ public class OrganizationService {
 
     @Transactional
     public void deleteOrganization(Integer organizationId) {
-        teamRepository.deleteByOrganizationId(organizationId);
+        Organization organization = organizationRepository.findById(organizationId).orElse(null);
+        if(organization == null) {
+            return;
+        }
+
+        organization.getTeams()
+                .forEach(team -> teamService.deleteTeam(team.getId()));
         organizationRepository.deleteById(organizationId);
     }
 }

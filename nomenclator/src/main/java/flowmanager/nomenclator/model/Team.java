@@ -9,7 +9,12 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode(exclude = "projects")
+@EqualsAndHashCode(exclude = {
+        "organization",
+        "manager",
+        "projects",
+        "users"
+})
 @Builder
 @Entity
 @Table(name = "team")
@@ -49,5 +54,5 @@ public class Team {
             joinColumns = @JoinColumn(name = "team_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
-    private List<User> users;
+    private List<User> members;
 }

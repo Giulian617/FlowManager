@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -18,4 +20,6 @@ public class TeamCreateDto {
 
     @NotNull(message = "organizationId is required and cannot be null")
     private Integer organizationId;
+
+    private List<Integer> membersIds;
 }

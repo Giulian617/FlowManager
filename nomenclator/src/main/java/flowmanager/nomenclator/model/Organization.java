@@ -9,7 +9,10 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode()
+@EqualsAndHashCode(exclude = {
+        "manager",
+        "teams"
+})
 @Builder
 @Entity
 @Table(name = "organization")

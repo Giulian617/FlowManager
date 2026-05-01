@@ -21,7 +21,7 @@ import java.util.List;
         "organization",
         "manager",
         "projects",
-        "users"
+        "members"
 })
 public class TeamResponseDto {
     private Integer id;
@@ -31,5 +31,5 @@ public class TeamResponseDto {
     private OrganizationSummaryDto organization;
     private UserSummaryDto manager;
     private List<ProjectSummaryDto> projects;
-    private List<UserSummaryDto> users;
+    private List<UserSummaryDto> members;
 }

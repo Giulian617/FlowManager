@@ -105,9 +105,9 @@ public class TeamMapper {
                     .toList();
         }
 
-        List<UserSummaryDto> usersDto = new ArrayList<>();
-        if(team.getUsers() != null) {
-            usersDto = team.getUsers()
+        List<UserSummaryDto> membersDto = new ArrayList<>();
+        if(team.getMembers() != null) {
+            membersDto = team.getMembers()
                     .stream()
                     .map(this::mapUserSummary)
                     .toList();
@@ -121,7 +121,7 @@ public class TeamMapper {
                 .organization(getOrganizationSummaryDto(team))
                 .manager(getManagerSummaryDto(team))
                 .projects(projectsDto)
-                .users(usersDto)
+                .members(membersDto)
                 .build();
     }
 }

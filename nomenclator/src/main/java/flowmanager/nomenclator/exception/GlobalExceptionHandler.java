@@ -1,5 +1,6 @@
 package flowmanager.nomenclator.exception;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import flowmanager.nomenclator.dto.ErrorResponseDto;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
@@ -8,7 +9,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import tools.jackson.databind.exc.InvalidFormatException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -30,7 +30,7 @@ public class GlobalExceptionHandler {
         if (ex.getCause() instanceof InvalidFormatException invalidFormatException
                 && invalidFormatException.getTargetType().isEnum()) {
 
-            String fieldName = invalidFormatException.getPath().getFirst().getPropertyName();
+            String fieldName = invalidFormatException.getPath().getFirst().getFieldName();
 
             if ("itemType".equals(fieldName)) {
                 return new ErrorResponseDto(

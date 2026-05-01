@@ -9,7 +9,4 @@ import java.util.List;
 
 @Repository
 public interface WorkItemRepository extends JpaRepository<WorkItem, Integer>, JpaSpecificationExecutor<WorkItem> {
-    List<WorkItem> findAllByReporterId(Integer reporterId);
-    void deleteByReporterId(Integer reporterId);
-    void deleteByProjectId(Integer projectId);
 }

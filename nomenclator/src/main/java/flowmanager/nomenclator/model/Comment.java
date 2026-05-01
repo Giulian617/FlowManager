@@ -8,7 +8,10 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode()
+@EqualsAndHashCode(exclude = {
+        "author",
+        "workItem"
+})
 @Builder
 @Entity
 @Table(name = "comment")

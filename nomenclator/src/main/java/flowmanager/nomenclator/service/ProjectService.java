@@ -21,9 +21,15 @@ import java.util.List;
 public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
-    private final WorkItemRepository workItemRepository;
     private final TeamRepository teamRepository;
     private final ProjectMapper projectMapper;
+    private final WorkItemService workItemService;
+
+    private Project getProject(Integer projectId) {
+        return projectRepository.findById(projectId).orElseThrow(
+                () -> new NotFoundException(String.format("Project with id %d not found", projectId))
+        );
+    }
 
     public List<ProjectSummaryDto> findAllProjects() {
         return projectRepository
@@ -34,9 +40,7 @@ public class ProjectService {
     }
 
     public ProjectResponseDto findProjectById(Integer projectId) {
-        return projectMapper.toResponseDto(projectRepository.findById(projectId).orElseThrow(
-                () -> new NotFoundException(String.format("Project with id %d not found", projectId))
-        ));
+        return projectMapper.toResponseDto(getProject(projectId));
     }
 
     public ProjectResponseDto createProject(ProjectCreateDto projectCreateDto) {
@@ -46,9 +50,7 @@ public class ProjectService {
     }
 
     public ProjectResponseDto updateProject(Integer projectId, ProjectUpdateDto projectUpdateDto) {
-        Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new NotFoundException(String.format("Project with id %d not found", projectId))
-        );
+        Project project = getProject(projectId);
         User manager = project.getManager();
         if(projectUpdateDto.getManagerId() != null) {
             manager = userRepository.findById(projectUpdateDto.getManagerId()).orElseThrow(
@@ -62,9 +64,7 @@ public class ProjectService {
 
     @Transactional
     public ProjectResponseDto assignTeams(Integer projectId, ProjectAssignDto projectAssignDto) {
-        Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new NotFoundException(String.format("Project with id %d not found", projectId))
-        );
+        Project project = getProject(projectId);
 
         List<Team> teams = teamRepository.findAllById(projectAssignDto.getAssignedTeamsIds());
         if(teams.size() != projectAssignDto.getAssignedTeamsIds().size()) {
@@ -83,7 +83,13 @@ public class ProjectService {
 
     @Transactional
     public void deleteProject(Integer projectId) {
-        workItemRepository.deleteByProjectId(projectId);
+        Project project = projectRepository.findById(projectId).orElse(null);
+        if(project == null) {
+            return;
+        }
+
+        project.getWorkItems()
+                .forEach(workItem -> workItemService.deleteWorkItem(workItem.getId()));
         projectRepository.deleteById(projectId);
     }
 }
