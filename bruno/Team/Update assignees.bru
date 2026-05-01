@@ -1,0 +1,17 @@
+meta {
+  name: Update assignees
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{url}}/teams/1/assignees
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "membersIds": [1,2]
+  }
+}

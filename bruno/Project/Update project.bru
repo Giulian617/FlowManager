@@ -1,0 +1,18 @@
+meta {
+  name: Update project
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{url}}/projects/1
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "exemplu modificat",
+    "managerId": 2
+  }
+}

@@ -1,0 +1,23 @@
+meta {
+  name: Create work item
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{url}}/work-items
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "title": "exemplu",
+    "description": "exemplu",
+    "itemType": "Epic",
+    "severity": "Low",
+    "projectId": 1,
+    "dueDate": "2026-07-01",
+    "assigneesIds": [1, 2]
+  }
+}

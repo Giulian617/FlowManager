@@ -1,0 +1,17 @@
+meta {
+  name: Read all
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{url}}/work-items?itemType=Epic&status=To_do&severity=Low
+  body: none
+  auth: none
+}
+
+params:query {
+  itemType: Epic
+  status: To_do
+  severity: Low
+}

@@ -1,0 +1,19 @@
+meta {
+  name: Create team
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{url}}/teams
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Exemplu",
+    "description": "Exemplu",
+    "organizationId": 1
+  }
+}

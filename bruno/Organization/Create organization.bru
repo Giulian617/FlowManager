@@ -1,0 +1,20 @@
+meta {
+  name: Create organization
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{url}}/organizations
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Exemplu",
+    "description": "Exemplu",
+    "industry": "Exemplu",
+    "managerId": 1
+  }
+}
