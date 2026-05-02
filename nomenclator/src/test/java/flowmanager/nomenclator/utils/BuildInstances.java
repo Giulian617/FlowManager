@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public final class BuildInstances {
 
@@ -45,6 +46,9 @@ public final class BuildInstances {
     }
 
     public static List<WorkItem> buildWorkItems() {
+        Project project = buildProject();
+        User reporter = buildUser();
+
         return List.of(
                 WorkItem.builder()
                     .id(1)
@@ -54,6 +58,12 @@ public final class BuildInstances {
                     .status(Status.To_do)
                     .severity(Severity.Low)
                     .createdAt(LocalDateTime.of(2026, 3, 20, 18, 33, 30))
+                    .project(project)
+                    .reporter(reporter)
+                    .assignees(new ArrayList<>())
+                    .comments(new ArrayList<>())
+                    .children(new ArrayList<>())
+                    .parent(null)
                     .build(),
                 WorkItem.builder()
                     .id(2)
@@ -63,6 +73,12 @@ public final class BuildInstances {
                     .status(Status.To_do)
                     .severity(Severity.Low)
                     .createdAt(LocalDateTime.of(2026, 5, 15, 13, 27, 51))
+                    .project(project)
+                    .reporter(reporter)
+                    .assignees(new ArrayList<>())
+                    .comments(new ArrayList<>())
+                    .children(new ArrayList<>())
+                    .parent(null)
                     .build()
         );
     }

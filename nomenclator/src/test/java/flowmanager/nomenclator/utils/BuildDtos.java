@@ -5,6 +5,7 @@ import flowmanager.nomenclator.model.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public final class BuildDtos {
 
@@ -45,6 +46,37 @@ public final class BuildDtos {
                 .itemType(workItem.getItemType())
                 .status(workItem.getStatus())
                 .severity(workItem.getSeverity())
+                .build();
+    }
+
+    public static WorkItemResponseDto buildWorkItemResponseDto(WorkItem workItem) {
+        return WorkItemResponseDto.builder()
+                .id(workItem.getId())
+                .title(workItem.getTitle())
+                .description(workItem.getDescription())
+                .itemType(workItem.getItemType())
+                .status(workItem.getStatus())
+                .severity(workItem.getSeverity())
+                .createdAt(workItem.getCreatedAt())
+                .dueDate(workItem.getDueDate())
+                .project(buildProjectSummaryDto(workItem.getProject()))
+                .comments(workItem.getComments().stream()
+                        .map(BuildDtos::buildCommentResponseWorkItemDto)
+                        .toList()
+                )
+                .reporter(buildUserSummaryDto(workItem.getReporter()))
+                .assignees(workItem.getAssignees().stream()
+                        .map(BuildDtos::buildUserSummaryDto)
+                        .toList()
+                )
+                .parent(Optional.ofNullable(workItem.getParent())
+                        .map(BuildDtos::buildWorkItemSummaryDto)
+                        .orElse(null)
+                )
+                .children(workItem.getChildren().stream()
+                        .map(BuildDtos::buildWorkItemSummaryDto)
+                        .toList()
+                )
                 .build();
     }
 
