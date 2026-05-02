@@ -109,6 +109,8 @@ public final class BuildInstances {
                     .startDate(LocalDate.of(2026, 1, 1))
                     .endDate(LocalDate.of(2026,12,31))
                     .manager(manager)
+                    .workItems(new ArrayList<>())
+                    .teams(new ArrayList<>())
                     .build(),
                 Project.builder()
                     .id(2)
@@ -117,6 +119,8 @@ public final class BuildInstances {
                     .startDate(LocalDate.of(2026, 1, 20))
                     .endDate(LocalDate.of(2026,7,20))
                     .manager(manager)
+                    .workItems(new ArrayList<>())
+                    .teams(new ArrayList<>())
                     .build()
         );
     }

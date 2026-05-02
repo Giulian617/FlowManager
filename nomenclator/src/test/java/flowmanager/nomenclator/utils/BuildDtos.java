@@ -87,6 +87,25 @@ public final class BuildDtos {
                 .build();
     }
 
+    public static ProjectResponseDto buildProjectResponseDto(Project project) {
+        return ProjectResponseDto.builder()
+                .id(project.getId())
+                .name(project.getName())
+                .description(project.getDescription())
+                .startDate(project.getStartDate())
+                .endDate(project.getEndDate())
+                .manager(buildUserSummaryDto(project.getManager()))
+                .workItems(project.getWorkItems().stream()
+                        .map(BuildDtos::buildWorkItemSummaryDto)
+                        .toList()
+                )
+                .teams(project.getTeams().stream()
+                        .map(BuildDtos::buildTeamSummaryDto)
+                        .toList()
+                )
+                .build();
+    }
+
     public static OrganizationSummaryDto buildOrganizationSummaryDto(Organization organization) {
         return OrganizationSummaryDto.builder()
                 .id(organization.getId())
