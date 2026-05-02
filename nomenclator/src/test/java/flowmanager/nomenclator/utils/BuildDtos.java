@@ -3,6 +3,9 @@ package flowmanager.nomenclator.utils;
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.model.*;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 public final class BuildDtos {
 
     private BuildDtos() {}
@@ -91,6 +94,23 @@ public final class BuildDtos {
                 .description(organization.getDescription())
                 .build();
     }
+
+    public static OrganizationResponseDto buildOrganizationResponseDto(Organization organization) {
+        return OrganizationResponseDto.builder()
+                .id(organization.getId())
+                .name(organization.getName())
+                .description(organization.getDescription())
+                .industry(organization.getIndustry())
+                .createdAt(organization.getCreatedAt())
+                .manager(buildUserSummaryDto(organization.getManager()))
+                .teams(organization.getTeams().stream()
+                        .map(BuildDtos::buildTeamSummaryOrganizationDto)
+                        .toList()
+                )
+                .build();
+    }
+
+
 
     public static TeamSummaryUserDto buildTeamSummaryUserDto(Team team) {
         return TeamSummaryUserDto.builder()

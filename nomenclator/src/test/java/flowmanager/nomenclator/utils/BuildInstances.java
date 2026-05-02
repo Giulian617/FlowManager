@@ -4,6 +4,7 @@ import flowmanager.nomenclator.model.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 public final class BuildInstances {
@@ -130,6 +131,7 @@ public final class BuildInstances {
                     .industry("IT")
                     .createdAt(LocalDateTime.of(2025, 12, 31, 10, 0, 5))
                     .manager(manager)
+                    .teams(new ArrayList<>())
                     .build()
                 ,
                 Organization.builder()
@@ -139,6 +141,7 @@ public final class BuildInstances {
                     .industry("IT")
                     .createdAt(LocalDateTime.of(2023, 10, 11, 15, 10, 45))
                     .manager(manager)
+                    .teams(new ArrayList<>())
                     .build()
         );
     }
