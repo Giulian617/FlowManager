@@ -9,7 +9,6 @@ import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.ProjectRepository;
 import flowmanager.nomenclator.repository.TeamRepository;
 import flowmanager.nomenclator.repository.UserRepository;
-import flowmanager.nomenclator.repository.WorkItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

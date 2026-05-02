@@ -3,7 +3,6 @@ package flowmanager.nomenclator.mapper;
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.model.Organization;
 import flowmanager.nomenclator.model.User;
-import flowmanager.nomenclator.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

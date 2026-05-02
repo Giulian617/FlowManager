@@ -1,11 +1,17 @@
 package flowmanager.nomenclator.service;
 
-import flowmanager.nomenclator.dto.*;
+import flowmanager.nomenclator.dto.CommentCreateDto;
+import flowmanager.nomenclator.dto.CommentResponseDto;
+import flowmanager.nomenclator.dto.CommentUpdateDto;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.CommentMapper;
-import flowmanager.nomenclator.model.*;
+import flowmanager.nomenclator.model.Comment;
+import flowmanager.nomenclator.model.User;
+import flowmanager.nomenclator.model.WorkItem;
 import flowmanager.nomenclator.repository.CommentRepository;
 import flowmanager.nomenclator.repository.WorkItemRepository;
+import flowmanager.nomenclator.utils.BuildDtos;
+import flowmanager.nomenclator.utils.BuildInstances;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -34,63 +40,6 @@ public class CommentServiceTests {
     @InjectMocks
     private CommentService commentService;
 
-    private User buildAuthor() {
-        return User.builder()
-                .id(1)
-                .email("user1@example.com")
-                .username("User1")
-                .firstName("Example")
-                .lastName("User")
-                .phoneNumber("+407777777777")
-                .active(false)
-                .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
-                .build();
-    }
-
-    private WorkItem buildWorkItem() {
-        return WorkItem.builder()
-                .id(1)
-                .title("Work item 1")
-                .description("Description work item 1")
-                .itemType(ItemType.Task)
-                .status(Status.To_do)
-                .severity(Severity.Low)
-                .createdAt(LocalDateTime.of(2026, 3, 20, 18, 33, 30))
-                .build();
-    }
-
-    private UserSummaryDto buildAuthorDto(User author) {
-        return UserSummaryDto.builder()
-                .id(author.getId())
-                .username(author.getUsername())
-                .build();
-    }
-
-    private WorkItemSummaryDto buildWorkItemDto(WorkItem workItem) {
-        return WorkItemSummaryDto.builder()
-                .id(workItem.getId())
-                .title(workItem.getTitle())
-                .itemType(workItem.getItemType())
-                .status(workItem.getStatus())
-                .severity(workItem.getSeverity())
-                .build();
-    }
-
-    private CommentResponseDto buildCommentResponseDto(
-            Comment comment,
-            UserSummaryDto authorDto,
-            WorkItemSummaryDto workItemDto
-    ) {
-        return CommentResponseDto.builder()
-                .id(comment.getId())
-                .content(comment.getContent())
-                .createdAt(comment.getCreatedAt())
-                .updatedAt(comment.getUpdatedAt())
-                .author(authorDto)
-                .workItem(workItemDto)
-                .build();
-    }
-
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
@@ -98,44 +47,23 @@ public class CommentServiceTests {
 
     @Test
     void testFindAllComments_Valid() {
-        User author = buildAuthor();
-        UserSummaryDto authorDto = buildAuthorDto(author);
+        List<Comment> comments = BuildInstances.buildComments();
+        List<CommentResponseDto> commentsDto = comments.stream()
+                .map(BuildDtos::buildCommentResponseDto)
+                .toList();
 
-        WorkItem workItem = buildWorkItem();
-        WorkItemSummaryDto workItemDto = buildWorkItemDto(workItem);
-
-        Comment comment1 = Comment.builder()
-                .id(1)
-                .content("Comentariul 1")
-                .createdAt(LocalDateTime.of(2026, 5, 1, 15, 23, 30))
-                .author(author)
-                .workItem(workItem)
-                .build();
-
-        Comment comment2 = Comment.builder()
-                .id(2)
-                .content("Comentariul 2")
-                .createdAt(LocalDateTime.of(2026, 5, 1, 15, 24, 21))
-                .updatedAt(LocalDateTime.of(2026, 5, 1, 15, 28, 44))
-                .author(author)
-                .workItem(workItem)
-                .build();
-
-        CommentResponseDto dto1 = buildCommentResponseDto(comment1, authorDto, workItemDto);
-        CommentResponseDto dto2 = buildCommentResponseDto(comment2, authorDto, workItemDto);
-
-        when(commentRepository.findAll()).thenReturn(List.of(comment1, comment2));
-        when(commentMapper.toResponseDto(comment1)).thenReturn(dto1);
-        when(commentMapper.toResponseDto(comment2)).thenReturn(dto2);
+        when(commentRepository.findAll()).thenReturn(comments);
+        when(commentMapper.toResponseDto(comments.get(0))).thenReturn(commentsDto.get(0));
+        when(commentMapper.toResponseDto(comments.get(1))).thenReturn(commentsDto.get(1));
 
         List<CommentResponseDto> result = commentService.findAllComments();
 
         assertEquals(2, result.size());
-        assertEquals(dto1, result.get(0));
-        assertEquals(dto2, result.get(1));
+        assertEquals(commentsDto.get(0), result.get(0));
+        assertEquals(commentsDto.get(1), result.get(1));
         verify(commentRepository, times(1)).findAll();
-        verify(commentMapper, times(1)).toResponseDto(comment1);
-        verify(commentMapper, times(1)).toResponseDto(comment2);
+        verify(commentMapper, times(1)).toResponseDto(comments.get(0));
+        verify(commentMapper, times(1)).toResponseDto(comments.get(1));
     }
 
     @Test
@@ -151,10 +79,8 @@ public class CommentServiceTests {
 
     @Test
     void testCreateComment_Valid() {
-        User author = buildAuthor();
-        UserSummaryDto authorDto = buildAuthorDto(author);
-        WorkItem workItem = buildWorkItem();
-        WorkItemSummaryDto workItemDto = buildWorkItemDto(workItem);
+        User author = BuildInstances.buildUser();
+        WorkItem workItem = BuildInstances.buildWorkItem();
 
         Comment comment = Comment.builder()
                 .content("Comentariul 1")
@@ -162,22 +88,14 @@ public class CommentServiceTests {
                 .author(author)
                 .workItem(workItem)
                 .build();
-
-        Comment savedComment = Comment.builder()
-                .id(1)
-                .content("Comentariul 1")
-                .createdAt(LocalDateTime.of(2026, 5, 1, 15, 23, 30))
-                .author(author)
-                .workItem(workItem)
-                .build();
-
+        Comment savedComment = BuildInstances.buildComment();
         CommentCreateDto createDto = new CommentCreateDto(
                 "Comentariul 1",
                 1
         );
-        CommentResponseDto responseDto = buildCommentResponseDto(savedComment, authorDto, workItemDto);
+        CommentResponseDto responseDto = BuildDtos.buildCommentResponseDto(savedComment);
 
-        when(workItemRepository.findById(1)).thenReturn(Optional.of(workItem));
+        when(workItemRepository.findById(workItem.getId())).thenReturn(Optional.of(workItem));
         when(commentMapper.toEntity(createDto,workItem)).thenReturn(comment);
         when(commentRepository.save(comment)).thenReturn(savedComment);
         when(commentMapper.toResponseDto(savedComment)).thenReturn(responseDto);
@@ -185,14 +103,14 @@ public class CommentServiceTests {
         CommentResponseDto result = commentService.createComment(createDto);
 
         assertEquals(responseDto, result);
-        verify(workItemRepository, times(1)).findById(1);
+        verify(workItemRepository, times(1)).findById(workItem.getId());
         verify(commentMapper, times(1)).toEntity(createDto, workItem);
         verify(commentRepository, times(1)).save(comment);
         verify(commentMapper, times(1)).toResponseDto(savedComment);
     }
 
     @Test
-    void testCreateComment_Invalid() {
+    void testCreateComment_WorkItemNotFound() {
         CommentCreateDto createDto = new CommentCreateDto(
                 "Comentariul 1",
                 1
@@ -208,19 +126,10 @@ public class CommentServiceTests {
 
     @Test
     void testUpdateComment_Valid() {
-        User author = buildAuthor();
-        UserSummaryDto authorDto = buildAuthorDto(author);
+        User author = BuildInstances.buildUser();
+        WorkItem workItem = BuildInstances.buildWorkItem();
 
-        WorkItem workItem = buildWorkItem();
-        WorkItemSummaryDto workItemDto = buildWorkItemDto(workItem);
-
-        Comment comment = Comment.builder()
-                .content("Comentariul 1")
-                .createdAt(LocalDateTime.of(2026, 5, 1, 15, 23, 30))
-                .author(author)
-                .workItem(workItem)
-                .build();
-
+        Comment comment = BuildInstances.buildComment();
         Comment updatedComment = Comment.builder()
                 .id(1)
                 .content("Comentariul 1 actualizat")
@@ -229,26 +138,25 @@ public class CommentServiceTests {
                 .author(author)
                 .workItem(workItem)
                 .build();
-
         CommentUpdateDto updateDto = new CommentUpdateDto("Comentariul 1 actualizat");
-        CommentResponseDto responseDto = buildCommentResponseDto(updatedComment, authorDto, workItemDto);
+        CommentResponseDto responseDto = BuildDtos.buildCommentResponseDto(updatedComment);
 
-        when(commentRepository.findById(1)).thenReturn(Optional.of(comment));
+        when(commentRepository.findById(comment.getId())).thenReturn(Optional.of(comment));
         doNothing().when(commentMapper).updateEntityFromDto(updateDto, comment);
         when(commentRepository.save(comment)).thenReturn(updatedComment);
         when(commentMapper.toResponseDto(updatedComment)).thenReturn(responseDto);
 
-        CommentResponseDto result = commentService.updateComment(1, updateDto);
+        CommentResponseDto result = commentService.updateComment(comment.getId(), updateDto);
 
         assertEquals(responseDto, result);
-        verify(commentRepository, times(1)).findById(1);
+        verify(commentRepository, times(1)).findById(comment.getId());
         verify(commentMapper, times(1)).updateEntityFromDto(updateDto, comment);
         verify(commentRepository, times(1)).save(comment);
         verify(commentMapper, times(1)).toResponseDto(updatedComment);
     }
 
     @Test
-    void testUpdateComment_Invalid() {
+    void testUpdateComment_CommentNotFound() {
         CommentUpdateDto updateDto = new CommentUpdateDto("Comentariul 1 actualizat");
 
         when(commentRepository.findById(1)).thenReturn(Optional.empty());

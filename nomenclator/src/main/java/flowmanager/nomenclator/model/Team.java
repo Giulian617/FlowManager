@@ -13,7 +13,7 @@ import java.util.List;
         "organization",
         "manager",
         "projects",
-        "users"
+        "members"
 })
 @Builder
 @Entity

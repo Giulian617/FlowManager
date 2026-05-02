@@ -48,34 +48,34 @@ public class UserController {
 
     @GetMapping("/{userId}/teams/manager")
     @ResponseBody
-    public ResponseEntity<List<TeamSummaryUserDto>> getAllTeamsByUserIdWhereManager(
+    public ResponseEntity<List<TeamSummaryUserDto>> getAllManagedTeamsByUserId(
             @PathVariable Integer userId
     ) {
-        return ResponseEntity.ok(userService.findAllTeamsByUserIdWhereManager(userId));
+        return ResponseEntity.ok(userService.findAllManagedTeamsByUserId(userId));
     }
 
     @GetMapping("/{userId}/teams/assignee")
     @ResponseBody
-    public ResponseEntity<List<TeamSummaryUserDto>> getAllTeamsByUserIdWhereAssignee(
+    public ResponseEntity<List<TeamSummaryUserDto>> getAllAssignedTeamsByUserId(
             @PathVariable Integer userId
     ) {
-        return ResponseEntity.ok(userService.findAllTeamsByUserIdWhereAssignee(userId));
+        return ResponseEntity.ok(userService.findAllAssignedTeamsByUserId(userId));
     }
 
     @GetMapping("/{userId}/work-items/reporter")
     @ResponseBody
-    public ResponseEntity<List<WorkItemSummaryDto>> getAllWorkItemsByUserIdWhereReporter(
+    public ResponseEntity<List<WorkItemSummaryDto>> getAllReportedWorkItemsByUserId(
             @PathVariable Integer userId
     ) {
-        return ResponseEntity.ok(userService.findAllWorkItemsByUserIdWhereReporter(userId));
+        return ResponseEntity.ok(userService.findAllReportedWorkItemsByUserId(userId));
     }
 
     @GetMapping("/{userId}/work-items/assignee")
     @ResponseBody
-    public ResponseEntity<List<WorkItemSummaryDto>> getAllWorkItemsByUserIdWhereAssignee(
+    public ResponseEntity<List<WorkItemSummaryDto>> getAllAssignedWorkItemsByUserId(
             @PathVariable Integer userId
     ) {
-        return ResponseEntity.ok(userService.findAllWorkItemsByUserIdWhereAssignee(userId));
+        return ResponseEntity.ok(userService.findAllAssignedWorkItemsByUserId(userId));
     }
 
     @GetMapping("/{userId}")
