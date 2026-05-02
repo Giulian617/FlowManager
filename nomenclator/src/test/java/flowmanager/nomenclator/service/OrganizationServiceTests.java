@@ -277,7 +277,7 @@ public class OrganizationServiceTests {
 
         when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
         when(userRepository.findById(1)).thenReturn(Optional.empty());
-        
+
         NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> organizationService.updateOrganization(organization.getId(), updateDto));
 

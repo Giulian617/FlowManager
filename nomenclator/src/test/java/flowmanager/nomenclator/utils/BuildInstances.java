@@ -22,6 +22,8 @@ public final class BuildInstances {
                     .phoneNumber("+407777777777")
                     .active(false)
                     .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
+                    .assignedTeams(new ArrayList<>())
+                    .managedTeams(new ArrayList<>())
                     .build(),
                 User.builder()
                     .id(2)
@@ -32,6 +34,8 @@ public final class BuildInstances {
                     .phoneNumber("+408888888888")
                     .active(false)
                     .createdAt(LocalDateTime.of(2025, 9, 22, 19, 41, 3))
+                    .assignedTeams(new ArrayList<>())
+                    .managedTeams(new ArrayList<>())
                     .build()
         );
     }
@@ -161,6 +165,8 @@ public final class BuildInstances {
                     .description("Descriere 1")
                     .organization(organization)
                     .manager(manager)
+                    .projects(new ArrayList<>())
+                    .members(new ArrayList<>())
                     .build(),
                 Team.builder()
                     .id(2)
@@ -168,6 +174,8 @@ public final class BuildInstances {
                     .description("Descriere 2")
                     .organization(organization)
                     .manager(manager)
+                    .projects(new ArrayList<>())
+                    .members(new ArrayList<>())
                     .build()
         );
     }

@@ -110,7 +110,34 @@ public final class BuildDtos {
                 .build();
     }
 
+    public static TeamSummaryDto buildTeamSummaryDto(Team team) {
+        return TeamSummaryDto.builder()
+                .id(team.getId())
+                .name(team.getName())
+                .description(team.getDescription())
+                .organization(buildOrganizationSummaryDto(team.getOrganization()))
+                .manager(buildUserSummaryDto(team.getManager()))
+                .build();
+    }
 
+    public static TeamResponseDto buildTeamResponseDto(Team team) {
+        return TeamResponseDto.builder()
+                .id(team.getId())
+                .name(team.getName())
+                .description(team.getDescription())
+                .createdAt(team.getCreatedAt())
+                .organization(buildOrganizationSummaryDto(team.getOrganization()))
+                .manager(buildUserSummaryDto(team.getManager()))
+                .projects(team.getProjects().stream()
+                        .map(BuildDtos::buildProjectSummaryDto)
+                        .toList()
+                )
+                .members(team.getMembers().stream()
+                        .map(BuildDtos::buildUserSummaryDto)
+                        .toList()
+                )
+                .build();
+    }
 
     public static TeamSummaryUserDto buildTeamSummaryUserDto(Team team) {
         return TeamSummaryUserDto.builder()
