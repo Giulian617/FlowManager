@@ -35,7 +35,7 @@ public class Organization {
     private LocalDateTime createdAt;
 
     @ManyToOne
-    @JoinColumn(name = "manager_id")
+    @JoinColumn(name = "manager_id", nullable = false)
     private User manager;
 
     @Builder.Default

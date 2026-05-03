@@ -105,14 +105,22 @@ public class WorkItemService {
     @Transactional
     public WorkItemResponseDto assignUsers(Integer workItemId, WorkItemAssignDto workItemAssignDto) {
         WorkItem workItem = getWorkItem(workItemId);
-        List<User> assignedUsers = getAssignedUsers(workItemAssignDto.getAssigneesIds());
-        workItem.setAssignees(assignedUsers);
-        assignedUsers.forEach(user -> {
-            if(!user.getAssignedWorkItems().contains(workItem)) {
+        List<User> previousAssignees = workItem.getAssignees();
+        List<User> newAssignees = getAssignedUsers(workItemAssignDto.getAssigneesIds());
+
+        previousAssignees.forEach(user -> {
+            if (!newAssignees.contains(user)) {
+                user.getAssignedWorkItems().remove(workItem);
+            }
+        });
+
+        newAssignees.forEach(user -> {
+            if (!user.getAssignedWorkItems().contains(workItem)) {
                 user.getAssignedWorkItems().add(workItem);
             }
         });
 
+        workItem.setAssignees(newAssignees);
         return workItemMapper.toResponseDto(workItemRepository.save(workItem));
     }
 

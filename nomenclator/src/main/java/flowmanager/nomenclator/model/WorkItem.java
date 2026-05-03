@@ -52,7 +52,7 @@ public class WorkItem {
     private LocalDate dueDate;
 
     @ManyToOne
-    @JoinColumn(name = "project_id")
+    @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
     @Builder.Default
@@ -60,7 +60,7 @@ public class WorkItem {
     private List<Comment> comments = new ArrayList<>();
 
     @ManyToOne
-    @JoinColumn(name = "reporter_id")
+    @JoinColumn(name = "reporter_id", nullable = false)
     private User reporter;
 
     @Builder.Default

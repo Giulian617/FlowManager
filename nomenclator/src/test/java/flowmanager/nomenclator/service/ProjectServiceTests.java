@@ -108,7 +108,46 @@ public class ProjectServiceTests {
     }
 
     @Test
-    void testCreateProject_Valid() {
+    void testCreateProject_Valid_WithTeams() {
+        User manager = BuildInstances.buildUser();
+        List<Team> teams = BuildInstances.buildTeams();
+        List<Integer> teamsIds = List.of(teams.get(0).getId(), teams.get(1).getId());
+
+        Project project = Project.builder()
+                .name("Proiectul 1")
+                .description("Descriere 1")
+                .startDate(LocalDate.of(2026, 7, 1))
+                .endDate(LocalDate.of(2026, 12, 31))
+                .manager(manager)
+                .teams(new ArrayList<>())
+                .workItems(new ArrayList<>())
+                .build();
+        Project savedProject = BuildInstances.buildProject();
+        ProjectCreateDto createDto = new ProjectCreateDto(
+                "Proiectul 1",
+                "Descriere 1",
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 12, 31),
+                teamsIds
+        );
+        ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(savedProject);
+
+        when(projectMapper.toEntity(createDto)).thenReturn(project);
+        when(teamRepository.findAllById(teamsIds)).thenReturn(teams);
+        when(projectRepository.save(project)).thenReturn(savedProject);
+        when(projectMapper.toResponseDto(savedProject)).thenReturn(responseDto);
+
+        ProjectResponseDto result = projectService.createProject(createDto);
+
+        assertEquals(responseDto, result);
+        verify(projectMapper, times(1)).toEntity(createDto);
+        verify(teamRepository, times(1)).findAllById(teamsIds);
+        verify(projectRepository, times(1)).save(project);
+        verify(projectMapper, times(1)).toResponseDto(savedProject);
+    }
+
+    @Test
+    void testCreateProject_Valid_NoTeams() {
         User manager = BuildInstances.buildUser();
 
         Project project = Project.builder()
@@ -125,7 +164,8 @@ public class ProjectServiceTests {
                 "Proiectul 1",
                 "Descriere 1",
                 LocalDate.of(2026, 1, 1),
-                LocalDate.of(2026, 12, 31)
+                LocalDate.of(2026, 12, 31),
+                null
         );
         ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(savedProject);
 
@@ -137,6 +177,7 @@ public class ProjectServiceTests {
 
         assertEquals(responseDto, result);
         verify(projectMapper, times(1)).toEntity(createDto);
+        verify(teamRepository, never()).findAllById(any());
         verify(projectRepository, times(1)).save(project);
         verify(projectMapper, times(1)).toResponseDto(savedProject);
     }
@@ -262,8 +303,55 @@ public class ProjectServiceTests {
 
     @Test
     void testAssignTeams_Valid() {
+        List<Team> teams = BuildInstances.buildTeams();
+        Team retainedTeam = teams.get(0);
+        Team removedTeam = teams.get(1);
+        Team addedTeam = Team.builder()
+                .id(3)
+                .name("Echipa 3")
+                .description("Descriere 3")
+                .organization(BuildInstances.buildOrganization())
+                .manager(BuildInstances.buildUser())
+                .build();
+
+        Project project = BuildInstances.buildProject();
+        project.setTeams(teams);
+        retainedTeam.getProjects().add(project);
+        removedTeam.getProjects().add(project);
+
+        List<Integer> newTeamIds = List.of(retainedTeam.getId(), addedTeam.getId());
+        ProjectAssignDto assignDto = new ProjectAssignDto(newTeamIds);
+        ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(project);
+
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+        when(teamRepository.findAllById(newTeamIds)).thenReturn(List.of(retainedTeam, addedTeam));
+        when(projectRepository.save(project)).thenReturn(project);
+        when(projectMapper.toResponseDto(project)).thenReturn(responseDto);
+
+        ProjectResponseDto result = projectService.assignTeams(project.getId(), assignDto);
+
+        assertEquals(responseDto, result);
+        assertFalse(removedTeam.getProjects().contains(project));
+        assertTrue(retainedTeam.getProjects().contains(project));
+        assertEquals(1, retainedTeam.getProjects().stream()
+                .filter(p -> p.equals(project)).count());
+        assertTrue(addedTeam.getProjects().contains(project));
+        assertEquals(List.of(retainedTeam, addedTeam), project.getTeams());
+        verify(projectRepository, times(1)).findById(project.getId());
+        verify(teamRepository, times(1)).findAllById(newTeamIds);
+        verify(projectRepository, times(1)).save(project);
+        verify(projectMapper, times(1)).toResponseDto(project);
+    }
+
+    @Test
+    void testAssignTeams_WhenNotAlreadyPresent() {
         Project project = BuildInstances.buildProject();
         List<Team> teams = BuildInstances.buildTeams();
+
+        teams.get(0).setProjects(new ArrayList<>());
+        teams.get(1).setProjects(new ArrayList<>(List.of(project)));
+        project.setTeams(new ArrayList<>(List.of(teams.get(1))));
+
         List<Integer> teamIds = List.of(teams.get(0).getId(), teams.get(1).getId());
         ProjectAssignDto assignDto = new ProjectAssignDto(teamIds);
         ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(project);
@@ -277,31 +365,6 @@ public class ProjectServiceTests {
 
         assertEquals(responseDto, result);
         assertEquals(teams, project.getTeams());
-        verify(projectRepository, times(1)).findById(project.getId());
-        verify(teamRepository, times(1)).findAllById(teamIds);
-        verify(projectRepository, times(1)).save(project);
-        verify(projectMapper, times(1)).toResponseDto(project);
-    }
-
-    @Test
-    void testAssignTeams_WhenNotAlreadyPresent() {
-        Project project = BuildInstances.buildProject();
-        List<Team> teams = BuildInstances.buildTeams();
-
-        teams.get(0).setProjects(new ArrayList<>());
-        teams.get(1).setProjects(new ArrayList<>(List.of(project)));
-        List<Integer> teamIds = List.of(teams.get(0).getId(), teams.get(1).getId());
-        ProjectAssignDto assignDto = new ProjectAssignDto(teamIds);
-        ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(project);
-
-        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
-        when(teamRepository.findAllById(teamIds)).thenReturn(teams);
-        when(projectRepository.save(project)).thenReturn(project);
-        when(projectMapper.toResponseDto(project)).thenReturn(responseDto);
-
-        ProjectResponseDto result = projectService.assignTeams(1, assignDto);
-
-        assertEquals(responseDto, result);
         assertTrue(teams.get(0).getProjects().contains(project));
         assertEquals(1, teams.get(1).getProjects().size());
         verify(projectRepository, times(1)).findById(project.getId());

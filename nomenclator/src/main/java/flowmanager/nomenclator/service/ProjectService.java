@@ -42,8 +42,23 @@ public class ProjectService {
         return projectMapper.toResponseDto(getProject(projectId));
     }
 
+    @Transactional
+    protected List<Team> getTeams(List<Integer> teamsIds) {
+        List<Team> teams = teamRepository.findAllById(teamsIds);
+        if(teams.size() != teamsIds.size()) {
+            throw new NotFoundException("One or more teams were not found");
+        }
+        return teams;
+    }
+
+    @Transactional
     public ProjectResponseDto createProject(ProjectCreateDto projectCreateDto) {
         Project project = projectMapper.toEntity(projectCreateDto);
+
+        if (projectCreateDto.getTeamsIds() != null && !projectCreateDto.getTeamsIds().isEmpty()) {
+            List<Team> teams = getTeams(projectCreateDto.getTeamsIds());
+            project.setTeams(teams);
+        }
 
         return projectMapper.toResponseDto(projectRepository.save(project));
     }
@@ -64,19 +79,22 @@ public class ProjectService {
     @Transactional
     public ProjectResponseDto assignTeams(Integer projectId, ProjectAssignDto projectAssignDto) {
         Project project = getProject(projectId);
+        List<Team> previousTeams = project.getTeams();
+        List<Team> newTeams = getTeams(projectAssignDto.getTeamsIds());
 
-        List<Team> teams = teamRepository.findAllById(projectAssignDto.getAssignedTeamsIds());
-        if(teams.size() != projectAssignDto.getAssignedTeamsIds().size()) {
-            throw new NotFoundException("One or more teams were not found");
-        }
+        previousTeams.forEach(team -> {
+            if (!newTeams.contains(team)) {
+                team.getProjects().remove(project);
+            }
+        });
 
-        project.setTeams(teams);
-        teams.forEach(team -> {
-            if(!team.getProjects().contains(project)) {
+        newTeams.forEach(team -> {
+            if (!team.getProjects().contains(project)) {
                 team.getProjects().add(project);
             }
         });
 
+        project.setTeams(newTeams);
         return projectMapper.toResponseDto(projectRepository.save(project));
     }
 

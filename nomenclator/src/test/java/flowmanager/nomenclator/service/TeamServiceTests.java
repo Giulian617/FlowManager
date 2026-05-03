@@ -440,23 +440,45 @@ public class TeamServiceTests {
 
     @Test
     void testAssignUsers_Valid() {
-        Team team = BuildInstances.buildTeam();
         List<User> users = BuildInstances.buildUsers();
-        List<Integer> userIds = List.of(users.get(0).getId(), users.get(1).getId());
-        TeamAssignDto assignDto = new TeamAssignDto(userIds);
+        User retainedUser = users.get(0);
+        User removedUser = users.get(1);
+        User addedUser = User.builder()
+                .id(3)
+                .email("user3@example.com")
+                .username("User3")
+                .firstName("Example3")
+                .lastName("User")
+                .phoneNumber("+409999999999")
+                .active(false)
+                .createdAt(LocalDateTime.of(2025, 11, 25, 13, 25, 13))
+                .build();
+
+        Team team = BuildInstances.buildTeam();
+        team.setMembers(users);
+        retainedUser.getAssignedTeams().add(team);
+        removedUser.getAssignedTeams().add(team);
+
+        List<Integer> newUserIds = List.of(retainedUser.getId(), addedUser.getId());
+        TeamAssignDto assignDto = new TeamAssignDto(newUserIds);
         TeamResponseDto responseDto = BuildDtos.buildTeamResponseDto(team);
 
         when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
-        when(userRepository.findAllById(userIds)).thenReturn(users);
+        when(userRepository.findAllById(newUserIds)).thenReturn(List.of(retainedUser, addedUser));
         when(teamRepository.save(team)).thenReturn(team);
         when(teamMapper.toResponseDto(team)).thenReturn(responseDto);
 
         TeamResponseDto result = teamService.assignUsers(team.getId(), assignDto);
 
         assertEquals(responseDto, result);
-        assertEquals(users, team.getMembers());
+        assertFalse(removedUser.getAssignedTeams().contains(team));
+        assertTrue(retainedUser.getAssignedTeams().contains(team));
+        assertEquals(1, retainedUser.getAssignedTeams().stream()
+                .filter(t -> t.equals(team)).count());
+        assertTrue(addedUser.getAssignedTeams().contains(team));
+        assertEquals(List.of(retainedUser, addedUser), team.getMembers());
         verify(teamRepository, times(1)).findById(team.getId());
-        verify(userRepository, times(1)).findAllById(userIds);
+        verify(userRepository, times(1)).findAllById(newUserIds);
         verify(teamRepository, times(1)).save(team);
         verify(teamMapper, times(1)).toResponseDto(team);
     }
@@ -468,6 +490,8 @@ public class TeamServiceTests {
 
         users.get(0).setAssignedTeams(new ArrayList<>());
         users.get(1).setAssignedTeams(new ArrayList<>(List.of(team)));
+        team.setMembers(new ArrayList<>(List.of(users.get(1))));
+
         List<Integer> userIds = List.of(users.get(0).getId(), users.get(1).getId());
         TeamAssignDto assignDto = new TeamAssignDto(userIds);
         TeamResponseDto responseDto = BuildDtos.buildTeamResponseDto(team);

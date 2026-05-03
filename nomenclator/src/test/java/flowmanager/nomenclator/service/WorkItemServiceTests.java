@@ -531,23 +531,45 @@ public class WorkItemServiceTests {
 
     @Test
     void testAssignUsers_Valid() {
-        WorkItem workItem = BuildInstances.buildWorkItem();
         List<User> users = BuildInstances.buildUsers();
-        List<Integer> userIds = List.of(users.get(0).getId(), users.get(1).getId());;
-        WorkItemAssignDto assignDto = new WorkItemAssignDto(userIds);
+        User retainedUser = users.get(0);
+        User removedUser = users.get(1);
+        User addedUser = User.builder()
+                .id(3)
+                .email("user3@example.com")
+                .username("User3")
+                .firstName("Example3")
+                .lastName("User")
+                .phoneNumber("+409999999999")
+                .active(false)
+                .createdAt(LocalDateTime.of(2025, 11, 25, 13, 25, 13))
+                .build();
+
+        WorkItem workItem = BuildInstances.buildWorkItem();
+        workItem.setAssignees(users);
+        retainedUser.getAssignedWorkItems().add(workItem);
+        removedUser.getAssignedWorkItems().add(workItem);
+
+        List<Integer> newUserIds = List.of(retainedUser.getId(), addedUser.getId());
+        WorkItemAssignDto assignDto = new WorkItemAssignDto(newUserIds);
         WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(workItem);
 
         when(workItemRepository.findById(workItem.getId())).thenReturn(Optional.of(workItem));
-        when(userRepository.findAllById(userIds)).thenReturn(users);
+        when(userRepository.findAllById(newUserIds)).thenReturn(List.of(retainedUser, addedUser));
         when(workItemRepository.save(workItem)).thenReturn(workItem);
         when(workItemMapper.toResponseDto(workItem)).thenReturn(responseDto);
 
         WorkItemResponseDto result = workItemService.assignUsers(workItem.getId(), assignDto);
 
         assertEquals(responseDto, result);
-        assertEquals(users, workItem.getAssignees());
+        assertFalse(removedUser.getAssignedWorkItems().contains(workItem));
+        assertTrue(retainedUser.getAssignedWorkItems().contains(workItem));
+        assertEquals(1, retainedUser.getAssignedWorkItems().stream()
+                .filter(wi -> wi.equals(workItem)).count());
+        assertTrue(addedUser.getAssignedWorkItems().contains(workItem));
+        assertEquals(List.of(retainedUser, addedUser), workItem.getAssignees());
         verify(workItemRepository, times(1)).findById(workItem.getId());
-        verify(userRepository, times(1)).findAllById(userIds);
+        verify(userRepository, times(1)).findAllById(newUserIds);
         verify(workItemRepository, times(1)).save(workItem);
         verify(workItemMapper, times(1)).toResponseDto(workItem);
     }
@@ -559,6 +581,8 @@ public class WorkItemServiceTests {
 
         users.get(0).setAssignedWorkItems(new ArrayList<>());
         users.get(1).setAssignedWorkItems(new ArrayList<>(List.of(workItem)));
+        workItem.setAssignees(new ArrayList<>(List.of(users.get(1))));
+
         List<Integer> userIds = List.of(users.get(0).getId(), users.get(1).getId());
         WorkItemAssignDto assignDto = new WorkItemAssignDto(userIds);
         WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(workItem);

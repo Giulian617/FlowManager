@@ -30,10 +30,10 @@ public class Comment {
     private LocalDateTime updatedAt;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User author;
 
     @ManyToOne
-    @JoinColumn(name = "work_item_id")
+    @JoinColumn(name = "work_item_id", nullable = false)
     private WorkItem workItem;
 }

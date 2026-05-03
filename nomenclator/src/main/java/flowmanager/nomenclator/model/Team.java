@@ -34,11 +34,11 @@ public class Team {
     private LocalDateTime createdAt;
 
     @ManyToOne
-    @JoinColumn(name = "organization_id")
+    @JoinColumn(name = "organization_id", nullable = false)
     private Organization organization;
 
     @ManyToOne
-    @JoinColumn(name = "manager_id")
+    @JoinColumn(name = "manager_id", nullable = false)
     private User manager;
 
     @Builder.Default

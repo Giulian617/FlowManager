@@ -79,7 +79,7 @@ public class OrganizationServiceTests {
 
         assertEquals(0, result.size());
         verify(organizationRepository, times(1)).findAll();
-        verify(organizationMapper, never()).toResponseDto(any());
+        verify(organizationMapper, never()).toSummaryDto(any());
     }
 
     @Test

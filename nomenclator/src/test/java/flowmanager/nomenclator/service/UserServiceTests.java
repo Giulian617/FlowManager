@@ -98,7 +98,7 @@ public class UserServiceTests {
 
         assertEquals(0, result.size());
         verify(userRepository, times(1)).findAll();
-        verify(userMapper, never()).toResponseDto(any());
+        verify(userMapper, never()).toSummaryDto(any());
     }
 
     @Test

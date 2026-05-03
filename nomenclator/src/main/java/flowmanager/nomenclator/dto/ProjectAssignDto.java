@@ -14,9 +14,9 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonPropertyOrder({
-        "assignedTeamsIds",
+        "teamsIds",
 })
 public class ProjectAssignDto {
-    @NotNull(message = "assignedTeamsIds is required and cannot be null")
-    private List<Integer> assignedTeamsIds;
+    @NotNull(message = "teamsIds is required and cannot be null")
+    private List<Integer> teamsIds;
 }
