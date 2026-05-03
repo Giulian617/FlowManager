@@ -5,8 +5,8 @@ import flowmanager.nomenclator.exception.DuplicateAttributeException;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.*;
 import flowmanager.nomenclator.model.User;
-import flowmanager.nomenclator.model.WorkItem;
-import flowmanager.nomenclator.repository.*;
+import flowmanager.nomenclator.repository.CommentRepository;
+import flowmanager.nomenclator.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,10 +18,6 @@ import java.util.List;
 public class UserService {
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
-    private final ProjectRepository projectRepository;
-    private final OrganizationRepository organizationRepository;
-    private final TeamRepository teamRepository;
-    private final WorkItemRepository workItemRepository;
     private final UserMapper userMapper;
     private final CommentMapper commentMapper;
     private final ProjectMapper projectMapper;
@@ -71,7 +67,7 @@ public class UserService {
                 .toList();
     }
 
-    public List<TeamSummaryUserDto> findAllTeamsByUserIdWhereManager(Integer userId) {
+    public List<TeamSummaryUserDto> findAllManagedTeamsByUserId(Integer userId) {
         return getUser(userId)
                 .getManagedTeams()
                 .stream()
@@ -79,7 +75,7 @@ public class UserService {
                 .toList();
     }
 
-    public List<TeamSummaryUserDto> findAllTeamsByUserIdWhereAssignee(Integer userId) {
+    public List<TeamSummaryUserDto> findAllAssignedTeamsByUserId(Integer userId) {
         return getUser(userId)
                 .getAssignedTeams()
                 .stream()
@@ -87,7 +83,7 @@ public class UserService {
                 .toList();
     }
 
-    public List<WorkItemSummaryDto> findAllWorkItemsByUserIdWhereReporter(Integer userId) {
+    public List<WorkItemSummaryDto> findAllReportedWorkItemsByUserId(Integer userId) {
         return getUser(userId)
                 .getReportedWorkItems()
                 .stream()
@@ -95,7 +91,7 @@ public class UserService {
                 .toList();
     }
 
-    public List<WorkItemSummaryDto> findAllWorkItemsByUserIdWhereAssignee(Integer userId) {
+    public List<WorkItemSummaryDto> findAllAssignedWorkItemsByUserId(Integer userId) {
         return getUser(userId)
                 .getAssignedWorkItems()
                 .stream()
@@ -111,9 +107,9 @@ public class UserService {
         User user = userMapper.toEntity(userCreateDto);
 
         if(userRepository.existsByEmail(user.getEmail()))
-            throw new DuplicateAttributeException("Email already exists");
+            throw new DuplicateAttributeException(String.format("Email %s already exists", user.getEmail()));
         if(userRepository.existsByUsername(user.getUsername()))
-            throw new DuplicateAttributeException("Username already exists");
+            throw new DuplicateAttributeException(String.format("Username %s already exists", user.getUsername()));
 
         return userMapper.toResponseDto(userRepository.save(user));
     }
@@ -123,12 +119,11 @@ public class UserService {
 
         if (userUpdateDto.getEmail() != null && !userUpdateDto.getEmail().equals(user.getEmail()) &&
                 userRepository.existsByEmail(userUpdateDto.getEmail())) {
-            throw new DuplicateAttributeException("Email already exists");
+            throw new DuplicateAttributeException(String.format("Email %s already exists", userUpdateDto.getEmail()));
         }
-
         if (userUpdateDto.getUsername() != null && !userUpdateDto.getUsername().equals(user.getUsername()) &&
                 userRepository.existsByUsername(userUpdateDto.getUsername())) {
-            throw new DuplicateAttributeException("Username already exists");
+            throw new DuplicateAttributeException(String.format("Username %s already exists", userUpdateDto.getUsername()));
         }
 
         userMapper.updateEntityFromDto(userUpdateDto, user);
@@ -140,7 +135,7 @@ public class UserService {
         User user = userRepository.findById(userId).orElse(null);
         if(user == null) {
             return;
-        };
+        }
 
         user.getAssignedWorkItems()
                 .forEach(workItem -> workItem.getAssignees().remove(user));

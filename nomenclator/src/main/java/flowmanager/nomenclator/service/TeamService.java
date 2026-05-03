@@ -13,6 +13,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -87,15 +88,22 @@ public class TeamService {
     @Transactional
     public TeamResponseDto assignUsers(Integer teamId, TeamAssignDto teamAssignDto) {
         Team team = getTeam(teamId);
+        List<User> previousMembers = team.getMembers();
+        List<User> newMembers = getMembers(teamAssignDto.getMembersIds());
 
-        List<User> members = getMembers(teamAssignDto.getMembersIds());
-        team.setMembers(members);
-        members.forEach(user -> {
-            if(!user.getAssignedTeams().contains(team)) {
+        previousMembers.forEach(user -> {
+            if (!newMembers.contains(user)) {
+                user.getAssignedTeams().remove(team);
+            }
+        });
+
+        newMembers.forEach(user -> {
+            if (!user.getAssignedTeams().contains(team)) {
                 user.getAssignedTeams().add(team);
             }
         });
 
+        team.setMembers(newMembers);
         return teamMapper.toResponseDto(teamRepository.save(team));
     }
 
@@ -105,8 +113,11 @@ public class TeamService {
             return;
         }
 
-        team.getMembers().clear();
-        team.getProjects().clear();
+        team.getManager().getManagedTeams().remove(team);
+        team.getMembers()
+                .forEach(user -> user.getAssignedTeams().remove(team));
+        team.getProjects()
+                .forEach(project -> project.getTeams().remove(team));
         teamRepository.deleteById(teamId);
     }
 }

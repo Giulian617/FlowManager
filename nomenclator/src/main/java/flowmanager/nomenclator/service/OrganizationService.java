@@ -7,7 +7,6 @@ import flowmanager.nomenclator.mapper.TeamMapper;
 import flowmanager.nomenclator.model.Organization;
 import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.OrganizationRepository;
-import flowmanager.nomenclator.repository.TeamRepository;
 import flowmanager.nomenclator.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

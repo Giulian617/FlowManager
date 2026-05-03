@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -34,9 +35,10 @@ public class Organization {
     private LocalDateTime createdAt;
 
     @ManyToOne
-    @JoinColumn(name = "manager_id")
+    @JoinColumn(name = "manager_id", nullable = false)
     private User manager;
 
+    @Builder.Default
     @OneToMany(mappedBy = "organization")
-    private List<Team> teams;
+    private List<Team> teams = new ArrayList<>();
 }

@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -51,28 +52,31 @@ public class WorkItem {
     private LocalDate dueDate;
 
     @ManyToOne
-    @JoinColumn(name = "project_id")
+    @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
+    @Builder.Default
     @OneToMany(mappedBy = "workItem")
-    private List<Comment> comments;
+    private List<Comment> comments = new ArrayList<>();
 
     @ManyToOne
-    @JoinColumn(name = "reporter_id")
+    @JoinColumn(name = "reporter_id", nullable = false)
     private User reporter;
 
+    @Builder.Default
     @ManyToMany
     @JoinTable(
             name = "work_item_assignment",
             joinColumns = @JoinColumn(name = "work_item_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
-    private List<User> assignees;
+    private List<User> assignees = new ArrayList<>();
 
     @ManyToOne
     @JoinColumn(name = "parent_id")
     private WorkItem parent;
 
+    @Builder.Default
     @OneToMany(mappedBy = "parent")
-    private List<WorkItem> children;
+    private List<WorkItem> children = new ArrayList<>();
 }
