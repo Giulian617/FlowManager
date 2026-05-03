@@ -4,9 +4,7 @@ import flowmanager.nomenclator.model.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public final class BuildInstances {
 
@@ -23,8 +21,6 @@ public final class BuildInstances {
                     .phoneNumber("+407777777777")
                     .active(false)
                     .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
-                    .assignedTeams(new ArrayList<>())
-                    .managedTeams(new ArrayList<>())
                     .build(),
                 User.builder()
                     .id(2)
@@ -35,8 +31,6 @@ public final class BuildInstances {
                     .phoneNumber("+408888888888")
                     .active(false)
                     .createdAt(LocalDateTime.of(2025, 9, 22, 19, 41, 3))
-                    .assignedTeams(new ArrayList<>())
-                    .managedTeams(new ArrayList<>())
                     .build()
         );
     }
@@ -60,25 +54,17 @@ public final class BuildInstances {
                     .createdAt(LocalDateTime.of(2026, 3, 20, 18, 33, 30))
                     .project(project)
                     .reporter(reporter)
-                    .assignees(new ArrayList<>())
-                    .comments(new ArrayList<>())
-                    .children(new ArrayList<>())
-                    .parent(null)
                     .build(),
                 WorkItem.builder()
                     .id(2)
                     .title("Work item 2")
                     .description("Description work item 2")
                     .itemType(ItemType.Task)
-                    .status(Status.To_do)
-                    .severity(Severity.Low)
+                    .status(Status.In_Progress)
+                    .severity(Severity.High)
                     .createdAt(LocalDateTime.of(2026, 5, 15, 13, 27, 51))
                     .project(project)
                     .reporter(reporter)
-                    .assignees(new ArrayList<>())
-                    .comments(new ArrayList<>())
-                    .children(new ArrayList<>())
-                    .parent(null)
                     .build()
         );
     }
@@ -125,8 +111,6 @@ public final class BuildInstances {
                     .startDate(LocalDate.of(2026, 1, 1))
                     .endDate(LocalDate.of(2026,12,31))
                     .manager(manager)
-                    .workItems(new ArrayList<>())
-                    .teams(new ArrayList<>())
                     .build(),
                 Project.builder()
                     .id(2)
@@ -135,8 +119,6 @@ public final class BuildInstances {
                     .startDate(LocalDate.of(2026, 1, 20))
                     .endDate(LocalDate.of(2026,7,20))
                     .manager(manager)
-                    .workItems(new ArrayList<>())
-                    .teams(new ArrayList<>())
                     .build()
         );
     }
@@ -155,7 +137,6 @@ public final class BuildInstances {
                     .industry("IT")
                     .createdAt(LocalDateTime.of(2025, 12, 31, 10, 0, 5))
                     .manager(manager)
-                    .teams(new ArrayList<>())
                     .build()
                 ,
                 Organization.builder()
@@ -165,7 +146,6 @@ public final class BuildInstances {
                     .industry("IT")
                     .createdAt(LocalDateTime.of(2023, 10, 11, 15, 10, 45))
                     .manager(manager)
-                    .teams(new ArrayList<>())
                     .build()
         );
     }
@@ -185,8 +165,6 @@ public final class BuildInstances {
                     .description("Descriere 1")
                     .organization(organization)
                     .manager(manager)
-                    .projects(new ArrayList<>())
-                    .members(new ArrayList<>())
                     .build(),
                 Team.builder()
                     .id(2)
@@ -194,8 +172,6 @@ public final class BuildInstances {
                     .description("Descriere 2")
                     .organization(organization)
                     .manager(manager)
-                    .projects(new ArrayList<>())
-                    .members(new ArrayList<>())
                     .build()
         );
     }

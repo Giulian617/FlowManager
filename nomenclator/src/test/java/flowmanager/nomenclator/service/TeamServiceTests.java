@@ -26,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class TeamServiceTests {
-
     @Mock
     private TeamRepository teamRepository;
 
@@ -47,7 +46,6 @@ public class TeamServiceTests {
         MockitoAnnotations.openMocks(this);
     }
 
-
     @Test
     void testFindAllTeams_Valid() {
         List<Team> teams = BuildInstances.buildTeams();
@@ -64,26 +62,34 @@ public class TeamServiceTests {
         assertEquals(2, result.size());
         assertEquals(teamsDto.get(0), result.get(0));
         assertEquals(teamsDto.get(1), result.get(1));
-
         verify(teamRepository, times(1)).findAll();
         verify(teamMapper, times(1)).toSummaryDto(teams.get(0));
         verify(teamMapper, times(1)).toSummaryDto(teams.get(1));
     }
 
+    @Test
+    void testFindAllTeams_EmptyList() {
+        when(teamRepository.findAll()).thenReturn(List.of());
+
+        List<TeamSummaryDto> result = teamService.findAllTeams();
+
+        assertEquals(0, result.size());
+        verify(teamRepository, times(1)).findAll();
+        verify(teamMapper, never()).toSummaryDto(any());
+    }
 
     @Test
     void testFindTeamById_Valid() {
         Team team = BuildInstances.buildTeam();
         TeamResponseDto responseDto = BuildDtos.buildTeamResponseDto(team);
 
-        when(teamRepository.findById(1)).thenReturn(Optional.of(team));
+        when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
         when(teamMapper.toResponseDto(team)).thenReturn(responseDto);
 
-        TeamResponseDto result = teamService.findTeamById(1);
+        TeamResponseDto result = teamService.findTeamById(team.getId());
 
         assertEquals(responseDto, result);
-
-        verify(teamRepository, times(1)).findById(1);
+        verify(teamRepository, times(1)).findById(team.getId());
         verify(teamMapper, times(1)).toResponseDto(team);
     }
 
@@ -91,108 +97,17 @@ public class TeamServiceTests {
     void testFindTeamById_NotFound() {
         when(teamRepository.findById(1)).thenReturn(Optional.empty());
 
-        NotFoundException ex = assertThrows(NotFoundException.class,
+        NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> teamService.findTeamById(1));
 
-        assertEquals("Team with id 1 not found", ex.getMessage());
-    }
-
-    @Test
-    void testCreateTeam_Valid_NoMembers() {
-        Organization organization = BuildInstances.buildOrganization();
-
-        Team team = Team.builder()
-                .name("Echipa 1")
-                .description("Descriere 1")
-                .organization(organization)
-                .createdAt(LocalDateTime.of(2026, 5, 1, 15, 23, 30))
-                .manager(null)
-                .members(new ArrayList<>())
-                .projects(new ArrayList<>())
-                .build();
-
-        Team savedTeam = BuildInstances.buildTeam();
-
-        TeamCreateDto createDto = new TeamCreateDto(
-                "Echipa 1",
-                "Descriere 1",
-                1,
-                null
-        );
-
-        TeamResponseDto responseDto = BuildDtos.buildTeamResponseDto(savedTeam);
-
-        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
-        when(teamMapper.toEntity(createDto, organization)).thenReturn(team);
-        when(teamRepository.save(team)).thenReturn(savedTeam);
-        when(teamMapper.toResponseDto(savedTeam)).thenReturn(responseDto);
-
-        TeamResponseDto result = teamService.createTeam(createDto);
-
-        assertEquals(responseDto, result);
-
-        verify(organizationRepository, times(1)).findById(organization.getId());
-        verify(teamMapper, times(1)).toEntity(createDto, organization);
-        verify(teamRepository, times(1)).save(team);
-        verify(teamMapper, times(1)).toResponseDto(savedTeam);
-    }
-
-    @Test
-    void testCreateTeam_EmptyMembersList() {
-        Organization organization = BuildInstances.buildOrganization();
-        Team team = Team.builder()
-                .name("Echipa 1")
-                .description("Descriere 1")
-                .organization(organization)
-                .createdAt(LocalDateTime.of(2026, 5, 1, 15, 23, 30))
-                .manager(null)
-                .members(new ArrayList<>())
-                .projects(new ArrayList<>())
-                .build();
-
-        Team savedTeam = BuildInstances.buildTeam();
-
-        TeamCreateDto dto = new TeamCreateDto(
-                "Echipa 1",
-                "Descriere 1",
-                1,
-                new ArrayList<>()
-        );
-
-        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
-        when(teamMapper.toEntity(dto, organization)).thenReturn(team);
-        when(teamRepository.save(team)).thenReturn(savedTeam);
-        when(teamMapper.toResponseDto(savedTeam)).thenReturn(BuildDtos.buildTeamResponseDto(savedTeam));
-
-        TeamResponseDto result = teamService.createTeam(dto);
-
-        assertNotNull(result);
-
-        verify(userRepository, never()).findAllById(any());
-        verify(teamRepository).save(team);
-    }
-
-    @Test
-    void testCreateTeam_OrganizationNotFound() {
-        TeamCreateDto dto = new TeamCreateDto(
-                "Echipa 1",
-                "Descriere 1",
-                1,
-                null);
-
-        when(organizationRepository.findById(1)).thenReturn(Optional.empty());
-
-        NotFoundException ex = assertThrows(NotFoundException.class,
-                () -> teamService.createTeam(dto));
-
-        assertEquals("Organization with id 1 not found", ex.getMessage());
+        assertEquals("Team with id 1 not found", exception.getMessage());
     }
 
     @Test
     void testCreateTeam_Valid_WithMembers() {
         Organization organization = BuildInstances.buildOrganization();
         List<User> users = BuildInstances.buildUsers();
-        List<Integer> membersIds = List.of(1, 2);
+        List<Integer> membersIds = List.of(users.get(0).getId(), users.get(1).getId());
 
         Team team = Team.builder()
                 .name("Echipa 1")
@@ -203,9 +118,7 @@ public class TeamServiceTests {
                 .members(users)
                 .projects(new ArrayList<>())
                 .build();
-
         Team savedTeam = BuildInstances.buildTeam();
-
         TeamCreateDto createDto = new TeamCreateDto(
                 "Echipa 1",
                 "Descriere 1",
@@ -224,7 +137,6 @@ public class TeamServiceTests {
         TeamResponseDto result = teamService.createTeam(createDto);
 
         assertEquals(responseDto, result);
-
         verify(organizationRepository, times(1)).findById(organization.getId());
         verify(teamMapper, times(1)).toEntity(createDto, organization);
         verify(userRepository, times(1)).findAllById(membersIds);
@@ -233,8 +145,100 @@ public class TeamServiceTests {
     }
 
     @Test
+    void testCreateTeam_Valid_NoMembers() {
+        Organization organization = BuildInstances.buildOrganization();
+
+        Team team = Team.builder()
+                .name("Echipa 1")
+                .description("Descriere 1")
+                .organization(organization)
+                .createdAt(LocalDateTime.of(2026, 5, 1, 15, 23, 30))
+                .manager(null)
+                .members(null)
+                .projects(new ArrayList<>())
+                .build();
+        Team savedTeam = BuildInstances.buildTeam();
+        TeamCreateDto createDto = new TeamCreateDto(
+                "Echipa 1",
+                "Descriere 1",
+                1,
+                null
+        );
+        TeamResponseDto responseDto = BuildDtos.buildTeamResponseDto(savedTeam);
+
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        when(teamMapper.toEntity(createDto, organization)).thenReturn(team);
+        when(teamRepository.save(team)).thenReturn(savedTeam);
+        when(teamMapper.toResponseDto(savedTeam)).thenReturn(responseDto);
+
+        TeamResponseDto result = teamService.createTeam(createDto);
+
+        assertEquals(responseDto, result);
+        verify(organizationRepository, times(1)).findById(organization.getId());
+        verify(teamMapper, times(1)).toEntity(createDto, organization);
+        verify(userRepository, never()).findAllById(any());
+        verify(teamRepository, times(1)).save(team);
+        verify(teamMapper, times(1)).toResponseDto(savedTeam);
+    }
+
+    @Test
+    void testCreateTeam_EmptyMembersList() {
+        Organization organization = BuildInstances.buildOrganization();
+
+        Team team = Team.builder()
+                .name("Echipa 1")
+                .description("Descriere 1")
+                .organization(organization)
+                .createdAt(LocalDateTime.of(2026, 5, 1, 15, 23, 30))
+                .manager(null)
+                .members(new ArrayList<>())
+                .projects(new ArrayList<>())
+                .build();
+        Team savedTeam = BuildInstances.buildTeam();
+        TeamCreateDto createDto = new TeamCreateDto(
+                "Echipa 1",
+                "Descriere 1",
+                1,
+                new ArrayList<>()
+        );
+        TeamResponseDto responseDto = BuildDtos.buildTeamResponseDto(savedTeam);
+
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        when(teamMapper.toEntity(createDto, organization)).thenReturn(team);
+        when(teamRepository.save(team)).thenReturn(savedTeam);
+        when(teamMapper.toResponseDto(savedTeam)).thenReturn(responseDto);
+
+        TeamResponseDto result = teamService.createTeam(createDto);
+
+        assertEquals(responseDto, result);
+        verify(organizationRepository, times(1)).findById(organization.getId());
+        verify(teamMapper, times(1)).toEntity(createDto, organization);
+        verify(userRepository, never()).findAllById(any());
+        verify(teamRepository, times(1)).save(team);
+        verify(teamMapper, times(1)).toResponseDto(savedTeam);
+    }
+
+    @Test
+    void testCreateTeam_OrganizationNotFound() {
+        TeamCreateDto createDto = new TeamCreateDto(
+                "Echipa 1",
+                "Descriere 1",
+                1,
+                null
+        );
+
+        when(organizationRepository.findById(1)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> teamService.createTeam(createDto));
+
+        assertEquals("Organization with id 1 not found", exception.getMessage());
+    }
+
+    @Test
     void testCreateTeam_MembersNotFound() {
         Organization organization = BuildInstances.buildOrganization();
+
         Team team = Team.builder()
                 .name("Echipa 1")
                 .description("Descriere 1")
@@ -242,7 +246,6 @@ public class TeamServiceTests {
                 .members(new ArrayList<>())
                 .projects(new ArrayList<>())
                 .build();
-
         TeamCreateDto createDto = new TeamCreateDto(
                 "Echipa 1",
                 "Descriere 1",
@@ -250,22 +253,19 @@ public class TeamServiceTests {
                 List.of(1, 2)
         );
 
-        when(organizationRepository.findById(1)).thenReturn(Optional.of(organization));
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
         when(teamMapper.toEntity(createDto, organization)).thenReturn(team);
-
         when(userRepository.findAllById(List.of(1, 2))).thenReturn(List.of(BuildInstances.buildUser()));
 
-        NotFoundException ex = assertThrows(NotFoundException.class,
+        NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> teamService.createTeam(createDto));
 
-        assertEquals("One or more users were not found", ex.getMessage());
-
-        verify(organizationRepository).findById(1);
+        assertEquals("One or more users were not found", exception.getMessage());
+        verify(organizationRepository).findById(organization.getId());
         verify(teamMapper).toEntity(createDto, organization);
         verify(userRepository).findAllById(List.of(1, 2));
         verify(teamRepository, never()).save(any());
     }
-
 
     @Test
     void testUpdateTeam_Valid() {
@@ -281,15 +281,17 @@ public class TeamServiceTests {
                 .projects(new ArrayList<>())
                 .members(new ArrayList<>())
                 .build();
-
-        TeamUpdateDto updateDto = new TeamUpdateDto("Echipa 1 actualizat", "Descriere 1", 1, 1
+        TeamUpdateDto updateDto = new TeamUpdateDto(
+                "Echipa 1 actualizata",
+                "Descriere 1",
+                1,
+                1
         );
-
         TeamResponseDto responseDto = BuildDtos.buildTeamResponseDto(updatedTeam);
 
         when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
-        when(organizationRepository.findById(1)).thenReturn(Optional.of(organization));
-        when(userRepository.findById(1)).thenReturn(Optional.of(manager));
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        when(userRepository.findById(manager.getId())).thenReturn(Optional.of(manager));
         doNothing().when(teamMapper).updateEntityFromDto(updateDto, team, organization, manager);
         when(teamRepository.save(team)).thenReturn(updatedTeam);
         when(teamMapper.toResponseDto(updatedTeam)).thenReturn(responseDto);
@@ -297,10 +299,9 @@ public class TeamServiceTests {
         TeamResponseDto result = teamService.updateTeam(team.getId(), updateDto);
 
         assertEquals(responseDto, result);
-
         verify(teamRepository, times(1)).findById(team.getId());
-        verify(organizationRepository, times(1)).findById(1);
-        verify(userRepository, times(1)).findById(1);
+        verify(organizationRepository, times(1)).findById(organization.getId());
+        verify(userRepository, times(1)).findById(manager.getId());
         verify(teamMapper, times(1)).updateEntityFromDto(updateDto, team, organization, manager);
         verify(teamRepository, times(1)).save(team);
         verify(teamMapper, times(1)).toResponseDto(updatedTeam);
@@ -311,6 +312,116 @@ public class TeamServiceTests {
         Team team = BuildInstances.buildTeam();
         User manager = BuildInstances.buildUser();
 
+        Team updatedTeam = Team.builder()
+                .name("Echipa 1 actualizata")
+                .description("Descriere 1")
+                .organization(team.getOrganization())
+                .manager(manager)
+                .projects(new ArrayList<>())
+                .members(new ArrayList<>())
+                .build();
+        TeamUpdateDto updateDto = new TeamUpdateDto(
+                "Echipa 1 actualizata",
+                "Descriere 1",
+                null,
+                1
+        );
+        TeamResponseDto responseDto = BuildDtos.buildTeamResponseDto(updatedTeam);
+
+        when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
+        when(userRepository.findById(manager.getId())).thenReturn(Optional.of(manager));
+        doNothing().when(teamMapper).updateEntityFromDto(updateDto, team, team.getOrganization(), manager);
+        when(teamRepository.save(team)).thenReturn(updatedTeam);
+        when(teamMapper.toResponseDto(updatedTeam)).thenReturn(responseDto);
+
+        TeamResponseDto result = teamService.updateTeam(team.getId(), updateDto);
+
+        assertEquals(responseDto, result);
+        verify(teamRepository, times(1)).findById(team.getId());
+        verify(organizationRepository, never()).findById(any());
+        verify(userRepository, times(1)).findById(manager.getId());
+        verify(teamMapper, times(1)).updateEntityFromDto(updateDto, team, team.getOrganization(), manager);
+        verify(teamRepository, times(1)).save(team);
+        verify(teamMapper, times(1)).toResponseDto(updatedTeam);
+    }
+
+    @Test
+    void testUpdateTeam_NoManagerChange() {
+        Team team = BuildInstances.buildTeam();
+        Organization organization = BuildInstances.buildOrganization();
+
+        Team updatedTeam = Team.builder()
+                .name("Echipa 1 actualizata")
+                .description("Descriere 1")
+                .organization(team.getOrganization())
+                .manager(team.getManager())
+                .projects(new ArrayList<>())
+                .members(new ArrayList<>())
+                .build();
+        TeamUpdateDto updateDto = new TeamUpdateDto(
+                "Echipa 1 actualizata",
+                "Descriere 1",
+                1,
+                null
+        );
+        TeamResponseDto responseDto = BuildDtos.buildTeamResponseDto(updatedTeam);
+
+        when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        doNothing().when(teamMapper).updateEntityFromDto(updateDto, team, organization, team.getManager());
+        when(teamRepository.save(team)).thenReturn(updatedTeam);
+        when(teamMapper.toResponseDto(updatedTeam)).thenReturn(responseDto);
+
+        TeamResponseDto result = teamService.updateTeam(1, updateDto);
+
+        assertEquals(responseDto, result);
+        verify(teamRepository, times(1)).findById(team.getId());
+        verify(organizationRepository, times(1)).findById(organization.getId());
+        verify(userRepository, never()).findById(any());
+        verify(teamMapper, times(1)).updateEntityFromDto(updateDto, team, organization, team.getManager());
+        verify(teamRepository, times(1)).save(team);
+        verify(teamMapper, times(1)).toResponseDto(updatedTeam);
+    }
+
+    @Test
+    void testUpdateTeam_TeamNotFound() {
+        TeamUpdateDto updateDto = new TeamUpdateDto(
+                "Echipa 1 actualizata",
+                "Descriere 1",
+                1,
+                1
+        );
+
+        when(teamRepository.findById(1)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> teamService.updateTeam(1, updateDto));
+
+        assertEquals("Team with id 1 not found", exception.getMessage());
+    }
+
+    @Test
+    void testUpdateTeam_OrganizationNotFound() {
+        Team team = BuildInstances.buildTeam();
+        TeamUpdateDto updateDto = new TeamUpdateDto(
+                "Echipa 1 actualizata",
+                "Descriere 1",
+                1,
+                null
+        );
+
+        when(teamRepository.findById(1)).thenReturn(Optional.of(team));
+        when(organizationRepository.findById(1)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> teamService.updateTeam(1, updateDto));
+        
+        assertEquals("Organization with id 1 not found", exception.getMessage());
+    }
+
+    @Test
+    void testUpdateTeam_ManagerNotFound() {
+        Team team = BuildInstances.buildTeam();
         TeamUpdateDto updateDto = new TeamUpdateDto(
                 "Echipa 1 actualizat",
                 "Descriere 1",
@@ -319,174 +430,106 @@ public class TeamServiceTests {
         );
 
         when(teamRepository.findById(1)).thenReturn(Optional.of(team));
-        when(userRepository.findById(1)).thenReturn(Optional.of(manager));
-        when(teamRepository.save(team)).thenReturn(team);
-        when(teamMapper.toResponseDto(team)).thenReturn(BuildDtos.buildTeamResponseDto(team));
+        when(userRepository.findById(1)).thenReturn(Optional.empty());
 
-        TeamResponseDto result = teamService.updateTeam(1, updateDto);
-
-        assertNotNull(result);
-        verify(organizationRepository, never()).findById(any());
-        verify(teamMapper).updateEntityFromDto(updateDto, team, team.getOrganization(), manager);
-    }
-
-    @Test
-    void testUpdateTeam_NoManagerChange() {
-        Team team = BuildInstances.buildTeam();
-        Organization organization = BuildInstances.buildOrganization();
-
-        TeamUpdateDto updateDto = new TeamUpdateDto(
-                "Echipa 1 actualizat",
-                "Descriere 1",
-                1,
-                null
-        );
-
-        when(teamRepository.findById(1)).thenReturn(Optional.of(team));
-        when(organizationRepository.findById(1)).thenReturn(Optional.of(organization));
-        when(teamRepository.save(team)).thenReturn(team);
-        when(teamMapper.toResponseDto(team)).thenReturn(BuildDtos.buildTeamResponseDto(team));
-
-        TeamResponseDto result = teamService.updateTeam(1, updateDto);
-
-        assertNotNull(result);
-        verify(userRepository, never()).findById(any());
-        verify(teamMapper).updateEntityFromDto(updateDto, team, organization, team.getManager());
-    }
-
-
-    @Test
-    void testUpdateTeam_OrganizationNotFound() {
-        Team team = BuildInstances.buildTeam();
-
-        TeamUpdateDto updateDto = new TeamUpdateDto(
-                "Echipa 1 actualizat",
-                "Descriere 1",
-                99,
-                null
-        );
-
-        when(teamRepository.findById(1)).thenReturn(Optional.of(team));
-        when(organizationRepository.findById(99)).thenReturn(Optional.empty());
-
-        assertThrows(NotFoundException.class,
-                () -> teamService.updateTeam(1, updateDto));
-    }
-
-    @Test
-    void testUpdateTeam_TeamNotFound() {
-        when(teamRepository.findById(1)).thenReturn(Optional.empty());
-
-        assertThrows(NotFoundException.class,
-                () -> teamService.updateTeam(1, new TeamUpdateDto()));
-    }
-
-    @Test
-    void testUpdateTeam_ManagerNotFound() {
-        Team team = BuildInstances.buildTeam();
-
-        TeamUpdateDto updateDto = new TeamUpdateDto(
-                "Echipa 1 actualizat",
-                "Descriere 1",
-                null,
-                99
-        );
-
-        when(teamRepository.findById(1)).thenReturn(Optional.of(team));
-        when(userRepository.findById(99)).thenReturn(Optional.empty());
-
-        NotFoundException ex = assertThrows(NotFoundException.class,
+        NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> teamService.updateTeam(1, updateDto));
 
-        assertEquals("Manager with id 99 not found", ex.getMessage());
-
-        verify(organizationRepository, never()).findById(any());
-        verify(userRepository).findById(99);
-        verify(teamRepository, never()).save(any());
+        assertEquals("Manager with id 1 not found", exception.getMessage());
     }
 
     @Test
     void testAssignUsers_Valid() {
         Team team = BuildInstances.buildTeam();
-        List<Integer> userIds = List.of(1, 2);
         List<User> users = BuildInstances.buildUsers();
-
+        List<Integer> userIds = List.of(users.get(0).getId(), users.get(1).getId());
         TeamAssignDto assignDto = new TeamAssignDto(userIds);
+        TeamResponseDto responseDto = BuildDtos.buildTeamResponseDto(team);
 
-        when(teamRepository.findById(1)).thenReturn(Optional.of(team));
+        when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
         when(userRepository.findAllById(userIds)).thenReturn(users);
         when(teamRepository.save(team)).thenReturn(team);
-        when(teamMapper.toResponseDto(team)).thenReturn(BuildDtos.buildTeamResponseDto(team));
+        when(teamMapper.toResponseDto(team)).thenReturn(responseDto);
 
-        TeamResponseDto result = teamService.assignUsers(1, assignDto);
+        TeamResponseDto result = teamService.assignUsers(team.getId(), assignDto);
 
-        assertNotNull(result);
-
+        assertEquals(responseDto, result);
+        assertEquals(users, team.getMembers());
+        verify(teamRepository, times(1)).findById(team.getId());
+        verify(userRepository, times(1)).findAllById(userIds);
         verify(teamRepository, times(1)).save(team);
+        verify(teamMapper, times(1)).toResponseDto(team);
     }
 
     @Test
     void testAssignUsers_WhenNotAlreadyPresent() {
         Team team = BuildInstances.buildTeam();
+        List<User> users = BuildInstances.buildUsers();
 
-        User user1 = BuildInstances.buildUser();
-        user1.setAssignedTeams(new ArrayList<>());
+        users.get(0).setAssignedTeams(new ArrayList<>());
+        users.get(1).setAssignedTeams(new ArrayList<>(List.of(team)));
+        List<Integer> userIds = List.of(users.get(0).getId(), users.get(1).getId());
+        TeamAssignDto assignDto = new TeamAssignDto(userIds);
+        TeamResponseDto responseDto = BuildDtos.buildTeamResponseDto(team);
 
-        User user2 = BuildInstances.buildUser();
-        user2.setId(2);
-        user2.setAssignedTeams(new ArrayList<>(List.of(team)));
-
-        List<Integer> ids = List.of(1, 2);
-        TeamAssignDto assignDto = new TeamAssignDto(ids);
-
-        when(teamRepository.findById(1)).thenReturn(Optional.of(team));
-        when(userRepository.findAllById(ids)).thenReturn(List.of(user1, user2));
+        when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
+        when(userRepository.findAllById(userIds)).thenReturn(users);
         when(teamRepository.save(team)).thenReturn(team);
-        when(teamMapper.toResponseDto(team)).thenReturn(BuildDtos.buildTeamResponseDto(team));
+        when(teamMapper.toResponseDto(team)).thenReturn(responseDto);
 
-        teamService.assignUsers(1, assignDto);
-        assertTrue(user1.getAssignedTeams().contains(team));
-        assertEquals(1, user2.getAssignedTeams().size());
-        verify(teamRepository).save(team);
+        TeamResponseDto result = teamService.assignUsers(team.getId(), assignDto);
+
+        assertEquals(responseDto, result);
+        assertEquals(users, team.getMembers());
+        assertTrue(users.get(0).getAssignedTeams().contains(team));
+        assertEquals(1, users.get(1).getAssignedTeams().size());
+        verify(teamRepository, times(1)).findById(team.getId());
+        verify(userRepository, times(1)).findAllById(userIds);
+        verify(teamRepository, times(1)).save(team);
+        verify(teamMapper, times(1)).toResponseDto(team);
     }
 
     @Test
     void testAssignUsers_UsersNotFound() {
         Team team = BuildInstances.buildTeam();
-        List<Integer> ids = List.of(1, 2);
-        TeamAssignDto assignDto = new TeamAssignDto(ids);
+        User user = BuildInstances.buildUser();
+        List<Integer> userIds = List.of(1, 2);
+        TeamAssignDto assignDto = new TeamAssignDto(userIds);
 
-        when(teamRepository.findById(1)).thenReturn(Optional.of(team));
-        when(userRepository.findAllById(ids)).thenReturn(List.of(BuildInstances.buildUser()));
+        when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
+        when(userRepository.findAllById(userIds)).thenReturn(List.of(user));
 
-        assertThrows(NotFoundException.class,
+        NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> teamService.assignUsers(1, assignDto));
 
-        verify(userRepository).findAllById(ids);
+        assertEquals("One or more users were not found", exception.getMessage());
     }
 
     @Test
     void testAssignUsers_TeamNotFound() {
-        TeamAssignDto dto = new TeamAssignDto(List.of(1, 2));
+        TeamAssignDto assignDto = new TeamAssignDto(List.of(1, 2));
 
         when(teamRepository.findById(1)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class,
-                () -> teamService.assignUsers(1, dto));
-    }
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> teamService.assignUsers(1, assignDto));
 
+        assertEquals("Team with id 1 not found", exception.getMessage());
+    }
 
     @Test
     void testDeleteTeam_Valid() {
         Team team = BuildInstances.buildTeam();
 
-        when(teamRepository.findById(1)).thenReturn(Optional.of(team));
+        when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
 
         teamService.deleteTeam(1);
 
-        verify(teamRepository, times(1)).deleteById(1);
+        assertFalse(team.getManager().getManagedTeams().contains(team));
+        team.getMembers().forEach(m -> assertFalse(m.getAssignedTeams().contains(team)));
+        team.getProjects().forEach(project -> project.getTeams().remove(team));
+        verify(teamRepository, times(1)).deleteById(team.getId());
     }
-
 
     @Test
     void testDeleteTeam_NotFound() {
@@ -494,6 +537,6 @@ public class TeamServiceTests {
 
         teamService.deleteTeam(1);
 
-        verify(teamRepository, never()).deleteById(anyInt());
+        verify(teamRepository, never()).deleteById(any());
     }
 }

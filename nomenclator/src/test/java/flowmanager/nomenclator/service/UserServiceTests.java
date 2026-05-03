@@ -201,7 +201,7 @@ public class UserServiceTests {
     }
 
     @Test
-    void findAllManagedTeamsByUserId_Valid() {
+    void testFindAllManagedTeamsByUserId_Valid() {
         User user = BuildInstances.buildUser();
         List<Team> teams = BuildInstances.buildTeams();
         List<TeamSummaryUserDto> teamsDto = teams.stream()
@@ -234,7 +234,7 @@ public class UserServiceTests {
     }
 
     @Test
-    void findAllAssignedTeamsByUserId_Valid() {
+    void testFindAllAssignedTeamsByUserId_Valid() {
         User user = BuildInstances.buildUser();
         List<Team> teams = BuildInstances.buildTeams();
         List<TeamSummaryUserDto> teamsDto = teams.stream()
@@ -267,7 +267,7 @@ public class UserServiceTests {
     }
 
     @Test
-    void findAllReportedWorkItemsByUserId_Valid() {
+    void testFindAllReportedWorkItemsByUserId_Valid() {
         User user = BuildInstances.buildUser();
         List<WorkItem> workItems = BuildInstances.buildWorkItems();
         List<WorkItemSummaryDto> workItemsDto = workItems.stream()
@@ -300,7 +300,7 @@ public class UserServiceTests {
     }
 
     @Test
-    void findAllAssignedWorkItemsByUserId_Valid() {
+    void testFindAllAssignedWorkItemsByUserId_Valid() {
         User user = BuildInstances.buildUser();
         List<WorkItem> workItems = BuildInstances.buildWorkItems();
         List<WorkItemSummaryDto> workItemsDto = workItems.stream()
@@ -495,11 +495,97 @@ public class UserServiceTests {
     }
 
     @Test
-    void testUpdateComment_UserNotFound() {
+    void testUpdateUser_EmailNull() {
+        User user = BuildInstances.buildUser();
+        User updatedUser = User.builder()
+                .id(1)
+                .email(null)
+                .username("User1")
+                .firstName("Example")
+                .lastName("User")
+                .phoneNumber("+407777777777")
+                .active(false)
+                .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
+                .build();
+        UserUpdateDto updateDto = new UserUpdateDto(
+                null,
+                "User1",
+                "Example",
+                "User",
+                "+407777777777"
+        );
+        UserResponseDto responseDto = BuildDtos.buildUserResponseDto(updatedUser);
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        doNothing().when(userMapper).updateEntityFromDto(updateDto, user);
+        when(userRepository.save(user)).thenReturn(updatedUser);
+        when(userMapper.toResponseDto(updatedUser)).thenReturn(responseDto);
+
+        UserResponseDto result = userService.updateUser(user.getId(), updateDto);
+
+        assertEquals(responseDto, result);
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(userRepository, times(0)).existsByEmail(updateDto.getEmail());
+        verify(userRepository, times(0)).existsByUsername(updatedUser.getUsername());
+        verify(userMapper, times(1)).updateEntityFromDto(updateDto, user);
+        verify(userRepository, times(1)).save(user);
+        verify(userMapper, times(1)).toResponseDto(updatedUser);
+    }
+
+    @Test
+    void testUpdateUser_UsernameNull() {
+        User user = BuildInstances.buildUser();
+        User updatedUser = User.builder()
+                .id(1)
+                .email("user12@example.com")
+                .username(null)
+                .firstName("Example")
+                .lastName("User")
+                .phoneNumber("+407777777777")
+                .active(false)
+                .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
+                .build();
+        UserUpdateDto updateDto = new UserUpdateDto(
+                "user12@example.com",
+                null,
+                "Example",
+                "User",
+                "+407777777777"
+        );
+        UserResponseDto responseDto = BuildDtos.buildUserResponseDto(updatedUser);
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(userRepository.existsByEmail(updateDto.getEmail())).thenReturn(false);
+        doNothing().when(userMapper).updateEntityFromDto(updateDto, user);
+        when(userRepository.save(user)).thenReturn(updatedUser);
+        when(userMapper.toResponseDto(updatedUser)).thenReturn(responseDto);
+
+        UserResponseDto result = userService.updateUser(user.getId(), updateDto);
+
+        assertEquals(responseDto, result);
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(userRepository, times(1)).existsByEmail(updateDto.getEmail());
+        verify(userRepository, times(0)).existsByUsername(updatedUser.getUsername());
+        verify(userMapper, times(1)).updateEntityFromDto(updateDto, user);
+        verify(userRepository, times(1)).save(user);
+        verify(userMapper, times(1)).toResponseDto(updatedUser);
+    }
+
+    @Test
+    void testUpdateUser_UserNotFound() {
+        UserUpdateDto updateDto = new UserUpdateDto(
+                "user12@example.com",
+                "User1 Actualizat",
+                "Example",
+                "User",
+                "+407777777777"
+        );
+
         when(userRepository.findById(1)).thenReturn(Optional.empty());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> userService.findUserById(1));
+                () -> userService.updateUser(1, updateDto));
 
         assertEquals("User with id 1 not found", exception.getMessage());
     }
@@ -546,7 +632,7 @@ public class UserServiceTests {
     }
 
     @Test
-    void deleteUser_Valid() {
+    void testDeleteUser_Valid() {
         User user = BuildInstances.buildUser();
         List<WorkItem> workItems = BuildInstances.buildWorkItems();
         List<Project> projects = BuildInstances.buildProjects();
@@ -587,11 +673,16 @@ public class UserServiceTests {
     }
 
     @Test
-    void deleteUser_NotFound() {
+    void testDeleteUser_NotFound() {
         when(userRepository.findById(1)).thenReturn(Optional.empty());
 
         userService.deleteUser(1);
 
+        verify(workItemService, never()).deleteWorkItem(any());
+        verify(projectService, never()).deleteProject(any());
+        verify(teamService, never()).deleteTeam(any());
+        verify(organizationService, never()).deleteOrganization(any());
+        verify(commentRepository, never()).deleteAll(any());
         verify(userRepository, never()).deleteById(any());
     }
 }

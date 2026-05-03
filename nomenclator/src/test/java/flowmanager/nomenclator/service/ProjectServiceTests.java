@@ -27,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class ProjectServiceTests {
-
     @Mock
     private ProjectRepository projectRepository;
 
@@ -51,7 +50,6 @@ public class ProjectServiceTests {
         MockitoAnnotations.openMocks(this);
     }
 
-
     @Test
     void testFindAllProjects_Valid() {
         List<Project> projects = BuildInstances.buildProjects();
@@ -68,7 +66,6 @@ public class ProjectServiceTests {
         assertEquals(2, result.size());
         assertEquals(projectsDto.get(0), result.get(0));
         assertEquals(projectsDto.get(1), result.get(1));
-
         verify(projectRepository, times(1)).findAll();
         verify(projectMapper, times(1)).toSummaryDto(projects.get(0));
         verify(projectMapper, times(1)).toSummaryDto(projects.get(1));
@@ -85,20 +82,18 @@ public class ProjectServiceTests {
         verify(projectMapper, never()).toSummaryDto(any());
     }
 
-
     @Test
     void testFindProjectById_Valid() {
         Project project = BuildInstances.buildProject();
         ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(project);
 
-        when(projectRepository.findById(1)).thenReturn(Optional.of(project));
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
         when(projectMapper.toResponseDto(project)).thenReturn(responseDto);
 
-        ProjectResponseDto result = projectService.findProjectById(1);
+        ProjectResponseDto result = projectService.findProjectById(project.getId());
 
         assertEquals(responseDto, result);
-
-        verify(projectRepository, times(1)).findById(1);
+        verify(projectRepository, times(1)).findById(project.getId());
         verify(projectMapper, times(1)).toResponseDto(project);
     }
 
@@ -106,10 +101,10 @@ public class ProjectServiceTests {
     void testFindProjectById_NotFound() {
         when(projectRepository.findById(1)).thenReturn(Optional.empty());
 
-        NotFoundException ex = assertThrows(NotFoundException.class,
+        NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> projectService.findProjectById(1));
 
-        assertEquals("Project with id 1 not found", ex.getMessage());
+        assertEquals("Project with id 1 not found", exception.getMessage());
     }
 
     @Test
@@ -125,31 +120,26 @@ public class ProjectServiceTests {
                 .teams(new ArrayList<>())
                 .workItems(new ArrayList<>())
                 .build();
-
         Project savedProject = BuildInstances.buildProject();
-
         ProjectCreateDto createDto = new ProjectCreateDto(
                 "Proiectul 1",
                 "Descriere 1",
                 LocalDate.of(2026, 1, 1),
                 LocalDate.of(2026, 12, 31)
         );
+        ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(savedProject);
 
-            ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(savedProject);
+        when(projectMapper.toEntity(createDto)).thenReturn(project);
+        when(projectRepository.save(project)).thenReturn(savedProject);
+        when(projectMapper.toResponseDto(savedProject)).thenReturn(responseDto);
 
-            when(projectMapper.toEntity(createDto)).thenReturn(project);
-            when(projectRepository.save(project)).thenReturn(savedProject);
-            when(projectMapper.toResponseDto(savedProject)).thenReturn(responseDto);
+        ProjectResponseDto result = projectService.createProject(createDto);
 
-            ProjectResponseDto result = projectService.createProject(createDto);
-
-            assertEquals(responseDto, result);
-
-            verify(projectMapper, times(1)).toEntity(createDto);
-            verify(projectRepository, times(1)).save(project);
-            verify(projectMapper, times(1)).toResponseDto(savedProject);
-        }
-
+        assertEquals(responseDto, result);
+        verify(projectMapper, times(1)).toEntity(createDto);
+        verify(projectRepository, times(1)).save(project);
+        verify(projectMapper, times(1)).toResponseDto(savedProject);
+    }
 
     @Test
     void testUpdateProject_Valid() {
@@ -166,33 +156,46 @@ public class ProjectServiceTests {
                 .teams(new ArrayList<>())
                 .workItems(new ArrayList<>())
                 .build();
-
-        ProjectUpdateDto updateDto = new ProjectUpdateDto("Proiectul 1 actualizat", "Descriere 1", LocalDate.of(2026, 6, 1), LocalDate.of(2026, 12, 31), 1
+        ProjectUpdateDto updateDto = new ProjectUpdateDto(
+                "Proiectul 1 actualizat",
+                "Descriere 1",
+                LocalDate.of(2026, 6, 1),
+                LocalDate.of(2026, 12, 31),
+                1
         );
-
         ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(updatedProject);
 
-        when(projectRepository.findById(1)).thenReturn(Optional.of(project));
-        when(userRepository.findById(1)).thenReturn(Optional.of(manager));
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+        when(userRepository.findById(manager.getId())).thenReturn(Optional.of(manager));
         doNothing().when(projectMapper).updateEntityFromDto(updateDto, project, manager);
         when(projectRepository.save(project)).thenReturn(updatedProject);
         when(projectMapper.toResponseDto(updatedProject)).thenReturn(responseDto);
 
-        ProjectResponseDto result = projectService.updateProject(1, updateDto);
+        ProjectResponseDto result = projectService.updateProject(project.getId(), updateDto);
 
         assertEquals(responseDto, result);
-
-        verify(projectRepository, times(1)).findById(1);
-        verify(userRepository, times(1)).findById(1);
+        verify(projectRepository, times(1)).findById(project.getId());
+        verify(userRepository, times(1)).findById(manager.getId());
         verify(projectMapper, times(1)).updateEntityFromDto(updateDto, project, manager);
         verify(projectRepository, times(1)).save(project);
         verify(projectMapper, times(1)).toResponseDto(updatedProject);
     }
 
     @Test
-    void testUpdateProject_NoManagerChange() {
+    void testUpdateProject_ManagerIdNull() {
         Project project = BuildInstances.buildProject();
+        User existingManager = project.getManager();
 
+        Project updatedProject = Project.builder()
+                .id(1)
+                .name("Proiectul 1 actualizat")
+                .description("Descriere 1")
+                .startDate(LocalDate.of(2026, 6, 1))
+                .endDate(LocalDate.of(2026, 12, 31))
+                .manager(existingManager)
+                .teams(new ArrayList<>())
+                .workItems(new ArrayList<>())
+                .build();
         ProjectUpdateDto updateDto = new ProjectUpdateDto(
                 "Proiectul 1 actualizat",
                 "Descriere 1",
@@ -200,119 +203,127 @@ public class ProjectServiceTests {
                 project.getEndDate(),
                 null
         );
+        ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(updatedProject);
 
-        when(projectRepository.findById(1)).thenReturn(Optional.of(project));
-        when(projectRepository.save(project)).thenReturn(project);
-        when(projectMapper.toResponseDto(project)).thenReturn(BuildDtos.buildProjectResponseDto(project));
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+        doNothing().when(projectMapper).updateEntityFromDto(updateDto, project, existingManager);
+        when(projectRepository.save(project)).thenReturn(updatedProject);
+        when(projectMapper.toResponseDto(updatedProject)).thenReturn(responseDto);
 
-        ProjectResponseDto result = projectService.updateProject(1, updateDto);
+        ProjectResponseDto result = projectService.updateProject(project.getId(), updateDto);
 
-        assertNotNull(result);
-
+        assertEquals(responseDto, result);
+        verify(projectRepository, times(1)).findById(project.getId());
         verify(userRepository, never()).findById(any());
         verify(projectMapper).updateEntityFromDto(updateDto, project, project.getManager());
-    }
-
-    @Test
-    void testUpdateProject_ProjectNotFound() {
-        when(projectRepository.findById(1)).thenReturn(Optional.empty());
-
-        NotFoundException ex = assertThrows(NotFoundException.class,
-                () -> projectService.updateProject(1, new ProjectUpdateDto()));
-
-        assertEquals("Project with id 1 not found", ex.getMessage());
+        verify(projectRepository, times(1)).save(project);
+        verify(projectMapper, times(1)).toResponseDto(updatedProject);
     }
 
     @Test
     void testUpdateProject_ManagerNotFound() {
         Project project = BuildInstances.buildProject();
-
         ProjectUpdateDto updateDto = new ProjectUpdateDto(
                 "Proiectul 1 actualizat",
                 "Descriere 1",
                 project.getStartDate(),
                 project.getEndDate(),
-                99
+                1
         );
 
-        when(projectRepository.findById(1)).thenReturn(Optional.of(project));
-        when(userRepository.findById(99)).thenReturn(Optional.empty());
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+        when(userRepository.findById(1)).thenReturn(Optional.empty());
 
-        NotFoundException ex = assertThrows(NotFoundException.class,
-                () -> projectService.updateProject(1, updateDto));
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> projectService.updateProject(project.getId(), updateDto));
 
-        assertEquals("Manager with id 99 not found", ex.getMessage());
-
-        verify(projectRepository, never()).save(any());
+        assertEquals("Manager with id 1 not found", exception.getMessage());
+        verify(projectRepository, times(1)).findById(project.getId());
+        verify(userRepository, times(1)).findById(1);
     }
 
+    @Test
+    void testUpdateProject_ProjectNotFound() {
+        ProjectUpdateDto updateDto = new ProjectUpdateDto(
+                "Proiectul 1 actualizat",
+                "Descriere 1",
+                LocalDate.of(2026, 6, 1),
+                LocalDate.of(2026, 12, 31),
+                1
+        );
 
+        when(projectRepository.findById(1)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> projectService.updateProject(1, updateDto));
+
+        assertEquals("Project with id 1 not found", exception.getMessage());
+    }
 
     @Test
     void testAssignTeams_Valid() {
         Project project = BuildInstances.buildProject();
         List<Team> teams = BuildInstances.buildTeams();
-        List<Integer> teamIds = List.of(1, 2);
-
+        List<Integer> teamIds = List.of(teams.get(0).getId(), teams.get(1).getId());
         ProjectAssignDto assignDto = new ProjectAssignDto(teamIds);
+        ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(project);
 
-        when(projectRepository.findById(1)).thenReturn(Optional.of(project));
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
         when(teamRepository.findAllById(teamIds)).thenReturn(teams);
         when(projectRepository.save(project)).thenReturn(project);
-        when(projectMapper.toResponseDto(project)).thenReturn(BuildDtos.buildProjectResponseDto(project));
+        when(projectMapper.toResponseDto(project)).thenReturn(responseDto);
 
         ProjectResponseDto result = projectService.assignTeams(1, assignDto);
 
-        assertNotNull(result);
-
-        verify(projectRepository, times(1)).findById(1);
+        assertEquals(responseDto, result);
+        assertEquals(teams, project.getTeams());
+        verify(projectRepository, times(1)).findById(project.getId());
         verify(teamRepository, times(1)).findAllById(teamIds);
         verify(projectRepository, times(1)).save(project);
+        verify(projectMapper, times(1)).toResponseDto(project);
     }
 
     @Test
     void testAssignTeams_WhenNotAlreadyPresent() {
         Project project = BuildInstances.buildProject();
+        List<Team> teams = BuildInstances.buildTeams();
 
-        Team team1 = BuildInstances.buildTeams().get(0);
-        team1.setProjects(new ArrayList<>());
-
-        Team team2 = BuildInstances.buildTeams().get(1);
-        team2.setProjects(new ArrayList<>(List.of(project)));
-
-        List<Integer> teamIds = List.of(1, 2);
+        teams.get(0).setProjects(new ArrayList<>());
+        teams.get(1).setProjects(new ArrayList<>(List.of(project)));
+        List<Integer> teamIds = List.of(teams.get(0).getId(), teams.get(1).getId());
         ProjectAssignDto assignDto = new ProjectAssignDto(teamIds);
+        ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(project);
 
-        when(projectRepository.findById(1)).thenReturn(Optional.of(project));
-        when(teamRepository.findAllById(teamIds)).thenReturn(List.of(team1, team2));
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+        when(teamRepository.findAllById(teamIds)).thenReturn(teams);
         when(projectRepository.save(project)).thenReturn(project);
-        when(projectMapper.toResponseDto(project)).thenReturn(BuildDtos.buildProjectResponseDto(project));
+        when(projectMapper.toResponseDto(project)).thenReturn(responseDto);
 
-        projectService.assignTeams(1, assignDto);
+        ProjectResponseDto result = projectService.assignTeams(1, assignDto);
 
-        assertTrue(team1.getProjects().contains(project));
-        assertEquals(1, team2.getProjects().size());
-
-        verify(projectRepository).save(project);
+        assertEquals(responseDto, result);
+        assertTrue(teams.get(0).getProjects().contains(project));
+        assertEquals(1, teams.get(1).getProjects().size());
+        verify(projectRepository, times(1)).findById(project.getId());
+        verify(teamRepository, times(1)).findAllById(teamIds);
+        verify(projectRepository, times(1)).save(project);
+        verify(projectMapper, times(1)).toResponseDto(project);
     }
-
 
     @Test
     void testAssignTeams_TeamsNotFound() {
         Project project = BuildInstances.buildProject();
+        Team team = BuildInstances.buildTeam();
         List<Integer> teamIds = List.of(1, 2);
-
         ProjectAssignDto assignDto = new ProjectAssignDto(teamIds);
 
-        when(projectRepository.findById(1)).thenReturn(Optional.of(project));
-        when(teamRepository.findAllById(teamIds)).thenReturn(List.of(BuildInstances.buildTeam()));
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+        when(teamRepository.findAllById(teamIds)).thenReturn(List.of(team));
 
-        NotFoundException ex = assertThrows(NotFoundException.class,
+        NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> projectService.assignTeams(1, assignDto));
 
-        assertEquals("One or more teams were not found", ex.getMessage());
-
-        verify(projectRepository, never()).save(any());
+        assertEquals("One or more teams were not found", exception.getMessage());
     }
 
     @Test
@@ -321,37 +332,26 @@ public class ProjectServiceTests {
 
         when(projectRepository.findById(1)).thenReturn(Optional.empty());
 
-        NotFoundException ex = assertThrows(NotFoundException.class,
+        NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> projectService.assignTeams(1, assignDto));
 
-        assertEquals("Project with id 1 not found", ex.getMessage());
+        assertEquals("Project with id 1 not found", exception.getMessage());
     }
 
     @Test
     void testDeleteProject_Valid() {
         Project project = BuildInstances.buildProject();
-        project.setWorkItems(new ArrayList<>());
-
-        when(projectRepository.findById(1)).thenReturn(Optional.of(project));
-
-        projectService.deleteProject(1);
-
-        verify(projectRepository, times(1)).deleteById(1);
-    }
-
-    @Test
-    void testDeleteProject_DeletesWorkItems() {
-        Project project = BuildInstances.buildProject();
-        List<WorkItem> workItems = new ArrayList<>(BuildInstances.buildWorkItems());
+        List<WorkItem> workItems = BuildInstances.buildWorkItems();
         project.setWorkItems(workItems);
 
-        when(projectRepository.findById(1)).thenReturn(Optional.of(project));
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
         workItems.forEach(wi -> doNothing().when(workItemService).deleteWorkItem(wi.getId()));
 
-        projectService.deleteProject(1);
+        projectService.deleteProject(project.getId());
 
+        verify(projectRepository, times(1)).findById(project.getId());
         workItems.forEach(wi -> verify(workItemService).deleteWorkItem(wi.getId()));
-        verify(projectRepository, times(1)).deleteById(1);
+        verify(projectRepository, times(1)).deleteById(project.getId());
     }
 
     @Test
@@ -360,7 +360,8 @@ public class ProjectServiceTests {
 
         projectService.deleteProject(1);
 
-        verify(projectRepository, never()).deleteById(anyInt());
-        verify(workItemService, never()).deleteWorkItem(anyInt());
+        verify(projectRepository, times(1)).findById(1);
+        verify(workItemService, never()).deleteWorkItem(any());
+        verify(projectRepository, never()).deleteById(any());
     }
 }

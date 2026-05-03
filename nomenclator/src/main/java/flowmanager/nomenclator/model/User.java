@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -50,24 +51,31 @@ public class User {
     @Column
     private LocalDateTime lastLogin;
 
+    @Builder.Default
     @OneToMany(mappedBy = "author")
-    private List<Comment> comments;
+    private List<Comment> comments = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "manager")
-    private List<Project> projects;
+    private List<Project> projects = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "manager")
-    private List<Organization> organizations;
+    private List<Organization> organizations = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "manager")
-    private List<Team> managedTeams;
+    private List<Team> managedTeams = new ArrayList<>();
 
+    @Builder.Default
     @ManyToMany(mappedBy = "members")
-    private List<Team> assignedTeams;
+    private List<Team> assignedTeams = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "reporter")
-    private List<WorkItem> reportedWorkItems;
+    private List<WorkItem> reportedWorkItems = new ArrayList<>();
 
+    @Builder.Default
     @ManyToMany(mappedBy = "assignees")
-    private List<WorkItem> assignedWorkItems;
+    private List<WorkItem> assignedWorkItems = new ArrayList<>();
 }

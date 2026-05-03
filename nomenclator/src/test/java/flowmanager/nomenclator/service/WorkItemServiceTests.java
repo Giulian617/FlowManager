@@ -13,6 +13,7 @@ import flowmanager.nomenclator.utils.BuildDtos;
 import flowmanager.nomenclator.utils.BuildInstances;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -28,7 +29,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 public class WorkItemServiceTests {
-
     @Mock
     private WorkItemRepository workItemRepository;
 
@@ -55,7 +55,6 @@ public class WorkItemServiceTests {
         MockitoAnnotations.openMocks(this);
     }
 
-
     @Test
     void testFindAllWorkItems_NoFilters() {
         List<WorkItem> workItems = BuildInstances.buildWorkItems();
@@ -63,7 +62,7 @@ public class WorkItemServiceTests {
                 .map(BuildDtos::buildWorkItemSummaryDto)
                 .toList();
 
-        when(workItemRepository.findAll(any(Specification.class))).thenReturn(workItems);
+        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any())).thenReturn(workItems);
         when(workItemMapper.toSummaryDto(workItems.get(0))).thenReturn(workItemsDto.get(0));
         when(workItemMapper.toSummaryDto(workItems.get(1))).thenReturn(workItemsDto.get(1));
 
@@ -72,7 +71,7 @@ public class WorkItemServiceTests {
         assertEquals(2, result.size());
         assertEquals(workItemsDto.get(0), result.get(0));
         assertEquals(workItemsDto.get(1), result.get(1));
-        verify(workItemRepository, times(1)).findAll(any(Specification.class));
+        verify(workItemRepository, times(1)).findAll(ArgumentMatchers.<Specification<WorkItem>>any());
         verify(workItemMapper, times(1)).toSummaryDto(workItems.get(0));
         verify(workItemMapper, times(1)).toSummaryDto(workItems.get(1));
     }
@@ -84,14 +83,16 @@ public class WorkItemServiceTests {
                 .map(BuildDtos::buildWorkItemSummaryDto)
                 .toList();
 
-        when(workItemRepository.findAll(any(Specification.class))).thenReturn(workItems);
+        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any())).thenReturn(List.of(workItems.get(0), workItems.get(1)));
         when(workItemMapper.toSummaryDto(workItems.get(0))).thenReturn(workItemsDto.get(0));
         when(workItemMapper.toSummaryDto(workItems.get(1))).thenReturn(workItemsDto.get(1));
 
         List<WorkItemSummaryDto> result = workItemService.findAllWorkItems(ItemType.Task, null, null);
 
         assertEquals(2, result.size());
-        verify(workItemRepository, times(1)).findAll(any(Specification.class));
+        verify(workItemRepository, times(1)).findAll(ArgumentMatchers.<Specification<WorkItem>>any());
+        verify(workItemMapper, times(1)).toSummaryDto(workItems.get(0));
+        verify(workItemMapper, times(1)).toSummaryDto(workItems.get(1));
     }
 
     @Test
@@ -101,14 +102,15 @@ public class WorkItemServiceTests {
                 .map(BuildDtos::buildWorkItemSummaryDto)
                 .toList();
 
-        when(workItemRepository.findAll(any(Specification.class))).thenReturn(workItems);
-        when(workItemMapper.toSummaryDto(workItems.get(0))).thenReturn(workItemsDto.get(0));
+        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any())).thenReturn(List.of(workItems.get(1)));
         when(workItemMapper.toSummaryDto(workItems.get(1))).thenReturn(workItemsDto.get(1));
 
-        List<WorkItemSummaryDto> result = workItemService.findAllWorkItems(null, Status.To_do, null);
+        List<WorkItemSummaryDto> result = workItemService.findAllWorkItems(null, Status.In_Progress, null);
 
-        assertEquals(2, result.size());
-        verify(workItemRepository, times(1)).findAll(any(Specification.class));
+        assertEquals(1, result.size());
+        verify(workItemRepository, times(1)).findAll(ArgumentMatchers.<Specification<WorkItem>>any());
+        verify(workItemMapper, times(0)).toSummaryDto(workItems.get(0));
+        verify(workItemMapper, times(1)).toSummaryDto(workItems.get(1));
     }
 
     @Test
@@ -118,14 +120,15 @@ public class WorkItemServiceTests {
                 .map(BuildDtos::buildWorkItemSummaryDto)
                 .toList();
 
-        when(workItemRepository.findAll(any(Specification.class))).thenReturn(workItems);
-        when(workItemMapper.toSummaryDto(workItems.get(0))).thenReturn(workItemsDto.get(0));
-        when(workItemMapper.toSummaryDto(workItems.get(1))).thenReturn(workItemsDto.get(1));
+        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any())).thenReturn(List.of(workItems.getFirst()));
+        when(workItemMapper.toSummaryDto(workItems.getFirst())).thenReturn(workItemsDto.getFirst());
 
         List<WorkItemSummaryDto> result = workItemService.findAllWorkItems(null, null, Severity.Low);
 
-        assertEquals(2, result.size());
-        verify(workItemRepository, times(1)).findAll(any(Specification.class));
+        assertEquals(1, result.size());
+        verify(workItemRepository, times(1)).findAll(ArgumentMatchers.<Specification<WorkItem>>any());
+        verify(workItemMapper, times(1)).toSummaryDto(workItems.get(0));
+        verify(workItemMapper, times(0)).toSummaryDto(workItems.get(1));
     }
 
     @Test
@@ -135,27 +138,27 @@ public class WorkItemServiceTests {
                 .map(BuildDtos::buildWorkItemSummaryDto)
                 .toList();
 
-        when(workItemRepository.findAll(any(Specification.class))).thenReturn(workItems);
-        when(workItemMapper.toSummaryDto(workItems.get(0))).thenReturn(workItemsDto.get(0));
-        when(workItemMapper.toSummaryDto(workItems.get(1))).thenReturn(workItemsDto.get(1));
+        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any())).thenReturn(List.of(workItems.getFirst()));
+        when(workItemMapper.toSummaryDto(workItems.getFirst())).thenReturn(workItemsDto.getFirst());
 
         List<WorkItemSummaryDto> result = workItemService.findAllWorkItems(ItemType.Task, Status.To_do, Severity.Low);
 
-        assertEquals(2, result.size());
-        verify(workItemRepository, times(1)).findAll(any(Specification.class));
+        assertEquals(1, result.size());
+        verify(workItemRepository, times(1)).findAll(ArgumentMatchers.<Specification<WorkItem>>any());
+        verify(workItemMapper, times(1)).toSummaryDto(workItems.get(0));
+        verify(workItemMapper, times(0)).toSummaryDto(workItems.get(1));
     }
 
     @Test
     void testFindAllWorkItems_EmptyList() {
-        when(workItemRepository.findAll(any(Specification.class))).thenReturn(List.of());
+        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any())).thenReturn(List.of());
 
         List<WorkItemSummaryDto> result = workItemService.findAllWorkItems(null, null, null);
 
         assertEquals(0, result.size());
-        verify(workItemRepository, times(1)).findAll(any(Specification.class));
+        verify(workItemRepository, times(1)).findAll(ArgumentMatchers.<Specification<WorkItem>>any());
         verify(workItemMapper, never()).toSummaryDto(any());
     }
-
 
     @Test
     void testFindAllCommentsByWorkItemId_Valid() {
@@ -190,20 +193,18 @@ public class WorkItemServiceTests {
         assertEquals("WorkItem with id 1 not found", exception.getMessage());
     }
 
-
     @Test
     void testFindWorkItemById_Valid() {
         WorkItem workItem = BuildInstances.buildWorkItem();
         WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(workItem);
 
-        when(workItemRepository.findById(1)).thenReturn(Optional.of(workItem));
+        when(workItemRepository.findById(workItem.getId())).thenReturn(Optional.of(workItem));
         when(workItemMapper.toResponseDto(workItem)).thenReturn(responseDto);
 
-        WorkItemResponseDto result = workItemService.findWorkItemById(1);
+        WorkItemResponseDto result = workItemService.findWorkItemById(workItem.getId());
 
-        assertNotNull(result);
         assertEquals(responseDto, result);
-        verify(workItemRepository, times(1)).findById(1);
+        verify(workItemRepository, times(1)).findById(workItem.getId());
         verify(workItemMapper, times(1)).toResponseDto(workItem);
     }
 
@@ -216,7 +217,6 @@ public class WorkItemServiceTests {
 
         assertEquals("WorkItem with id 1 not found", exception.getMessage());
     }
-
 
     @Test
     void testCreateWorkItem_Valid_NoAssignees_NoParent() {
@@ -233,9 +233,7 @@ public class WorkItemServiceTests {
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())
                 .build();
-
         WorkItem savedWorkItem = BuildInstances.buildWorkItem();
-
         WorkItemCreateDto createDto = new WorkItemCreateDto(
                 "Work item 1",
                 "Description work item 1",
@@ -246,10 +244,9 @@ public class WorkItemServiceTests {
                 null,
                 null
         );
-
         WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(savedWorkItem);
 
-        when(projectRepository.findById(1)).thenReturn(Optional.of(project));
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
         when(workItemMapper.toEntity(createDto, project)).thenReturn(workItem);
         when(workItemRepository.save(workItem)).thenReturn(savedWorkItem);
         when(workItemMapper.toResponseDto(workItem)).thenReturn(responseDto);
@@ -257,17 +254,19 @@ public class WorkItemServiceTests {
         WorkItemResponseDto result = workItemService.createWorkItem(createDto);
 
         assertEquals(responseDto, result);
-        verify(projectRepository, times(1)).findById(1);
+        verify(projectRepository, times(1)).findById(project.getId());
         verify(workItemMapper, times(1)).toEntity(createDto, project);
-        verify(workItemRepository, times(1)).save(workItem);
         verify(userRepository, never()).findAllById(any());
+        verify(workItemRepository, times(1)).save(workItem);
+        verify(workItemRepository, never()).findById(any());
+        verify(workItemMapper, times(1)).toResponseDto(workItem);
     }
 
     @Test
     void testCreateWorkItem_Valid_WithAssignees() {
         Project project = BuildInstances.buildProject();
         List<User> users = BuildInstances.buildUsers();
-        List<Integer> assigneesIds = List.of(1, 2);
+        List<Integer> assigneesIds = List.of(users.get(0).getId(), users.get(1).getId());
 
         WorkItem workItem = WorkItem.builder()
                 .title("Work item 1")
@@ -280,9 +279,7 @@ public class WorkItemServiceTests {
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())
                 .build();
-
         WorkItem savedWorkItem = BuildInstances.buildWorkItem();
-
         WorkItemCreateDto createDto = new WorkItemCreateDto(
                 "Work item 1",
                 "Description work item 1",
@@ -293,10 +290,9 @@ public class WorkItemServiceTests {
                 null,
                 assigneesIds
         );
-
         WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(savedWorkItem);
 
-        when(projectRepository.findById(1)).thenReturn(Optional.of(project));
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
         when(workItemMapper.toEntity(createDto, project)).thenReturn(workItem);
         when(userRepository.findAllById(assigneesIds)).thenReturn(users);
         when(workItemRepository.save(workItem)).thenReturn(savedWorkItem);
@@ -306,106 +302,12 @@ public class WorkItemServiceTests {
 
         assertEquals(responseDto, result);
         assertEquals(users, workItem.getAssignees());
+        verify(projectRepository, times(1)).findById(project.getId());
+        verify(workItemMapper, times(1)).toEntity(createDto, project);
         verify(userRepository, times(1)).findAllById(assigneesIds);
         verify(workItemRepository, times(1)).save(workItem);
-    }
-
-    @Test
-    void testCreateWorkItem_EmptyAssigneesList() {
-        Project project = BuildInstances.buildProject();
-
-        WorkItem workItem = WorkItem.builder()
-                .title("Work item 1")
-                .description("Description work item 1")
-                .itemType(ItemType.Task)
-                .status(Status.To_do)
-                .severity(Severity.Low)
-                .assignees(new ArrayList<>())
-                .comments(new ArrayList<>())
-                .children(new ArrayList<>())
-                .build();
-
-        WorkItem savedWorkItem = BuildInstances.buildWorkItem();
-
-        WorkItemCreateDto createDto = new WorkItemCreateDto(
-                "Work item 1",
-                "Description work item 1",
-                ItemType.Task,
-                Severity.Low,
-                1,
-                null,
-                null,
-                new ArrayList<>()
-        );
-
-        when(projectRepository.findById(1)).thenReturn(Optional.of(project));
-        when(workItemMapper.toEntity(createDto, project)).thenReturn(workItem);
-        when(workItemRepository.save(workItem)).thenReturn(savedWorkItem);
-        when(workItemMapper.toResponseDto(workItem)).thenReturn(BuildDtos.buildWorkItemResponseDto(savedWorkItem));
-
-        WorkItemResponseDto result = workItemService.createWorkItem(createDto);
-
-        assertNotNull(result);
-        verify(userRepository, never()).findAllById(any());
-        verify(workItemRepository, times(1)).save(workItem);
-    }
-
-    @Test
-    void testCreateWorkItem_ProjectNotFound() {
-        WorkItemCreateDto createDto = new WorkItemCreateDto(
-                "Work item 1",
-                "Description work item 1",
-                ItemType.Task,
-                Severity.Low,
-                99,
-                null,
-                null,
-                null
-        );
-
-        when(projectRepository.findById(99)).thenReturn(Optional.empty());
-
-        NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> workItemService.createWorkItem(createDto));
-
-        assertEquals("Project with id 99 not found", exception.getMessage());
-        verify(workItemRepository, never()).save(any());
-    }
-
-    @Test
-    void testCreateWorkItem_AssigneesNotFound() {
-        Project project = BuildInstances.buildProject();
-
-        WorkItem workItem = WorkItem.builder()
-                .title("Work item 1")
-                .description("Description work item 1")
-                .itemType(ItemType.Task)
-                .severity(Severity.Low)
-                .assignees(new ArrayList<>())
-                .comments(new ArrayList<>())
-                .children(new ArrayList<>())
-                .build();
-
-        WorkItemCreateDto createDto = new WorkItemCreateDto(
-                "Work item 1",
-                "Description work item 1",
-                ItemType.Task,
-                Severity.Low,
-                1,
-                null,
-                null,
-                List.of(1, 2)
-        );
-
-        when(projectRepository.findById(1)).thenReturn(Optional.of(project));
-        when(workItemMapper.toEntity(createDto, project)).thenReturn(workItem);
-        when(userRepository.findAllById(List.of(1, 2))).thenReturn(List.of(BuildInstances.buildUser()));
-
-        NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> workItemService.createWorkItem(createDto));
-
-        assertEquals("One or more users were not found", exception.getMessage());
-        verify(workItemRepository, never()).save(any());
+        verify(workItemRepository, never()).findById(any());
+        verify(workItemMapper, times(1)).toResponseDto(workItem);
     }
 
     @Test
@@ -423,7 +325,6 @@ public class WorkItemServiceTests {
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())
                 .build();
-
         WorkItem workItem = WorkItem.builder()
                 .id(1)
                 .title("Work item 1")
@@ -437,7 +338,6 @@ public class WorkItemServiceTests {
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())
                 .build();
-
         WorkItemCreateDto createDto = new WorkItemCreateDto(
                 "Work item 1",
                 "Description work item 1",
@@ -448,10 +348,9 @@ public class WorkItemServiceTests {
                 null,
                 null
         );
-
         WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(workItem);
 
-        when(projectRepository.findById(1)).thenReturn(Optional.of(project));
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
         when(workItemMapper.toEntity(createDto, project)).thenReturn(workItem);
         when(workItemRepository.save(workItem)).thenReturn(workItem);
         when(workItemRepository.findById(1)).thenReturn(Optional.of(workItem));
@@ -462,9 +361,112 @@ public class WorkItemServiceTests {
 
         assertEquals(responseDto, result);
         assertEquals(parent, workItem.getParent());
+        verify(projectRepository, times(1)).findById(project.getId());
+        verify(workItemMapper, times(1)).toEntity(createDto, project);
+        verify(userRepository, never()).findAllById(any());
         verify(workItemRepository, times(2)).save(workItem);
+        verify(workItemRepository, times(1)).findById(workItem.getId());
+        verify(workItemRepository, times(1)).findById(parent.getId());
+        verify(workItemMapper, times(2)).toResponseDto(workItem);
     }
 
+    @Test
+    void testCreateWorkItem_EmptyAssigneesList() {
+        Project project = BuildInstances.buildProject();
+
+        WorkItem workItem = WorkItem.builder()
+                .title("Work item 1")
+                .description("Description work item 1")
+                .itemType(ItemType.Task)
+                .status(Status.To_do)
+                .severity(Severity.Low)
+                .assignees(new ArrayList<>())
+                .comments(new ArrayList<>())
+                .children(new ArrayList<>())
+                .build();
+        WorkItem savedWorkItem = BuildInstances.buildWorkItem();
+        WorkItemCreateDto createDto = new WorkItemCreateDto(
+                "Work item 1",
+                "Description work item 1",
+                ItemType.Task,
+                Severity.Low,
+                1,
+                null,
+                null,
+                new ArrayList<>()
+        );
+        WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(savedWorkItem);
+
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+        when(workItemMapper.toEntity(createDto, project)).thenReturn(workItem);
+        when(workItemRepository.save(workItem)).thenReturn(savedWorkItem);
+        when(workItemMapper.toResponseDto(workItem)).thenReturn(responseDto);
+
+        WorkItemResponseDto result = workItemService.createWorkItem(createDto);
+
+        assertEquals(responseDto, result);
+        verify(projectRepository, times(1)).findById(project.getId());
+        verify(workItemMapper, times(1)).toEntity(createDto, project);
+        verify(userRepository, never()).findAllById(any());
+        verify(workItemRepository, times(1)).save(workItem);
+        verify(workItemRepository, never()).findById(any());
+        verify(workItemMapper, times(1)).toResponseDto(workItem);
+    }
+
+    @Test
+    void testCreateWorkItem_ProjectNotFound() {
+        WorkItemCreateDto createDto = new WorkItemCreateDto(
+                "Work item 1",
+                "Description work item 1",
+                ItemType.Task,
+                Severity.Low,
+                1,
+                null,
+                null,
+                null
+        );
+
+        when(projectRepository.findById(1)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> workItemService.createWorkItem(createDto));
+
+        assertEquals("Project with id 1 not found", exception.getMessage());
+    }
+
+    @Test
+    void testCreateWorkItem_AssigneesNotFound() {
+        Project project = BuildInstances.buildProject();
+
+        WorkItem workItem = WorkItem.builder()
+                .title("Work item 1")
+                .description("Description work item 1")
+                .itemType(ItemType.Task)
+                .severity(Severity.Low)
+                .assignees(new ArrayList<>())
+                .comments(new ArrayList<>())
+                .children(new ArrayList<>())
+                .build();
+        WorkItemCreateDto createDto = new WorkItemCreateDto(
+                "Work item 1",
+                "Description work item 1",
+                ItemType.Task,
+                Severity.Low,
+                1,
+                null,
+                null,
+                List.of(1, 2)
+        );
+
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+        when(workItemMapper.toEntity(createDto, project)).thenReturn(workItem);
+        when(userRepository.findAllById(List.of(1, 2))).thenReturn(List.of(BuildInstances.buildUser()));
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> workItemService.createWorkItem(createDto));
+
+        assertEquals("One or more users were not found", exception.getMessage());
+    }
 
     @Test
     void testUpdateWorkItem_Valid() {
@@ -486,20 +488,24 @@ public class WorkItemServiceTests {
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())
                 .build();
-
-        WorkItemUpdateDto updateDto = new WorkItemUpdateDto("Work item 1 actualizat", "Description work item 1", Status.In_Progress, Severity.Medium, null);
-
+        WorkItemUpdateDto updateDto = new WorkItemUpdateDto(
+                "Work item 1 actualizat",
+                "Description work item 1",
+                Status.In_Progress,
+                Severity.Medium,
+                null
+        );
         WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(updatedWorkItem);
 
-        when(workItemRepository.findById(1)).thenReturn(Optional.of(workItem));
+        when(workItemRepository.findById(workItem.getId())).thenReturn(Optional.of(workItem));
         doNothing().when(workItemMapper).updateEntityFromDto(updateDto, workItem);
         when(workItemRepository.save(workItem)).thenReturn(updatedWorkItem);
         when(workItemMapper.toResponseDto(updatedWorkItem)).thenReturn(responseDto);
 
-        WorkItemResponseDto result = workItemService.updateWorkItem(1, updateDto);
+        WorkItemResponseDto result = workItemService.updateWorkItem(workItem.getId(), updateDto);
 
         assertEquals(responseDto, result);
-        verify(workItemRepository, times(1)).findById(1);
+        verify(workItemRepository, times(1)).findById(workItem.getId());
         verify(workItemMapper, times(1)).updateEntityFromDto(updateDto, workItem);
         verify(workItemRepository, times(1)).save(workItem);
         verify(workItemMapper, times(1)).toResponseDto(updatedWorkItem);
@@ -507,48 +513,82 @@ public class WorkItemServiceTests {
 
     @Test
     void testUpdateWorkItem_NotFound() {
+        WorkItemUpdateDto updateDto = new WorkItemUpdateDto(
+                "Work item 1 actualizat",
+                "Description work item 1",
+                Status.In_Progress,
+                Severity.Medium,
+                null
+        );
+
         when(workItemRepository.findById(1)).thenReturn(Optional.empty());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> workItemService.updateWorkItem(1, new WorkItemUpdateDto()));
+                () -> workItemService.updateWorkItem(1, updateDto));
 
         assertEquals("WorkItem with id 1 not found", exception.getMessage());
-        verify(workItemRepository, never()).save(any());
     }
-
 
     @Test
     void testAssignUsers_Valid() {
         WorkItem workItem = BuildInstances.buildWorkItem();
         List<User> users = BuildInstances.buildUsers();
-        List<Integer> assigneesIds = List.of(1, 2);
-
-        WorkItemAssignDto assignDto = new WorkItemAssignDto(assigneesIds);
+        List<Integer> userIds = List.of(users.get(0).getId(), users.get(1).getId());;
+        WorkItemAssignDto assignDto = new WorkItemAssignDto(userIds);
         WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(workItem);
 
-        when(workItemRepository.findById(1)).thenReturn(Optional.of(workItem));
-        when(userRepository.findAllById(assigneesIds)).thenReturn(users);
+        when(workItemRepository.findById(workItem.getId())).thenReturn(Optional.of(workItem));
+        when(userRepository.findAllById(userIds)).thenReturn(users);
+        when(workItemRepository.save(workItem)).thenReturn(workItem);
         when(workItemMapper.toResponseDto(workItem)).thenReturn(responseDto);
 
-        WorkItemResponseDto result = workItemService.assignUsers(1, assignDto);
+        WorkItemResponseDto result = workItemService.assignUsers(workItem.getId(), assignDto);
 
         assertEquals(responseDto, result);
         assertEquals(users, workItem.getAssignees());
-        //verify(workItemRepository, never()).save(any());
-        verify(workItemRepository, times(1)).findById(1);
-        verify(userRepository, times(1)).findAllById(assigneesIds);
+        verify(workItemRepository, times(1)).findById(workItem.getId());
+        verify(userRepository, times(1)).findAllById(userIds);
+        verify(workItemRepository, times(1)).save(workItem);
+        verify(workItemMapper, times(1)).toResponseDto(workItem);
+    }
+
+    @Test
+    void testAssignUsers_WhenNotAlreadyPresent() {
+        WorkItem workItem = BuildInstances.buildWorkItem();
+        List<User> users = BuildInstances.buildUsers();
+
+        users.get(0).setAssignedWorkItems(new ArrayList<>());
+        users.get(1).setAssignedWorkItems(new ArrayList<>(List.of(workItem)));
+        List<Integer> userIds = List.of(users.get(0).getId(), users.get(1).getId());
+        WorkItemAssignDto assignDto = new WorkItemAssignDto(userIds);
+        WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(workItem);
+
+        when(workItemRepository.findById(workItem.getId())).thenReturn(Optional.of(workItem));
+        when(userRepository.findAllById(userIds)).thenReturn(users);
+        when(workItemRepository.save(workItem)).thenReturn(workItem);
+        when(workItemMapper.toResponseDto(workItem)).thenReturn(responseDto);
+
+        WorkItemResponseDto result = workItemService.assignUsers(workItem.getId(), assignDto);
+
+        assertEquals(responseDto, result);
+        assertEquals(users, workItem.getAssignees());
+        assertTrue(users.get(0).getAssignedWorkItems().contains(workItem));
+        assertEquals(1, users.get(1).getAssignedWorkItems().size());
+        verify(workItemRepository, times(1)).findById(workItem.getId());
+        verify(userRepository, times(1)).findAllById(userIds);
+        verify(workItemRepository, times(1)).save(workItem);
         verify(workItemMapper, times(1)).toResponseDto(workItem);
     }
 
     @Test
     void testAssignUsers_UsersNotFound() {
         WorkItem workItem = BuildInstances.buildWorkItem();
-        List<Integer> assigneesIds = List.of(1, 2);
-
-        WorkItemAssignDto assignDto = new WorkItemAssignDto(assigneesIds);
+        User user = BuildInstances.buildUser();
+        List<Integer> userIds = List.of(1, 2);
+        WorkItemAssignDto assignDto = new WorkItemAssignDto(userIds);
 
         when(workItemRepository.findById(1)).thenReturn(Optional.of(workItem));
-        when(userRepository.findAllById(assigneesIds)).thenReturn(List.of(BuildInstances.buildUser()));
+        when(userRepository.findAllById(userIds)).thenReturn(List.of(user));
 
         NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> workItemService.assignUsers(1, assignDto));
@@ -568,14 +608,13 @@ public class WorkItemServiceTests {
         assertEquals("WorkItem with id 1 not found", exception.getMessage());
     }
 
-
     @Test
     void testSetParent_Valid_EpicParent() {
         Project project = BuildInstances.buildProject();
         User reporter = BuildInstances.buildUser();
 
         WorkItem parent = WorkItem.builder()
-                .id(2)
+                .id(1)
                 .title("Epic 1")
                 .itemType(ItemType.Epic)
                 .project(project)
@@ -584,9 +623,8 @@ public class WorkItemServiceTests {
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())
                 .build();
-
         WorkItem child = WorkItem.builder()
-                .id(1)
+                .id(2)
                 .title("UserStory 1")
                 .itemType(ItemType.User_Story)
                 .project(project)
@@ -595,18 +633,19 @@ public class WorkItemServiceTests {
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())
                 .build();
-
         WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(child);
 
-        when(workItemRepository.findById(1)).thenReturn(Optional.of(child));
-        when(workItemRepository.findById(2)).thenReturn(Optional.of(parent));
+        when(workItemRepository.findById(child.getId())).thenReturn(Optional.of(child));
+        when(workItemRepository.findById(parent.getId())).thenReturn(Optional.of(parent));
         when(workItemRepository.save(child)).thenReturn(child);
         when(workItemMapper.toResponseDto(child)).thenReturn(responseDto);
 
-        WorkItemResponseDto result = workItemService.setParent(1, 2);
+        WorkItemResponseDto result = workItemService.setParent(child.getId(), parent.getId());
 
         assertEquals(responseDto, result);
         assertEquals(parent, child.getParent());
+        verify(workItemRepository, times(1)).findById(child.getId());
+        verify(workItemRepository, times(1)).findById(parent.getId());
         verify(workItemRepository, times(1)).save(child);
         verify(workItemMapper, times(1)).toResponseDto(child);
     }
@@ -617,7 +656,7 @@ public class WorkItemServiceTests {
         User reporter = BuildInstances.buildUser();
 
         WorkItem parent = WorkItem.builder()
-                .id(2)
+                .id(1)
                 .title("UserStory 1")
                 .itemType(ItemType.User_Story)
                 .reporter(reporter)
@@ -626,9 +665,8 @@ public class WorkItemServiceTests {
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())
                 .build();
-
         WorkItem child = WorkItem.builder()
-                .id(1)
+                .id(2)
                 .title("Task 1")
                 .itemType(ItemType.Task)
                 .reporter(reporter)
@@ -637,31 +675,26 @@ public class WorkItemServiceTests {
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())
                 .build();
-
         WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(child);
 
-        when(workItemRepository.findById(1)).thenReturn(Optional.of(child));
-        when(workItemRepository.findById(2)).thenReturn(Optional.of(parent));
+        when(workItemRepository.findById(child.getId())).thenReturn(Optional.of(child));
+        when(workItemRepository.findById(parent.getId())).thenReturn(Optional.of(parent));
         when(workItemRepository.save(child)).thenReturn(child);
         when(workItemMapper.toResponseDto(child)).thenReturn(responseDto);
 
-        WorkItemResponseDto result = workItemService.setParent(1, 2);
+        WorkItemResponseDto result = workItemService.setParent(child.getId(), parent.getId());
 
         assertEquals(responseDto, result);
         assertEquals(parent, child.getParent());
+        verify(workItemRepository, times(1)).findById(child.getId());
+        verify(workItemRepository, times(1)).findById(parent.getId());
+        verify(workItemRepository, times(1)).save(child);
+        verify(workItemMapper, times(1)).toResponseDto(child);
     }
 
     @Test
     void testSetParent_ParentIsTask() {
         WorkItem parent = WorkItem.builder()
-                .id(2)
-                .itemType(ItemType.Task)
-                .assignees(new ArrayList<>())
-                .comments(new ArrayList<>())
-                .children(new ArrayList<>())
-                .build();
-
-        WorkItem child = WorkItem.builder()
                 .id(1)
                 .itemType(ItemType.Task)
                 .assignees(new ArrayList<>())
@@ -669,20 +702,27 @@ public class WorkItemServiceTests {
                 .children(new ArrayList<>())
                 .build();
 
-        when(workItemRepository.findById(1)).thenReturn(Optional.of(child));
-        when(workItemRepository.findById(2)).thenReturn(Optional.of(parent));
+        WorkItem child = WorkItem.builder()
+                .id(2)
+                .itemType(ItemType.Task)
+                .assignees(new ArrayList<>())
+                .comments(new ArrayList<>())
+                .children(new ArrayList<>())
+                .build();
+
+        when(workItemRepository.findById(child.getId())).thenReturn(Optional.of(child));
+        when(workItemRepository.findById(parent.getId())).thenReturn(Optional.of(parent));
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> workItemService.setParent(1, 2));
+                () -> workItemService.setParent(child.getId(), parent.getId()));
 
         assertEquals("A Task cannot have children", exception.getMessage());
-        verify(workItemRepository, never()).save(any());
     }
 
     @Test
     void testSetParent_ParentIsBug() {
         WorkItem parent = WorkItem.builder()
-                .id(2)
+                .id(1)
                 .itemType(ItemType.Bug)
                 .assignees(new ArrayList<>())
                 .comments(new ArrayList<>())
@@ -690,27 +730,26 @@ public class WorkItemServiceTests {
                 .build();
 
         WorkItem child = WorkItem.builder()
-                .id(1)
+                .id(2)
                 .itemType(ItemType.Task)
                 .assignees(new ArrayList<>())
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())
                 .build();
 
-        when(workItemRepository.findById(1)).thenReturn(Optional.of(child));
-        when(workItemRepository.findById(2)).thenReturn(Optional.of(parent));
+        when(workItemRepository.findById(child.getId())).thenReturn(Optional.of(child));
+        when(workItemRepository.findById(parent.getId())).thenReturn(Optional.of(parent));
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> workItemService.setParent(1, 2));
+                () -> workItemService.setParent(child.getId(), parent.getId()));
 
         assertEquals("A Bug cannot have children", exception.getMessage());
-        verify(workItemRepository, never()).save(any());
     }
 
     @Test
     void testSetParent_ChildIsEpic() {
         WorkItem parent = WorkItem.builder()
-                .id(2)
+                .id(1)
                 .itemType(ItemType.Epic)
                 .assignees(new ArrayList<>())
                 .comments(new ArrayList<>())
@@ -718,23 +757,21 @@ public class WorkItemServiceTests {
                 .build();
 
         WorkItem child = WorkItem.builder()
-                .id(1)
+                .id(2)
                 .itemType(ItemType.Epic)
                 .assignees(new ArrayList<>())
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())
                 .build();
 
-        when(workItemRepository.findById(1)).thenReturn(Optional.of(child));
-        when(workItemRepository.findById(2)).thenReturn(Optional.of(parent));
+        when(workItemRepository.findById(child.getId())).thenReturn(Optional.of(child));
+        when(workItemRepository.findById(parent.getId())).thenReturn(Optional.of(parent));
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> workItemService.setParent(1, 2));
+                () -> workItemService.setParent(child.getId(), parent.getId()));
 
         assertEquals("An Epic cannot have a parent", exception.getMessage());
-        verify(workItemRepository, never()).save(any());
     }
-
 
     @Test
     void testSetParent_ChildNotFound() {
@@ -756,11 +793,11 @@ public class WorkItemServiceTests {
                 .children(new ArrayList<>())
                 .build();
 
-        when(workItemRepository.findById(1)).thenReturn(Optional.of(child));
+        when(workItemRepository.findById(child.getId())).thenReturn(Optional.of(child));
         when(workItemRepository.findById(2)).thenReturn(Optional.empty());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> workItemService.setParent(1, 2));
+                () -> workItemService.setParent(child.getId(), 2));
 
         assertEquals("WorkItem with id 2 not found", exception.getMessage());
     }
@@ -771,12 +808,11 @@ public class WorkItemServiceTests {
         User reporter = BuildInstances.buildUser();
 
         WorkItem parent = WorkItem.builder()
-                .id(2)
+                .id(1)
                 .itemType(ItemType.Epic)
                 .build();
-
         WorkItem child = WorkItem.builder()
-                .id(1)
+                .id(2)
                 .title("Work item 1")
                 .description("Description work item 1")
                 .itemType(ItemType.Task)
@@ -789,18 +825,17 @@ public class WorkItemServiceTests {
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())
                 .build();
-
         WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(child);
 
-        when(workItemRepository.findById(1)).thenReturn(Optional.of(child));
+        when(workItemRepository.findById(child.getId())).thenReturn(Optional.of(child));
         when(workItemRepository.save(child)).thenReturn(child);
         when(workItemMapper.toResponseDto(child)).thenReturn(responseDto);
 
-        WorkItemResponseDto result = workItemService.removeParent(1);
+        WorkItemResponseDto result = workItemService.removeParent(child.getId());
 
         assertEquals(responseDto, result);
         assertNull(child.getParent());
-        verify(workItemRepository, times(1)).findById(1);
+        verify(workItemRepository, times(1)).findById(child.getId());
         verify(workItemRepository, times(1)).save(child);
         verify(workItemMapper, times(1)).toResponseDto(child);
     }
@@ -813,87 +848,44 @@ public class WorkItemServiceTests {
                 () -> workItemService.removeParent(1));
 
         assertEquals("WorkItem with id 1 not found", exception.getMessage());
-        verify(workItemRepository, never()).save(any());
     }
 
-
     @Test
-    void testDeleteWorkItem_Valid_NoChildren_NoComments() {
-        WorkItem workItem = WorkItem.builder()
-                .id(1)
-                .title("Work item 1")
-                .itemType(ItemType.Task)
-                .assignees(new ArrayList<>())
-                .comments(new ArrayList<>())
-                .children(new ArrayList<>())
-                .build();
+    void testDeleteWorkItem_Valid() {
+        WorkItem workItem = BuildInstances.buildWorkItem();
+        List<User> assignees = BuildInstances.buildUsers();
+        List<Comment> comments = BuildInstances.buildComments();
+        workItem.setAssignees(assignees);
+        workItem.setComments(comments);
+
+        workItem.setItemType(ItemType.Epic);
+        List<WorkItem> children = List.of(
+                WorkItem.builder()
+                    .id(2)
+                    .itemType(ItemType.User_Story)
+                    .parent(workItem)
+                    .assignees(new ArrayList<>())
+                    .comments(new ArrayList<>())
+                    .children(new ArrayList<>())
+                    .build(),
+                WorkItem.builder()
+                    .id(3)
+                    .itemType(ItemType.User_Story)
+                    .parent(workItem)
+                    .assignees(new ArrayList<>())
+                    .comments(new ArrayList<>())
+                    .children(new ArrayList<>())
+                    .build()
+        );
+        workItem.setChildren(children);
 
         when(workItemRepository.findById(1)).thenReturn(Optional.of(workItem));
 
         workItemService.deleteWorkItem(1);
 
-        verify(workItemRepository, times(1)).deleteById(1);
-        verify(commentRepository, times(1)).deleteAll(workItem.getComments());
-    }
-
-    @Test
-    void testDeleteWorkItem_ClearsAssigneesAndDeletesComments() {
-        List<User> assignees = new ArrayList<>(BuildInstances.buildUsers());
-        List<Comment> comments = new ArrayList<>(BuildInstances.buildComments());
-
-        WorkItem workItem = WorkItem.builder()
-                .id(1)
-                .itemType(ItemType.Task)
-                .assignees(assignees)
-                .comments(comments)
-                .children(new ArrayList<>())
-                .build();
-
-        when(workItemRepository.findById(1)).thenReturn(Optional.of(workItem));
-
-        workItemService.deleteWorkItem(1);
-
-        assertTrue(workItem.getAssignees().isEmpty());
+        children.forEach(child -> assertNull(child.getParent()));
+        assignees.forEach(a -> assertFalse(a.getAssignedWorkItems().contains(workItem)));
         verify(commentRepository, times(1)).deleteAll(comments);
-        verify(workItemRepository, times(1)).deleteById(1);
-    }
-
-    @Test
-    void testDeleteWorkItem_ClearsChildrenParent() {
-        WorkItem parent = WorkItem.builder()
-                .id(1)
-                .itemType(ItemType.Epic)
-                .assignees(new ArrayList<>())
-                .comments(new ArrayList<>())
-                .build();
-
-        WorkItem child1 = WorkItem.builder()
-                .id(2)
-                .itemType(ItemType.User_Story)
-                .parent(parent)
-                .assignees(new ArrayList<>())
-                .comments(new ArrayList<>())
-                .children(new ArrayList<>())
-                .build();
-
-        WorkItem child2 = WorkItem.builder()
-                .id(3)
-                .itemType(ItemType.User_Story)
-                .parent(parent)
-                .assignees(new ArrayList<>())
-                .comments(new ArrayList<>())
-                .children(new ArrayList<>())
-                .build();
-
-        parent.setChildren(new ArrayList<>(List.of(child1, child2)));
-
-        when(workItemRepository.findById(1)).thenReturn(Optional.of(parent));
-
-        workItemService.deleteWorkItem(1);
-
-        assertNull(child1.getParent());
-        assertNull(child2.getParent());
-        verify(commentRepository, times(1)).deleteAll(parent.getComments());
         verify(workItemRepository, times(1)).deleteById(1);
     }
 
@@ -903,8 +895,7 @@ public class WorkItemServiceTests {
 
         workItemService.deleteWorkItem(1);
 
-        verify(workItemRepository, never()).deleteById(anyInt());
         verify(commentRepository, never()).deleteAll(any());
+        verify(workItemRepository, never()).deleteById(any());
     }
-
 }

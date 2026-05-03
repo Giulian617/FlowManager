@@ -36,18 +36,15 @@ public class WorkItemService {
         Specification<WorkItem> specs = Specification.allOf();
 
         if (itemType != null) {
-            specs = specs.and((root, query, cb) ->
-                    cb.equal(root.get("itemType"), itemType));
+            specs = specs.and((root, query, cb) -> cb.equal(root.get("itemType"), itemType));
         }
 
         if (status != null) {
-            specs = specs.and((root, query, cb) ->
-                    cb.equal(root.get("status"), status));
+            specs = specs.and((root, query, cb) -> cb.equal(root.get("status"), status));
         }
 
         if (severity != null) {
-            specs = specs.and((root, query, cb) ->
-                    cb.equal(root.get("severity"), severity));
+            specs = specs.and((root, query, cb) -> cb.equal(root.get("severity"), severity));
         }
 
         return workItemRepository
@@ -110,8 +107,13 @@ public class WorkItemService {
         WorkItem workItem = getWorkItem(workItemId);
         List<User> assignedUsers = getAssignedUsers(workItemAssignDto.getAssigneesIds());
         workItem.setAssignees(assignedUsers);
+        assignedUsers.forEach(user -> {
+            if(!user.getAssignedWorkItems().contains(workItem)) {
+                user.getAssignedWorkItems().add(workItem);
+            }
+        });
 
-        return workItemMapper.toResponseDto(workItem);
+        return workItemMapper.toResponseDto(workItemRepository.save(workItem));
     }
 
     public WorkItemResponseDto setParent(Integer childId, Integer parentId) {
@@ -151,7 +153,9 @@ public class WorkItemService {
         for (WorkItem child : workItem.getChildren()) {
             child.setParent(null);
         }
-        workItem.getAssignees().clear();
+        workItem.getAssignees()
+                .forEach(user -> user.getAssignedWorkItems().remove(workItem));
+
         commentRepository.deleteAll(workItem.getComments());
         workItemRepository.deleteById(workItemId);
     }

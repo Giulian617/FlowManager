@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -34,9 +35,11 @@ public class Project {
     @JoinColumn(name = "user_id")
     private User manager;
 
+    @Builder.Default
     @OneToMany(mappedBy = "project")
-    private List<WorkItem> workItems;
+    private List<WorkItem> workItems = new ArrayList<>();
 
+    @Builder.Default
     @ManyToMany(mappedBy = "projects")
-    private List<Team> teams;
+    private List<Team> teams = new ArrayList<>();
 }

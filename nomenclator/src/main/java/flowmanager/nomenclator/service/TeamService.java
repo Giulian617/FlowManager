@@ -105,8 +105,11 @@ public class TeamService {
             return;
         }
 
-        team.getMembers().clear();
-        team.getProjects().clear();
+        team.getManager().getManagedTeams().remove(team);
+        team.getMembers()
+                .forEach(user -> user.getAssignedTeams().remove(team));
+        team.getProjects()
+                .forEach(project -> project.getTeams().remove(team));
         teamRepository.deleteById(teamId);
     }
 }
