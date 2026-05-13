@@ -1,0 +1,23 @@
+meta {
+  name: Token manager
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8080/realms/flowmanager/protocol/openid-connect/token
+  body: formUrlEncoded
+  auth: none
+}
+
+headers {
+  Content-Type: application/x-www-form-urlencoded
+}
+
+body:form-urlencoded {
+  grant_type: password
+  client_id: flowmanager-client
+  client_secret: {{client_secret}}
+  username: test-manager
+  password: {{Manager_password}}
+}

@@ -7,5 +7,9 @@ meta {
 delete {
   url: {{url}}/projects/1
   body: none
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }

@@ -7,14 +7,18 @@ meta {
 post {
   url: {{url}}/work-items
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }
 
 body:json {
   {
     "title": "exemplu",
     "description": "exemplu",
-    "itemType": "Epic",
+    "itemType": "Bug",
     "severity": "Low",
     "projectId": 1,
     "dueDate": "2026-07-01",

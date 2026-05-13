@@ -1,0 +1,61 @@
+server:
+  port: 8081
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/flowmanager
+
+  cloud:
+    gateway:
+      mvc:
+        routes:
+          - id: comments-route
+            uri: http://localhost:8082
+            predicates:
+              - Path=/comments/**
+            filters:
+              - AddRequestHeader=Internal-Gateway, ${GATEWAY_SECRET}
+
+          - id: organizations-route
+            uri: http://localhost:8082
+            predicates:
+              - Path=/organizations/**
+            filters:
+              - AddRequestHeader=Internal-Gateway, ${GATEWAY_SECRET}
+
+          - id: projects-route
+            uri: http://localhost:8082
+            predicates:
+              - Path=/projects/**
+            filters:
+              - AddRequestHeader=Internal-Gateway, ${GATEWAY_SECRET}
+
+          - id: teams-route
+            uri: http://localhost:8082
+            predicates:
+              - Path=/teams/**
+            filters:
+              - AddRequestHeader=Internal-Gateway, ${GATEWAY_SECRET}
+
+          - id: users-route
+            uri: http://localhost:8082
+            predicates:
+              - Path=/users/**
+            filters:
+              - AddRequestHeader=Internal-Gateway, ${GATEWAY_SECRET}
+
+          - id: work-items-route
+            uri: http://localhost:8082
+            predicates:
+              - Path=/work-items/**
+            filters:
+              - AddRequestHeader=Internal-Gateway, ${GATEWAY_SECRET}
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    ro.example.gateway: DEBUG

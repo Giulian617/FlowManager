@@ -6,6 +6,10 @@ meta {
 
 delete {
   url: {{url}}/organizations/1
-  body: json
-  auth: none
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }
