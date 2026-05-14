@@ -7,6 +7,7 @@ import flowmanager.nomenclator.mapper.*;
 import flowmanager.nomenclator.model.*;
 import flowmanager.nomenclator.repository.CommentRepository;
 import flowmanager.nomenclator.repository.UserRepository;
+import flowmanager.nomenclator.security.KeycloakAdminService;
 import flowmanager.nomenclator.utils.BuildDtos;
 import flowmanager.nomenclator.utils.BuildInstances;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,6 +61,9 @@ public class UserServiceTests {
 
     @Mock
     private OrganizationService organizationService;
+
+    @Mock
+    private KeycloakAdminService keycloakAdminService;
 
     @InjectMocks
     private UserService userService;
@@ -360,7 +364,9 @@ public class UserServiceTests {
 
     @Test
     void testCreateUser_Valid() {
+        String keycloakId = "keycloak-uuid-1";
         User user = User.builder()
+                .keycloakId(keycloakId)
                 .email("user1@example.com")
                 .username("User1")
                 .firstName("Example")
@@ -372,6 +378,7 @@ public class UserServiceTests {
         User savedUser = BuildInstances.buildUser();
         UserCreateDto createDto = new UserCreateDto(
                 "user1@example.com",
+                "password",
                 "User1",
                 "Example",
                 "User",
@@ -379,25 +386,31 @@ public class UserServiceTests {
         );
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(savedUser);
 
-        when(userMapper.toEntity(createDto)).thenReturn(user);
+        when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
         when(userRepository.existsByEmail(user.getEmail())).thenReturn(false);
         when(userRepository.existsByUsername(user.getUsername())).thenReturn(false);
+        when(keycloakAdminService.createUser(createDto)).thenReturn(user.getKeycloakId());
+        when(userRepository.existsByKeycloakId(keycloakId)).thenReturn(false);
         when(userRepository.save(user)).thenReturn(savedUser);
         when(userMapper.toResponseDto(savedUser)).thenReturn(responseDto);
 
         UserResponseDto result = userService.createUser(createDto);
 
         assertEquals(responseDto, result);
-        verify(userMapper, times(1)).toEntity(createDto);
+        verify(userMapper, times(1)).toEntity(createDto, keycloakId);
         verify(userRepository, times(1)).existsByEmail(user.getEmail());
         verify(userRepository, times(1)).existsByUsername(user.getUsername());
+        verify(keycloakAdminService, times(1)).createUser(createDto);
+        verify(userRepository, times(1)).existsByKeycloakId(user.getKeycloakId());
         verify(userRepository, times(1)).save(user);
         verify(userMapper, times(1)).toResponseDto(savedUser);
     }
 
     @Test
     void testCreateUser_EmailAlreadyExists() {
+        String keycloakId = "keycloak-uuid-1";
         User user = User.builder()
+                .keycloakId(keycloakId)
                 .email("user1@example.com")
                 .username("User1")
                 .firstName("Example")
@@ -409,24 +422,27 @@ public class UserServiceTests {
 
         UserCreateDto createDto = new UserCreateDto(
                 "user1@example.com",
+                "password",
                 "User1",
                 "Example",
                 "User",
                 "+407777777777"
         );
 
-        when(userMapper.toEntity(createDto)).thenReturn(user);
+        when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
         when(userRepository.existsByEmail(user.getEmail())).thenReturn(true);
 
         DuplicateAttributeException exception = assertThrows(DuplicateAttributeException.class,
                 () -> userService.createUser(createDto));
 
-        assertEquals("Email user1@example.com already exists", exception.getMessage());
+        assertEquals(String.format("Email %s already exists", createDto.getEmail()), exception.getMessage());
     }
 
     @Test
     void testCreateUser_UsernameAlreadyExists() {
+        String keycloakId = "keycloak-uuid-1";
         User user = User.builder()
+                .keycloakId(keycloakId)
                 .email("user1@example.com")
                 .username("User1")
                 .firstName("Example")
@@ -438,13 +454,14 @@ public class UserServiceTests {
 
         UserCreateDto createDto = new UserCreateDto(
                 "user1@example.com",
+                "password",
                 "User1",
                 "Example",
                 "User",
                 "+407777777777"
         );
 
-        when(userMapper.toEntity(createDto)).thenReturn(user);
+        when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
         when(userRepository.existsByEmail(user.getEmail())).thenReturn(false);
         when(userRepository.existsByUsername(user.getUsername())).thenReturn(true);
 
@@ -452,6 +469,41 @@ public class UserServiceTests {
                 () -> userService.createUser(createDto));
 
         assertEquals(String.format("Username %s already exists", createDto.getUsername()), exception.getMessage());
+    }
+
+    @Test
+    void testCreateUser_UserAlreadyExists() {
+        String keycloakId = "keycloak-uuid-1";
+        User user = User.builder()
+                .keycloakId(keycloakId)
+                .email("user1@example.com")
+                .username("User1")
+                .firstName("Example")
+                .lastName("User")
+                .phoneNumber("+407777777777")
+                .active(false)
+                .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
+                .build();
+
+        UserCreateDto createDto = new UserCreateDto(
+                "user1@example.com",
+                "password",
+                "User1",
+                "Example",
+                "User",
+                "+407777777777"
+        );
+
+        when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
+        when(userRepository.existsByEmail(user.getEmail())).thenReturn(false);
+        when(userRepository.existsByUsername(user.getUsername())).thenReturn(false);
+        when(keycloakAdminService.createUser(createDto)).thenReturn(user.getKeycloakId());
+        when(userRepository.existsByKeycloakId(keycloakId)).thenReturn(true);
+
+        DuplicateAttributeException exception = assertThrows(DuplicateAttributeException.class,
+                () -> userService.createUser(createDto));
+
+        assertEquals("User already registered", exception.getMessage());
     }
 
     @Test

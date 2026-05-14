@@ -132,15 +132,17 @@ public class ProjectServiceTests {
         );
         ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(savedProject);
 
-        when(projectMapper.toEntity(createDto)).thenReturn(project);
+        when(userRepository.findByKeycloakId(manager.getKeycloakId())).thenReturn(Optional.of(manager));
+        when(projectMapper.toEntity(createDto, manager)).thenReturn(project);
         when(teamRepository.findAllById(teamsIds)).thenReturn(teams);
         when(projectRepository.save(project)).thenReturn(savedProject);
         when(projectMapper.toResponseDto(savedProject)).thenReturn(responseDto);
 
-        ProjectResponseDto result = projectService.createProject(createDto);
+        ProjectResponseDto result = projectService.createProject(createDto, manager.getKeycloakId());
 
         assertEquals(responseDto, result);
-        verify(projectMapper, times(1)).toEntity(createDto);
+        verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
+        verify(projectMapper, times(1)).toEntity(createDto, manager);
         verify(teamRepository, times(1)).findAllById(teamsIds);
         verify(projectRepository, times(1)).save(project);
         verify(projectMapper, times(1)).toResponseDto(savedProject);
@@ -169,17 +171,76 @@ public class ProjectServiceTests {
         );
         ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(savedProject);
 
-        when(projectMapper.toEntity(createDto)).thenReturn(project);
+        when(userRepository.findByKeycloakId(manager.getKeycloakId())).thenReturn(Optional.of(manager));
+        when(projectMapper.toEntity(createDto, manager)).thenReturn(project);
         when(projectRepository.save(project)).thenReturn(savedProject);
         when(projectMapper.toResponseDto(savedProject)).thenReturn(responseDto);
 
-        ProjectResponseDto result = projectService.createProject(createDto);
+        ProjectResponseDto result = projectService.createProject(createDto,manager.getKeycloakId());
 
         assertEquals(responseDto, result);
-        verify(projectMapper, times(1)).toEntity(createDto);
+        verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
+        verify(projectMapper, times(1)).toEntity(createDto, manager);
         verify(teamRepository, never()).findAllById(any());
         verify(projectRepository, times(1)).save(project);
         verify(projectMapper, times(1)).toResponseDto(savedProject);
+    }
+
+    @Test
+    void testCreateProject_Valid_EmptyTeams() {
+        User manager = BuildInstances.buildUser();
+
+        Project project = Project.builder()
+                .name("Proiectul 1")
+                .description("Descriere 1")
+                .startDate(LocalDate.of(2026, 7, 1))
+                .endDate(LocalDate.of(2026, 12, 31))
+                .manager(manager)
+                .teams(new ArrayList<>())
+                .workItems(new ArrayList<>())
+                .build();
+        Project savedProject = BuildInstances.buildProject();
+        ProjectCreateDto createDto = new ProjectCreateDto(
+                "Proiectul 1",
+                "Descriere 1",
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 12, 31),
+                List.of()
+        );
+        ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(savedProject);
+
+        when(userRepository.findByKeycloakId(manager.getKeycloakId())).thenReturn(Optional.of(manager));
+        when(projectMapper.toEntity(createDto, manager)).thenReturn(project);
+        when(projectRepository.save(project)).thenReturn(savedProject);
+        when(projectMapper.toResponseDto(savedProject)).thenReturn(responseDto);
+
+        ProjectResponseDto result = projectService.createProject(createDto, manager.getKeycloakId());
+
+        assertEquals(responseDto, result);
+        verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
+        verify(projectMapper, times(1)).toEntity(createDto, manager);
+        verify(teamRepository, never()).findAllById(any());
+        verify(projectRepository, times(1)).save(project);
+        verify(projectMapper, times(1)).toResponseDto(savedProject);
+    }
+
+    @Test
+    void testCreateProject_UserNotFound() {
+        String keycloakId = "keycloak-uuid-1";
+        ProjectCreateDto createDto = new ProjectCreateDto(
+                "Proiectul 1",
+                "Descriere 1",
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 12, 31),
+                null
+        );
+
+        when(userRepository.findByKeycloakId(keycloakId)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> projectService.createProject(createDto, keycloakId));
+
+        assertEquals("User not found", exception.getMessage());
     }
 
     @Test

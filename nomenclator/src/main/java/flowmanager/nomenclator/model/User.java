@@ -28,6 +28,9 @@ public class User {
     private Integer id;
 
     @Column(unique = true, nullable = false)
+    private String keycloakId;
+
+    @Column(unique = true, nullable = false)
     private String email;
 
     @Column(unique = true, nullable = false)

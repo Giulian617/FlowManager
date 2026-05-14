@@ -106,6 +106,7 @@ public class TeamServiceTests {
     @Test
     void testCreateTeam_Valid_WithMembers() {
         Organization organization = BuildInstances.buildOrganization();
+        User manager = BuildInstances.buildUser();
         List<User> users = BuildInstances.buildUsers();
         List<Integer> membersIds = List.of(users.get(0).getId(), users.get(1).getId());
 
@@ -114,7 +115,7 @@ public class TeamServiceTests {
                 .description("Descriere 1")
                 .organization(organization)
                 .createdAt(LocalDateTime.of(2026, 5, 1, 15, 23, 30))
-                .manager(null)
+                .manager(manager)
                 .members(users)
                 .projects(new ArrayList<>())
                 .build();
@@ -129,16 +130,18 @@ public class TeamServiceTests {
         TeamResponseDto responseDto = BuildDtos.buildTeamResponseDto(savedTeam);
 
         when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
-        when(teamMapper.toEntity(createDto, organization)).thenReturn(team);
+        when(userRepository.findByKeycloakId(manager.getKeycloakId())).thenReturn(Optional.of(manager));
+        when(teamMapper.toEntity(createDto, organization, manager)).thenReturn(team);
         when(userRepository.findAllById(membersIds)).thenReturn(users);
         when(teamRepository.save(team)).thenReturn(savedTeam);
         when(teamMapper.toResponseDto(savedTeam)).thenReturn(responseDto);
 
-        TeamResponseDto result = teamService.createTeam(createDto);
+        TeamResponseDto result = teamService.createTeam(createDto, manager.getKeycloakId());
 
         assertEquals(responseDto, result);
         verify(organizationRepository, times(1)).findById(organization.getId());
-        verify(teamMapper, times(1)).toEntity(createDto, organization);
+        verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
+        verify(teamMapper, times(1)).toEntity(createDto, organization, manager);
         verify(userRepository, times(1)).findAllById(membersIds);
         verify(teamRepository, times(1)).save(team);
         verify(teamMapper, times(1)).toResponseDto(savedTeam);
@@ -147,13 +150,14 @@ public class TeamServiceTests {
     @Test
     void testCreateTeam_Valid_NoMembers() {
         Organization organization = BuildInstances.buildOrganization();
+        User manager = BuildInstances.buildUser();
 
         Team team = Team.builder()
                 .name("Echipa 1")
                 .description("Descriere 1")
                 .organization(organization)
                 .createdAt(LocalDateTime.of(2026, 5, 1, 15, 23, 30))
-                .manager(null)
+                .manager(manager)
                 .members(null)
                 .projects(new ArrayList<>())
                 .build();
@@ -167,15 +171,17 @@ public class TeamServiceTests {
         TeamResponseDto responseDto = BuildDtos.buildTeamResponseDto(savedTeam);
 
         when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
-        when(teamMapper.toEntity(createDto, organization)).thenReturn(team);
+        when(userRepository.findByKeycloakId(manager.getKeycloakId())).thenReturn(Optional.of(manager));
+        when(teamMapper.toEntity(createDto, organization, manager)).thenReturn(team);
         when(teamRepository.save(team)).thenReturn(savedTeam);
         when(teamMapper.toResponseDto(savedTeam)).thenReturn(responseDto);
 
-        TeamResponseDto result = teamService.createTeam(createDto);
+        TeamResponseDto result = teamService.createTeam(createDto, manager.getKeycloakId());
 
         assertEquals(responseDto, result);
         verify(organizationRepository, times(1)).findById(organization.getId());
-        verify(teamMapper, times(1)).toEntity(createDto, organization);
+        verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
+        verify(teamMapper, times(1)).toEntity(createDto, organization, manager);
         verify(userRepository, never()).findAllById(any());
         verify(teamRepository, times(1)).save(team);
         verify(teamMapper, times(1)).toResponseDto(savedTeam);
@@ -184,13 +190,14 @@ public class TeamServiceTests {
     @Test
     void testCreateTeam_EmptyMembersList() {
         Organization organization = BuildInstances.buildOrganization();
+        User manager = BuildInstances.buildUser();
 
         Team team = Team.builder()
                 .name("Echipa 1")
                 .description("Descriere 1")
                 .organization(organization)
                 .createdAt(LocalDateTime.of(2026, 5, 1, 15, 23, 30))
-                .manager(null)
+                .manager(manager)
                 .members(new ArrayList<>())
                 .projects(new ArrayList<>())
                 .build();
@@ -204,22 +211,45 @@ public class TeamServiceTests {
         TeamResponseDto responseDto = BuildDtos.buildTeamResponseDto(savedTeam);
 
         when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
-        when(teamMapper.toEntity(createDto, organization)).thenReturn(team);
+        when(userRepository.findByKeycloakId(manager.getKeycloakId())).thenReturn(Optional.of(manager));
+        when(teamMapper.toEntity(createDto, organization, manager)).thenReturn(team);
         when(teamRepository.save(team)).thenReturn(savedTeam);
         when(teamMapper.toResponseDto(savedTeam)).thenReturn(responseDto);
 
-        TeamResponseDto result = teamService.createTeam(createDto);
+        TeamResponseDto result = teamService.createTeam(createDto, manager.getKeycloakId());
 
         assertEquals(responseDto, result);
         verify(organizationRepository, times(1)).findById(organization.getId());
-        verify(teamMapper, times(1)).toEntity(createDto, organization);
+        verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
+        verify(teamMapper, times(1)).toEntity(createDto, organization, manager);
         verify(userRepository, never()).findAllById(any());
         verify(teamRepository, times(1)).save(team);
         verify(teamMapper, times(1)).toResponseDto(savedTeam);
     }
 
     @Test
+    void testCreateTeam_UserNotFound() {
+        Organization organization = BuildInstances.buildOrganization();
+        String keycloakId = "keycloak-uuid-1";
+        TeamCreateDto createDto = new TeamCreateDto(
+                "Echipa 1",
+                "Descriere 1",
+                1,
+                null
+        );
+
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        when(userRepository.findByKeycloakId(keycloakId)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> teamService.createTeam(createDto, keycloakId));
+
+        assertEquals("User not found", exception.getMessage());
+    }
+
+    @Test
     void testCreateTeam_OrganizationNotFound() {
+        String keycloakId = "keycloak-uuid-1";
         TeamCreateDto createDto = new TeamCreateDto(
                 "Echipa 1",
                 "Descriere 1",
@@ -230,7 +260,7 @@ public class TeamServiceTests {
         when(organizationRepository.findById(1)).thenReturn(Optional.empty());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> teamService.createTeam(createDto));
+                () -> teamService.createTeam(createDto, keycloakId));
 
         assertEquals("Organization with id 1 not found", exception.getMessage());
     }
@@ -238,6 +268,7 @@ public class TeamServiceTests {
     @Test
     void testCreateTeam_MembersNotFound() {
         Organization organization = BuildInstances.buildOrganization();
+        User manager = BuildInstances.buildUser();
 
         Team team = Team.builder()
                 .name("Echipa 1")
@@ -254,16 +285,18 @@ public class TeamServiceTests {
         );
 
         when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
-        when(teamMapper.toEntity(createDto, organization)).thenReturn(team);
+        when(userRepository.findByKeycloakId(manager.getKeycloakId())).thenReturn(Optional.of(manager));
+        when(teamMapper.toEntity(createDto, organization, manager)).thenReturn(team);
         when(userRepository.findAllById(List.of(1, 2))).thenReturn(List.of(BuildInstances.buildUser()));
 
         NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> teamService.createTeam(createDto));
+                () -> teamService.createTeam(createDto, manager.getKeycloakId()));
 
         assertEquals("One or more users were not found", exception.getMessage());
-        verify(organizationRepository).findById(organization.getId());
-        verify(teamMapper).toEntity(createDto, organization);
-        verify(userRepository).findAllById(List.of(1, 2));
+        verify(organizationRepository, times(1)).findById(organization.getId());
+        verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
+        verify(teamMapper, times(1)).toEntity(createDto, organization, manager);
+        verify(userRepository, times(1)).findAllById(List.of(1, 2));
         verify(teamRepository, never()).save(any());
     }
 

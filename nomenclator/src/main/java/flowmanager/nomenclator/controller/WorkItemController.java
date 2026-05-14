@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -49,10 +51,12 @@ public class WorkItemController {
     @PostMapping("")
     @ResponseBody
     public ResponseEntity<WorkItemResponseDto> createWorkItem(
-            @RequestBody @Valid WorkItemCreateDto workItemCreateDto
+            @RequestBody @Valid WorkItemCreateDto workItemCreateDto,
+            Authentication authentication
     ) {
+        Jwt jwt = (Jwt) authentication.getPrincipal();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(workItemService.createWorkItem(workItemCreateDto));
+                .body(workItemService.createWorkItem(workItemCreateDto, jwt.getSubject()));
     }
 
     @PutMapping("/{workItemId}")

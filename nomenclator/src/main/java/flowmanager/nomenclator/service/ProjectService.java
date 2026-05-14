@@ -52,8 +52,11 @@ public class ProjectService {
     }
 
     @Transactional
-    public ProjectResponseDto createProject(ProjectCreateDto projectCreateDto) {
-        Project project = projectMapper.toEntity(projectCreateDto);
+    public ProjectResponseDto createProject(ProjectCreateDto projectCreateDto, String keycloakId) {
+        User user = userRepository.findByKeycloakId(keycloakId).orElseThrow(
+                () -> new NotFoundException("User not found")
+        );
+        Project project = projectMapper.toEntity(projectCreateDto, user);
 
         if (projectCreateDto.getTeamsIds() != null && !projectCreateDto.getTeamsIds().isEmpty()) {
             List<Team> teams = getTeams(projectCreateDto.getTeamsIds());

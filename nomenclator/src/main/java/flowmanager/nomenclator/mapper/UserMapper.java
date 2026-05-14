@@ -20,8 +20,9 @@ public class UserMapper {
     private final ProjectMapper projectMapper;
     private final OrganizationMapper organizationMapper;
 
-    public User toEntity(UserCreateDto dto) {
+    public User toEntity(UserCreateDto dto, String keycloakId) {
         return User.builder()
+                .keycloakId(keycloakId)
                 .email(dto.getEmail())
                 .username(dto.getUsername())
                 .firstName(dto.getFirstName())

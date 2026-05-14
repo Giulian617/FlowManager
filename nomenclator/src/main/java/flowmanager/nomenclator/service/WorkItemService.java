@@ -76,11 +76,14 @@ public class WorkItemService {
     }
 
     @Transactional
-    public WorkItemResponseDto createWorkItem(WorkItemCreateDto workItemCreateDto) {
+    public WorkItemResponseDto createWorkItem(WorkItemCreateDto workItemCreateDto, String keycloakId) {
         Project project = projectRepository.findById(workItemCreateDto.getProjectId()).orElseThrow(
                 () -> new NotFoundException(String.format("Project with id %d not found", workItemCreateDto.getProjectId()))
         );
-        WorkItem workItem = workItemMapper.toEntity(workItemCreateDto, project);
+        User user = userRepository.findByKeycloakId(keycloakId).orElseThrow(
+                () -> new NotFoundException("User not found")
+        );
+        WorkItem workItem = workItemMapper.toEntity(workItemCreateDto, project, user);
 
         if (workItemCreateDto.getAssigneesIds() != null && !workItemCreateDto.getAssigneesIds().isEmpty()) {
             List<User> assignedUsers = getAssignedUsers(workItemCreateDto.getAssigneesIds());

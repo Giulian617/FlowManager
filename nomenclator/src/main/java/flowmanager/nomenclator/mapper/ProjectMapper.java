@@ -1,12 +1,10 @@
 package flowmanager.nomenclator.mapper;
 
 import flowmanager.nomenclator.dto.*;
-import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.model.Organization;
 import flowmanager.nomenclator.model.Project;
 import flowmanager.nomenclator.model.Team;
 import flowmanager.nomenclator.model.User;
-import flowmanager.nomenclator.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -17,17 +15,15 @@ import java.util.Optional;
 @Component
 @RequiredArgsConstructor
 public class ProjectMapper {
-    private final UserRepository userRepository;
     private final WorkItemMapper workItemMapper;
 
-    public Project toEntity(ProjectCreateDto dto) {
+    public Project toEntity(ProjectCreateDto dto, User manager) {
         return Project.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())
                 .startDate(dto.getStartDate())
                 .endDate(dto.getEndDate())
-                .manager(userRepository.findById(1).orElseThrow(
-                        () -> new NotFoundException(String.format("User with id %d not found", 1)))) // TODO: get from context
+                .manager(manager)
                 .build();
     }
 

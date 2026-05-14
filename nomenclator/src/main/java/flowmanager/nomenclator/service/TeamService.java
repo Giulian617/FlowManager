@@ -53,11 +53,14 @@ public class TeamService {
     }
 
     @Transactional
-    public TeamResponseDto createTeam(TeamCreateDto teamCreateDto) {
+    public TeamResponseDto createTeam(TeamCreateDto teamCreateDto, String keycloakId) {
         Organization organization = organizationRepository.findById(teamCreateDto.getOrganizationId()).orElseThrow(
                 () -> new NotFoundException(String.format("Organization with id %d not found", teamCreateDto.getOrganizationId()))
         );
-        Team team = teamMapper.toEntity(teamCreateDto, organization);
+        User user = userRepository.findByKeycloakId(keycloakId).orElseThrow(
+                () -> new NotFoundException("User not found")
+        );
+        Team team = teamMapper.toEntity(teamCreateDto, organization, user);
         if (teamCreateDto.getMembersIds() != null && !teamCreateDto.getMembersIds().isEmpty()) {
             List<User> members = getMembers(teamCreateDto.getMembersIds());
             team.setMembers(members);

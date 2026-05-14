@@ -7,6 +7,7 @@ import flowmanager.nomenclator.mapper.*;
 import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.CommentRepository;
 import flowmanager.nomenclator.repository.UserRepository;
+import flowmanager.nomenclator.security.KeycloakAdminService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class UserService {
     private final TeamService teamService;
     private final OrganizationService organizationService;
     private final WorkItemService workItemService;
+    private final KeycloakAdminService keycloakAdminService;
 
     private User getUser(Integer userId) {
         return userRepository.findById(userId).orElseThrow(
@@ -104,13 +106,16 @@ public class UserService {
     }
 
     public UserResponseDto createUser(UserCreateDto userCreateDto) {
-        User user = userMapper.toEntity(userCreateDto);
+        if(userRepository.existsByEmail(userCreateDto.getEmail()))
+            throw new DuplicateAttributeException(String.format("Email %s already exists", userCreateDto.getEmail()));
+        if(userRepository.existsByUsername(userCreateDto.getUsername()))
+            throw new DuplicateAttributeException(String.format("Username %s already exists", userCreateDto.getUsername()));
 
-        if(userRepository.existsByEmail(user.getEmail()))
-            throw new DuplicateAttributeException(String.format("Email %s already exists", user.getEmail()));
-        if(userRepository.existsByUsername(user.getUsername()))
-            throw new DuplicateAttributeException(String.format("Username %s already exists", user.getUsername()));
+        String keycloakId = keycloakAdminService.createUser(userCreateDto);
+        if(userRepository.existsByKeycloakId(keycloakId))
+            throw new DuplicateAttributeException("User already registered");
 
+        User user = userMapper.toEntity(userCreateDto, keycloakId);
         return userMapper.toResponseDto(userRepository.save(user));
     }
 

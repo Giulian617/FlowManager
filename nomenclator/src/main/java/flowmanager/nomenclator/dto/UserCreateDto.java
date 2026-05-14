@@ -14,6 +14,9 @@ public class UserCreateDto {
     @Email(message = "The email is not valid")
     private String email;
 
+    @NotBlank(message = "password is required and cannot be blank")
+    private String password;
+
     @NotBlank(message = "username is required and cannot be blank")
     private String username;
 
