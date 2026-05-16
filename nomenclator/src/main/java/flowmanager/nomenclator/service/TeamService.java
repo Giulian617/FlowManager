@@ -2,7 +2,10 @@ package flowmanager.nomenclator.service;
 
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
+import flowmanager.nomenclator.mapper.ProjectMapper;
 import flowmanager.nomenclator.mapper.TeamMapper;
+import flowmanager.nomenclator.mapper.UserMapper;
+import flowmanager.nomenclator.mapper.WorkItemMapper;
 import flowmanager.nomenclator.model.Organization;
 import flowmanager.nomenclator.model.Team;
 import flowmanager.nomenclator.model.User;
@@ -22,6 +25,9 @@ public class TeamService {
     private final UserRepository userRepository;
     private final OrganizationRepository organizationRepository;
     private final TeamMapper teamMapper;
+    private final UserMapper userMapper;
+    private final ProjectMapper projectMapper;
+    private final WorkItemMapper workItemMapper;
 
     private Team getTeam(Integer teamId) {
         return teamRepository.findById(teamId).orElseThrow(
@@ -34,6 +40,32 @@ public class TeamService {
                 .findAll()
                 .stream()
                 .map(teamMapper::toSummaryDto)
+                .toList();
+    }
+
+    public List<UserSummaryDto> findAllMembersByTeamId(Integer teamId) {
+        Team team = getTeam(teamId);
+
+        return team.getMembers().stream()
+                .map(userMapper::toSummaryDto)
+                .toList();
+    }
+
+    public List<ProjectSummaryDto> findAllProjectsByTeamId(Integer teamId) {
+        Team team = getTeam(teamId);
+
+        return team.getProjects().stream()
+                .map(projectMapper::toSummaryDto)
+                .toList();
+    }
+
+    public List<WorkItemSummaryDto> findAllWorkItemsByTeamId(Integer teamId) {
+        Team team = getTeam(teamId);
+
+        return team.getMembers().stream()
+                .flatMap(member -> member.getAssignedWorkItems().stream())
+                .distinct()
+                .map(workItemMapper::toSummaryDto)
                 .toList();
     }
 

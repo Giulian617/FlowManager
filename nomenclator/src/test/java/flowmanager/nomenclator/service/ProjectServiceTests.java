@@ -3,6 +3,7 @@ package flowmanager.nomenclator.service;
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.ProjectMapper;
+import flowmanager.nomenclator.mapper.WorkItemMapper;
 import flowmanager.nomenclator.model.Project;
 import flowmanager.nomenclator.model.Team;
 import flowmanager.nomenclator.model.User;
@@ -38,6 +39,9 @@ public class ProjectServiceTests {
 
     @Mock
     private ProjectMapper projectMapper;
+
+    @Mock
+    private WorkItemMapper workItemMapper;
 
     @Mock
     private WorkItemService workItemService;
@@ -80,6 +84,53 @@ public class ProjectServiceTests {
         assertEquals(0, result.size());
         verify(projectRepository, times(1)).findAll();
         verify(projectMapper, never()).toSummaryDto(any());
+    }
+
+    @Test
+    void testFindAllWorkItemsByProjectId_Valid() {
+        Project project = BuildInstances.buildProject();
+        List<WorkItem> workItems = BuildInstances.buildWorkItems();
+        List<WorkItemSummaryDto> workItemsDto = workItems.stream()
+                .map(BuildDtos::buildWorkItemSummaryDto)
+                .toList();
+        project.setWorkItems(workItems);
+
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+        when(workItemMapper.toSummaryDto(workItems.get(0))).thenReturn(workItemsDto.get(0));
+        when(workItemMapper.toSummaryDto(workItems.get(1))).thenReturn(workItemsDto.get(1));
+
+        List<WorkItemSummaryDto> result = projectService.findAllWorkItemsByProjectId(project.getId());
+
+        assertEquals(2, result.size());
+        assertEquals(workItemsDto.get(0), result.get(0));
+        assertEquals(workItemsDto.get(1), result.get(1));
+        verify(projectRepository, times(1)).findById(project.getId());
+        verify(workItemMapper, times(1)).toSummaryDto(workItems.get(0));
+        verify(workItemMapper, times(1)).toSummaryDto(workItems.get(1));
+    }
+
+    @Test
+    void testFindAllWorkItemsByProjectId_Empty() {
+        Project project = BuildInstances.buildProject();
+        project.setWorkItems(List.of());
+
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+
+        List<WorkItemSummaryDto> result = projectService.findAllWorkItemsByProjectId(project.getId());
+
+        assertEquals(0, result.size());
+        verify(projectRepository, times(1)).findById(project.getId());
+        verify(workItemMapper, never()).toSummaryDto(any());
+    }
+
+    @Test
+    void testFindAllWorkItemsByProjectId_NotFound() {
+        when(projectRepository.findById(1)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> projectService.findAllWorkItemsByProjectId(1));
+
+        assertEquals("Project with id 1 not found", exception.getMessage());
     }
 
     @Test

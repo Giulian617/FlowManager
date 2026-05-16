@@ -15,6 +15,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("work-items")
@@ -32,13 +33,23 @@ public class WorkItemController {
         return ResponseEntity.ok(workItemService.findAllWorkItems(itemType, status, severity));
     }
 
-    @GetMapping("/comments/{workItemId}")
+    @PreAuthorize("@workItemSecurity.canView(authentication, #workItemId)")
+    @GetMapping("/{workItemId}/comments")
     public ResponseEntity<List<CommentResponseWorkItemDto>> getAllCommentsByWorkItemId(
             @PathVariable Integer workItemId
     ) {
         return ResponseEntity.ok(workItemService.findAllCommentsByWorkItemId(workItemId));
     }
 
+    @PreAuthorize("@workItemSecurity.canView(authentication, #workItemId)")
+    @GetMapping("/{workItemId}/children")
+    public ResponseEntity<List<WorkItemSummaryDto>> getAllChildrenByWorkItemId(
+            @PathVariable Integer workItemId
+    ) {
+        return ResponseEntity.ok(workItemService.findAllChildrenByWorkItemId(workItemId));
+    }
+
+    @PreAuthorize("@workItemSecurity.canView(authentication, #workItemId)")
     @GetMapping("/{workItemId}")
     @ResponseBody
     public ResponseEntity<WorkItemResponseDto> getWorkItemById(
@@ -56,9 +67,10 @@ public class WorkItemController {
     ) {
         Jwt jwt = (Jwt) authentication.getPrincipal();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(workItemService.createWorkItem(workItemCreateDto, jwt.getSubject()));
+                .body(workItemService.createWorkItem(workItemCreateDto, Objects.requireNonNull(jwt.getSubject())));
     }
 
+    @PreAuthorize("@workItemSecurity.canModify(authentication, #workItemId)")
     @PutMapping("/{workItemId}")
     @ResponseBody
     public ResponseEntity<WorkItemResponseDto> updateWorkItem(
@@ -68,6 +80,7 @@ public class WorkItemController {
         return ResponseEntity.ok(workItemService.updateWorkItem(workItemId, workItemUpdateDto));
     }
 
+    @PreAuthorize("@workItemSecurity.canModify(authentication, #workItemId)")
     @PutMapping("/{workItemId}/assignees")
     @ResponseBody
     public ResponseEntity<WorkItemResponseDto> assignUsers(
@@ -77,6 +90,7 @@ public class WorkItemController {
         return ResponseEntity.ok(workItemService.assignUsers(workItemId, workItemAssignDto));
     }
 
+    @PreAuthorize("@workItemSecurity.canModify(authentication, #childId)")
     @PutMapping("/{childId}/parent/{parentId}")
     @ResponseBody
     public ResponseEntity<WorkItemResponseDto> setParent(
@@ -86,13 +100,16 @@ public class WorkItemController {
         return ResponseEntity.ok(workItemService.setParent(childId, parentId));
     }
 
-    @DeleteMapping("/{childId}/parent")
+    @PreAuthorize("@workItemSecurity.canModify(authentication, #childId)")
+    @PutMapping("/{childId}/parent")
     @ResponseBody
     public ResponseEntity<WorkItemResponseDto> removeParent(
             @PathVariable Integer childId
     ) {
         return ResponseEntity.ok(workItemService.removeParent(childId));
     }
+
+    @PreAuthorize("@workItemSecurity.canDelete(authentication, #workItemId)")
     @DeleteMapping("/{workItemId}")
     @ResponseBody
     public ResponseEntity<Void> deleteWorkItem(

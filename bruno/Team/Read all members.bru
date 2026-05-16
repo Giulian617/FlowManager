@@ -1,11 +1,11 @@
 meta {
-  name: Delete team
+  name: Read all members
   type: http
-  seq: 9
+  seq: 2
 }
 
-delete {
-  url: {{url}}/teams/1
+get {
+  url: {{url}}/teams/1/members
   body: none
   auth: bearer
 }

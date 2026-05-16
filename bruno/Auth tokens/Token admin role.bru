@@ -1,7 +1,7 @@
 meta {
-  name: Token user
+  name: Token admin role
   type: http
-  seq: 4
+  seq: 1
 }
 
 post {
@@ -18,6 +18,6 @@ body:form-urlencoded {
   grant_type: password
   client_id: flowmanager-client
   client_secret: {{client_secret}}
-  username: example1
-  password: {{default_password}}
+  username: test-admin
+  password: {{Admin_password}}
 }

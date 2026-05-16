@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +25,31 @@ public class TeamController {
         return ResponseEntity.ok(teamService.findAllTeams());
     }
 
+    @PreAuthorize("@teamSecurity.canView(authentication, #teamId)")
+    @GetMapping("/{teamId}/members")
+    public ResponseEntity<List<UserSummaryDto>> getAllMembersByTeamId(
+            @PathVariable Integer teamId
+    ) {
+        return ResponseEntity.ok(teamService.findAllMembersByTeamId(teamId));
+    }
+
+    @PreAuthorize("@teamSecurity.canView(authentication, #teamId)")
+    @GetMapping("/{teamId}/projects")
+    public ResponseEntity<List<ProjectSummaryDto>> getAllProjectsByTeamId(
+            @PathVariable Integer teamId
+    ) {
+        return ResponseEntity.ok(teamService.findAllProjectsByTeamId(teamId));
+    }
+
+    @PreAuthorize("@teamSecurity.canView(authentication, #teamId)")
+    @GetMapping("/{teamId}/work-items")
+    public ResponseEntity<List<WorkItemSummaryDto>> getAllWorkItemsByTeamId(
+            @PathVariable Integer teamId
+    ) {
+        return ResponseEntity.ok(teamService.findAllWorkItemsByTeamId(teamId));
+    }
+
+    @PreAuthorize("@teamSecurity.canView(authentication, #teamId)")
     @GetMapping("/{teamId}")
     @ResponseBody
     public ResponseEntity<TeamResponseDto> getTeamById(
@@ -41,6 +67,7 @@ public class TeamController {
         return ResponseEntity.status(HttpStatus.CREATED).body(teamService.createTeam(teamCreateDto, jwt.getSubject()));
     }
 
+    @PreAuthorize("@teamSecurity.canModify(authentication, #teamId)")
     @PutMapping("/{teamId}")
     @ResponseBody
     public ResponseEntity<TeamResponseDto> updateTeam(
@@ -50,6 +77,7 @@ public class TeamController {
         return ResponseEntity.ok(teamService.updateTeam(teamId, teamUpdateDto));
     }
 
+    @PreAuthorize("@teamSecurity.canModify(authentication, #teamId)")
     @PutMapping("/{teamId}/assignees")
     @ResponseBody
     public ResponseEntity<TeamResponseDto> assignUsers(
@@ -59,6 +87,7 @@ public class TeamController {
         return ResponseEntity.ok(teamService.assignUsers(teamId, teamAssignDto));
     }
 
+    @PreAuthorize("@teamSecurity.canDelete(authentication, #teamId)")
     @DeleteMapping("/{teamId}")
     @ResponseBody
     public ResponseEntity<Void> deleteTeam(

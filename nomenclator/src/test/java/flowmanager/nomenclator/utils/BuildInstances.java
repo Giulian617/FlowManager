@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public final class BuildInstances {
-
     private BuildInstances() {}
 
     public static List<User> buildUsers() {

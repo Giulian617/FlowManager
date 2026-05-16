@@ -2,10 +2,11 @@ package flowmanager.nomenclator.service;
 
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
+import flowmanager.nomenclator.mapper.ProjectMapper;
 import flowmanager.nomenclator.mapper.TeamMapper;
-import flowmanager.nomenclator.model.Organization;
-import flowmanager.nomenclator.model.Team;
-import flowmanager.nomenclator.model.User;
+import flowmanager.nomenclator.mapper.UserMapper;
+import flowmanager.nomenclator.mapper.WorkItemMapper;
+import flowmanager.nomenclator.model.*;
 import flowmanager.nomenclator.repository.OrganizationRepository;
 import flowmanager.nomenclator.repository.TeamRepository;
 import flowmanager.nomenclator.repository.UserRepository;
@@ -37,6 +38,15 @@ public class TeamServiceTests {
 
     @Mock
     private TeamMapper teamMapper;
+
+    @Mock
+    private UserMapper userMapper;
+
+    @Mock
+    private ProjectMapper projectMapper;
+
+    @Mock
+    private WorkItemMapper workItemMapper;
 
     @InjectMocks
     private TeamService teamService;
@@ -76,6 +86,174 @@ public class TeamServiceTests {
         assertEquals(0, result.size());
         verify(teamRepository, times(1)).findAll();
         verify(teamMapper, never()).toSummaryDto(any());
+    }
+
+    @Test
+    void testFindAllMembersByTeamId_Valid() {
+        Team team = BuildInstances.buildTeam();
+        List<User> members = BuildInstances.buildUsers();
+        List<UserSummaryDto> membersDto = members.stream()
+                .map(BuildDtos::buildUserSummaryDto)
+                .toList();
+        team.setMembers(members);
+
+        when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
+        when(userMapper.toSummaryDto(members.get(0))).thenReturn(membersDto.get(0));
+        when(userMapper.toSummaryDto(members.get(1))).thenReturn(membersDto.get(1));
+
+        List<UserSummaryDto> result = teamService.findAllMembersByTeamId(team.getId());
+
+        assertEquals(2, result.size());
+        assertEquals(membersDto.get(0), result.get(0));
+        assertEquals(membersDto.get(1), result.get(1));
+        verify(teamRepository, times(1)).findById(team.getId());
+        verify(userMapper, times(1)).toSummaryDto(members.get(0));
+        verify(userMapper, times(1)).toSummaryDto(members.get(1));
+    }
+
+    @Test
+    void testFindAllMembersByTeamId_Empty() {
+        Team team = BuildInstances.buildTeam();
+        team.setMembers(List.of());
+
+        when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
+
+        List<UserSummaryDto> result = teamService.findAllMembersByTeamId(team.getId());
+
+        assertEquals(0, result.size());
+        verify(teamRepository, times(1)).findById(team.getId());
+        verify(userMapper, never()).toSummaryDto(any());
+    }
+
+    @Test
+    void testFindAllMembersByTeamId_NotFound() {
+        when(teamRepository.findById(1)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> teamService.findAllMembersByTeamId(1));
+
+        assertEquals("Team with id 1 not found", exception.getMessage());
+    }
+
+    @Test
+    void testFindAllProjectsByTeamId_Valid() {
+        Team team = BuildInstances.buildTeam();
+        List<Project> projects = BuildInstances.buildProjects();
+        List<ProjectSummaryDto> projectsDto = projects.stream()
+                .map(BuildDtos::buildProjectSummaryDto)
+                .toList();
+        team.setProjects(projects);
+
+        when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
+        when(projectMapper.toSummaryDto(projects.get(0))).thenReturn(projectsDto.get(0));
+        when(projectMapper.toSummaryDto(projects.get(1))).thenReturn(projectsDto.get(1));
+
+        List<ProjectSummaryDto> result = teamService.findAllProjectsByTeamId(team.getId());
+
+        assertEquals(2, result.size());
+        assertEquals(projectsDto.get(0), result.get(0));
+        assertEquals(projectsDto.get(1), result.get(1));
+        verify(teamRepository, times(1)).findById(team.getId());
+        verify(projectMapper, times(1)).toSummaryDto(projects.get(0));
+        verify(projectMapper, times(1)).toSummaryDto(projects.get(1));
+    }
+
+    @Test
+    void testFindAllProjectsByTeamId_Empty() {
+        Team team = BuildInstances.buildTeam();
+        team.setProjects(List.of());
+
+        when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
+
+        List<ProjectSummaryDto> result = teamService.findAllProjectsByTeamId(team.getId());
+
+        assertEquals(0, result.size());
+        verify(teamRepository, times(1)).findById(team.getId());
+        verify(projectMapper, never()).toSummaryDto(any());
+    }
+
+    @Test
+    void testFindAllProjectsByTeamId_NotFound() {
+        when(teamRepository.findById(1)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> teamService.findAllProjectsByTeamId(1));
+
+        assertEquals("Team with id 1 not found", exception.getMessage());
+    }
+
+    @Test
+    void testFindAllWorkItemsByTeamId_Valid() {
+        Team team = BuildInstances.buildTeam();
+        List<User> members = BuildInstances.buildUsers();
+        List<WorkItem> workItems = BuildInstances.buildWorkItems();
+        List<WorkItemSummaryDto> workItemsDto = workItems.stream()
+                .map(BuildDtos::buildWorkItemSummaryDto)
+                .toList();
+        members.get(0).setAssignedWorkItems(List.of(workItems.get(0)));
+        members.get(1).setAssignedWorkItems(List.of(workItems.get(1)));
+        team.setMembers(members);
+
+        when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
+        when(workItemMapper.toSummaryDto(workItems.get(0))).thenReturn(workItemsDto.get(0));
+        when(workItemMapper.toSummaryDto(workItems.get(1))).thenReturn(workItemsDto.get(1));
+
+        List<WorkItemSummaryDto> result = teamService.findAllWorkItemsByTeamId(team.getId());
+
+        assertEquals(2, result.size());
+        assertEquals(workItemsDto.get(0), result.get(0));
+        assertEquals(workItemsDto.get(1), result.get(1));
+        verify(teamRepository, times(1)).findById(team.getId());
+        verify(workItemMapper, times(1)).toSummaryDto(workItems.get(0));
+        verify(workItemMapper, times(1)).toSummaryDto(workItems.get(1));
+    }
+
+    @Test
+    void testFindAllWorkItemsByTeamId_Distinct() {
+        Team team = BuildInstances.buildTeam();
+        List<User> members = BuildInstances.buildUsers();
+        WorkItem workItem = BuildInstances.buildWorkItem();
+        WorkItemSummaryDto workItemDto = BuildDtos.buildWorkItemSummaryDto(workItem);
+        members.get(0).setAssignedWorkItems(List.of(workItem));
+        members.get(1).setAssignedWorkItems(List.of(workItem));
+        team.setMembers(members);
+
+        when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
+        when(workItemMapper.toSummaryDto(workItem)).thenReturn(workItemDto);
+
+        List<WorkItemSummaryDto> result = teamService.findAllWorkItemsByTeamId(team.getId());
+
+        assertEquals(1, result.size());
+        assertEquals(workItemDto, result.getFirst());
+        verify(teamRepository, times(1)).findById(team.getId());
+        verify(workItemMapper, times(1)).toSummaryDto(workItem);
+    }
+
+    @Test
+    void testFindAllWorkItemsByTeamId_Empty() {
+        Team team = BuildInstances.buildTeam();
+        List<User> members = BuildInstances.buildUsers();
+        members.get(0).setAssignedWorkItems(List.of());
+        members.get(1).setAssignedWorkItems(List.of());
+        team.setMembers(members);
+
+        when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
+
+        List<WorkItemSummaryDto> result = teamService.findAllWorkItemsByTeamId(team.getId());
+
+        assertEquals(0, result.size());
+        verify(teamRepository, times(1)).findById(team.getId());
+        verify(workItemMapper, never()).toSummaryDto(any());
+    }
+
+    @Test
+    void testFindAllWorkItemsByTeamId_NotFound() {
+        when(teamRepository.findById(1)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> teamService.findAllWorkItemsByTeamId(1));
+
+        assertEquals("Team with id 1 not found", exception.getMessage());
     }
 
     @Test

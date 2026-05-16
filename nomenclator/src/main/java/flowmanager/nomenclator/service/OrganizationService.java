@@ -2,8 +2,7 @@ package flowmanager.nomenclator.service;
 
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
-import flowmanager.nomenclator.mapper.OrganizationMapper;
-import flowmanager.nomenclator.mapper.TeamMapper;
+import flowmanager.nomenclator.mapper.*;
 import flowmanager.nomenclator.model.Organization;
 import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.OrganizationRepository;
@@ -21,6 +20,9 @@ public class OrganizationService {
     private final UserRepository userRepository;
     private final OrganizationMapper organizationMapper;
     private final TeamMapper teamMapper;
+    private final UserMapper userMapper;
+    private final ProjectMapper projectMapper;
+    private final WorkItemMapper workItemMapper;
     private final TeamService teamService;
 
     private Organization getOrganization(Integer organizationId) {
@@ -44,6 +46,44 @@ public class OrganizationService {
         return organization.getTeams()
                 .stream()
                 .map(teamMapper::toSummaryOrganizationDto)
+                .toList();
+    }
+
+    public List<UserSummaryDto> findAllUsersByOrganizationId(Integer organizationId) {
+        Organization organization = organizationRepository.findById(organizationId).orElseThrow(
+                () -> new NotFoundException(String.format("Organization with id %d not found", organizationId))
+        );
+
+        return organization.getTeams()
+                .stream()
+                .flatMap(team -> team.getMembers().stream())
+                .distinct()
+                .map(userMapper::toSummaryDto)
+                .toList();
+    }
+
+    public List<ProjectSummaryDto> findAllProjectsByOrganizationId(Integer organizationId) {
+        Organization organization = organizationRepository.findById(organizationId).orElseThrow(
+                () -> new NotFoundException(String.format("Organization with id %d not found", organizationId))
+        );
+
+        return organization.getTeams().stream()
+                .flatMap(team -> team.getProjects().stream())
+                .distinct()
+                .map(projectMapper::toSummaryDto)
+                .toList();
+    }
+
+    public List<WorkItemSummaryDto> findAllWorkItemsByOrganizationId(Integer organizationId) {
+        Organization organization = organizationRepository.findById(organizationId).orElseThrow(
+                () -> new NotFoundException(String.format("Organization with id %d not found", organizationId))
+        );
+
+        return organization.getTeams().stream()
+                .flatMap(team -> team.getProjects().stream())
+                .flatMap(project -> project.getWorkItems().stream())
+                .distinct()
+                .map(workItemMapper::toSummaryDto)
                 .toList();
     }
 

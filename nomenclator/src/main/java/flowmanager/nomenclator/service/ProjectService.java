@@ -3,6 +3,7 @@ package flowmanager.nomenclator.service;
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.ProjectMapper;
+import flowmanager.nomenclator.mapper.WorkItemMapper;
 import flowmanager.nomenclator.model.Project;
 import flowmanager.nomenclator.model.Team;
 import flowmanager.nomenclator.model.User;
@@ -22,6 +23,7 @@ public class ProjectService {
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
     private final ProjectMapper projectMapper;
+    private final WorkItemMapper workItemMapper;
     private final WorkItemService workItemService;
 
     private Project getProject(Integer projectId) {
@@ -35,6 +37,14 @@ public class ProjectService {
                 .findAll()
                 .stream()
                 .map(projectMapper::toSummaryDto)
+                .toList();
+    }
+
+    public List<WorkItemSummaryDto> findAllWorkItemsByProjectId(Integer projectId) {
+        Project project = getProject(projectId);
+
+        return project.getWorkItems().stream()
+                .map(workItemMapper::toSummaryDto)
                 .toList();
     }
 

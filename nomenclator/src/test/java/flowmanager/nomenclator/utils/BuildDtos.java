@@ -6,7 +6,6 @@ import flowmanager.nomenclator.model.*;
 import java.util.Optional;
 
 public final class BuildDtos {
-
     private BuildDtos() {}
 
     public static UserSummaryDto buildUserSummaryDto(User user) {
