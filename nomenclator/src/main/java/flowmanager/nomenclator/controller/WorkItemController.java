@@ -80,16 +80,6 @@ public class WorkItemController {
         return ResponseEntity.ok(workItemService.updateWorkItem(workItemId, workItemUpdateDto));
     }
 
-    @PreAuthorize("@workItemSecurity.canModify(authentication, #workItemId)")
-    @PutMapping("/{workItemId}/assignees")
-    @ResponseBody
-    public ResponseEntity<WorkItemResponseDto> assignUsers(
-            @PathVariable Integer workItemId,
-            @RequestBody @Valid WorkItemAssignDto workItemAssignDto
-    ) {
-        return ResponseEntity.ok(workItemService.assignUsers(workItemId, workItemAssignDto));
-    }
-
     @PreAuthorize("@workItemSecurity.canModify(authentication, #childId)")
     @PutMapping("/{childId}/parent/{parentId}")
     @ResponseBody

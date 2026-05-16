@@ -17,13 +17,13 @@ public class WorkItemSecurity {
         if (Utils.isNotAuthenticated(auth)) return false;
         if (Utils.isAdmin(auth)) return true;
 
-        Integer currentUserId = Utils.getCurrentUserId(auth);
+        String currentUserId = Utils.getCurrentUserId(auth);
         return workItemRepository.findById(workItemId).map(workItem ->
                 workItem.getProject().getTeams().stream()
                         .anyMatch(team ->
-                                team.getManager().getId().equals(currentUserId) ||
-                                        team.getOrganization().getManager().getId().equals(currentUserId) ||
-                                        team.getMembers().stream().anyMatch(member -> member.getId().equals(currentUserId))
+                                team.getManager().getKeycloakId().equals(currentUserId) ||
+                                        team.getOrganization().getManager().getKeycloakId().equals(currentUserId) ||
+                                        team.getMembers().stream().anyMatch(member -> member.getKeycloakId().equals(currentUserId))
                         )
         ).orElse(false);
     }
@@ -40,16 +40,16 @@ public class WorkItemSecurity {
         if (Utils.isNotAuthenticated(auth)) return false;
         if (Utils.isAdmin(auth)) return true;
 
-        Integer currentUserId = Utils.getCurrentUserId(auth);
+        String currentUserId = Utils.getCurrentUserId(auth);
         return workItemRepository.findById(workItemId).map(workItem -> {
-            if (workItem.getReporter().getId().equals(currentUserId))
+            if (workItem.getReporter().getKeycloakId().equals(currentUserId))
                 return true;
-            if (workItem.getProject().getManager().getId().equals(currentUserId))
+            if (workItem.getProject().getManager().getKeycloakId().equals(currentUserId))
                 return true;
             return workItem.getProject().getTeams().stream()
                     .anyMatch(team ->
-                            team.getManager().getId().equals(currentUserId) ||
-                                    team.getOrganization().getManager().getId().equals(currentUserId)
+                            team.getManager().getKeycloakId().equals(currentUserId) ||
+                                    team.getOrganization().getManager().getKeycloakId().equals(currentUserId)
                     );
         }).orElse(false);
     }
@@ -58,14 +58,14 @@ public class WorkItemSecurity {
         if (Utils.isNotAuthenticated(auth)) return false;
         if (Utils.isAdmin(auth)) return true;
 
-        Integer currentUserId = Utils.getCurrentUserId(auth);
+        String currentUserId = Utils.getCurrentUserId(auth);
         return workItemRepository.findById(workItemId).map(workItem -> {
-            if (workItem.getProject().getManager().getId().equals(currentUserId))
+            if (workItem.getProject().getManager().getKeycloakId().equals(currentUserId))
                 return true;
             return workItem.getProject().getTeams().stream()
                     .anyMatch(team ->
-                            team.getManager().getId().equals(currentUserId) ||
-                                    team.getOrganization().getManager().getId().equals(currentUserId)
+                            team.getManager().getKeycloakId().equals(currentUserId) ||
+                                    team.getOrganization().getManager().getKeycloakId().equals(currentUserId)
                     );
         }).orElse(false);
     }

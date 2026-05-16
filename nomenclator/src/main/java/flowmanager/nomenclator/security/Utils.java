@@ -23,9 +23,9 @@ public class Utils {
                 .anyMatch(role -> role.equals("ROLE_ADMIN") || role.equals("ROLE_MANAGER"));
     }
 
-    public static Integer getCurrentUserId(Authentication auth) {
+    public static String getCurrentUserId(Authentication auth) {
         Jwt jwt = (Jwt) auth.getPrincipal();
-        return Integer.parseInt(jwt.getSubject());
+        return jwt.getSubject();
     }
 
     public static boolean isNotAuthenticated(Authentication auth) {

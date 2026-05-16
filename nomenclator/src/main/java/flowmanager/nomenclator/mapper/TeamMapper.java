@@ -46,7 +46,8 @@ public class TeamMapper {
         User manager = team.getManager();
         return new UserSummaryDto(
                 manager.getId(),
-                manager.getUsername()
+                manager.getUsername(),
+                manager.getRole()
         );
     }
 

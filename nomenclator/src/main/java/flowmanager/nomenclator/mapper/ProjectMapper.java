@@ -54,7 +54,8 @@ public class ProjectMapper {
         User manager = team.getManager();
         UserSummaryDto managerSummaryDto = new UserSummaryDto(
                 manager.getId(),
-                manager.getUsername()
+                manager.getUsername(),
+                manager.getRole()
         );
 
         return TeamSummaryDto.builder()
@@ -70,7 +71,8 @@ public class ProjectMapper {
         User manager = project.getManager();
         UserSummaryDto managerDto = new UserSummaryDto(
                 manager.getId(),
-                manager.getUsername()
+                manager.getUsername(),
+                manager.getRole()
         );
 
         List<WorkItemSummaryDto> workItemsDto = new ArrayList<>();

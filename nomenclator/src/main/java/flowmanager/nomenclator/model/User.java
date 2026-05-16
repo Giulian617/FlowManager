@@ -46,6 +46,9 @@ public class User {
     private String phoneNumber;
 
     @Column(nullable = false)
+    private Role role;
+
+    @Column(nullable = false)
     private Boolean active;
 
     @Column(nullable = false)

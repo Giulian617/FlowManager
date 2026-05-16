@@ -62,16 +62,6 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.updateProject(projectId, projectUpdateDto));
     }
 
-    @PreAuthorize("@projectSecurity.canModify(authentication, #projectId)")
-    @PutMapping("/{projectId}/assign")
-    @ResponseBody
-    public ResponseEntity<ProjectResponseDto> assignTeams(
-            @PathVariable Integer projectId,
-            @RequestBody @Valid ProjectAssignDto projectAssignDto
-    ) {
-        return ResponseEntity.ok(projectService.assignTeams(projectId, projectAssignDto));
-    }
-
     @PreAuthorize("@projectSecurity.canDelete(authentication, #projectId)")
     @DeleteMapping("/{projectId}")
     @ResponseBody

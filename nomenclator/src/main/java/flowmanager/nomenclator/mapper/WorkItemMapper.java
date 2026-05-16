@@ -56,7 +56,8 @@ public class WorkItemMapper {
         return assignedUsers.stream()
                 .map(assignedUser -> new UserSummaryDto(
                         assignedUser.getId(),
-                        assignedUser.getUsername()
+                        assignedUser.getUsername(),
+                        assignedUser.getRole()
                 ))
                 .toList();
     }
@@ -78,7 +79,8 @@ public class WorkItemMapper {
         User reporter = workItem.getReporter();
         UserSummaryDto reporterDto = new UserSummaryDto(
                 reporter.getId(),
-                reporter.getUsername()
+                reporter.getUsername(),
+                reporter.getRole()
         );
 
         List<UserSummaryDto> assigneesDto = mapAssignees(workItem.getAssignees());

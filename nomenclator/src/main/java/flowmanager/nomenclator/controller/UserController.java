@@ -103,7 +103,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(userCreateDto));
     }
 
-    @PreAuthorize("@userSecurity.canView(authentication, #userId)")
+    @PreAuthorize("@userSecurity.canUpdate(authentication, #userId, #userUpdateDto)")
     @PutMapping("/{userId}")
     @ResponseBody
     public ResponseEntity<UserResponseDto> updateUser(

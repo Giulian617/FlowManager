@@ -100,44 +100,45 @@ public class TeamService {
         return teamMapper.toResponseDto(teamRepository.save(team));
     }
 
+    @Transactional
     public TeamResponseDto updateTeam(Integer teamId, TeamUpdateDto teamUpdateDto) {
         Team team = getTeam(teamId);
+
         Organization organization = team.getOrganization();
         if(teamUpdateDto.getOrganizationId() != null) {
             organization = organizationRepository.findById(teamUpdateDto.getOrganizationId()).orElseThrow(
                     () -> new NotFoundException(String.format("Organization with id %d not found", teamUpdateDto.getOrganizationId()))
             );
         }
+
         User manager = team.getManager();
         if(teamUpdateDto.getManagerId() != null) {
             manager = userRepository.findById(teamUpdateDto.getManagerId()).orElseThrow(
                     () -> new NotFoundException(String.format("Manager with id %d not found", teamUpdateDto.getManagerId()))
             );
         }
+
+        if(teamUpdateDto.getMembersIds() != null && !teamUpdateDto.getMembersIds().isEmpty()) {
+            List<User> previousMembers = team.getMembers();
+            List<User> newMembers = getMembers(teamUpdateDto.getMembersIds());
+
+            previousMembers.forEach(user -> {
+                if (!newMembers.contains(user)) {
+                    user.getAssignedTeams().remove(team);
+                }
+            });
+
+            newMembers.forEach(user -> {
+                if (!user.getAssignedTeams().contains(team)) {
+                    user.getAssignedTeams().add(team);
+                }
+            });
+
+            team.setMembers(newMembers);
+        }
+
         teamMapper.updateEntityFromDto(teamUpdateDto, team, organization, manager);
 
-        return teamMapper.toResponseDto(teamRepository.save(team));
-    }
-
-    @Transactional
-    public TeamResponseDto assignUsers(Integer teamId, TeamAssignDto teamAssignDto) {
-        Team team = getTeam(teamId);
-        List<User> previousMembers = team.getMembers();
-        List<User> newMembers = getMembers(teamAssignDto.getMembersIds());
-
-        previousMembers.forEach(user -> {
-            if (!newMembers.contains(user)) {
-                user.getAssignedTeams().remove(team);
-            }
-        });
-
-        newMembers.forEach(user -> {
-            if (!user.getAssignedTeams().contains(team)) {
-                user.getAssignedTeams().add(team);
-            }
-        });
-
-        team.setMembers(newMembers);
         return teamMapper.toResponseDto(teamRepository.save(team));
     }
 

@@ -106,32 +106,31 @@ public class WorkItemService {
         return workItemMapper.toResponseDto(workItem);
     }
 
+    @Transactional
     public WorkItemResponseDto updateWorkItem(Integer workItemId, WorkItemUpdateDto workItemUpdateDto) {
         WorkItem workItem = getWorkItem(workItemId);
+
+        if(workItemUpdateDto.getAssigneesIds() != null && !workItemUpdateDto.getAssigneesIds().isEmpty()) {
+            List<User> previousAssignees = workItem.getAssignees();
+            List<User> newAssignees = getAssignedUsers(workItemUpdateDto.getAssigneesIds());
+
+            previousAssignees.forEach(user -> {
+                if (!newAssignees.contains(user)) {
+                    user.getAssignedWorkItems().remove(workItem);
+                }
+            });
+
+            newAssignees.forEach(user -> {
+                if (!user.getAssignedWorkItems().contains(workItem)) {
+                    user.getAssignedWorkItems().add(workItem);
+                }
+            });
+
+            workItem.setAssignees(newAssignees);
+        }
+
         workItemMapper.updateEntityFromDto(workItemUpdateDto, workItem);
 
-        return workItemMapper.toResponseDto(workItemRepository.save(workItem));
-    }
-
-    @Transactional
-    public WorkItemResponseDto assignUsers(Integer workItemId, WorkItemAssignDto workItemAssignDto) {
-        WorkItem workItem = getWorkItem(workItemId);
-        List<User> previousAssignees = workItem.getAssignees();
-        List<User> newAssignees = getAssignedUsers(workItemAssignDto.getAssigneesIds());
-
-        previousAssignees.forEach(user -> {
-            if (!newAssignees.contains(user)) {
-                user.getAssignedWorkItems().remove(workItem);
-            }
-        });
-
-        newAssignees.forEach(user -> {
-            if (!user.getAssignedWorkItems().contains(workItem)) {
-                user.getAssignedWorkItems().add(workItem);
-            }
-        });
-
-        workItem.setAssignees(newAssignees);
         return workItemMapper.toResponseDto(workItemRepository.save(workItem));
     }
 

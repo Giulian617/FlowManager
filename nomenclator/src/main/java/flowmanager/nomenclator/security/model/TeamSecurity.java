@@ -17,14 +17,14 @@ public class TeamSecurity {
         if (Utils.isAdmin(auth))
             return true;
 
-        Integer currentUserId = Utils.getCurrentUserId(auth);
+        String currentUserId = Utils.getCurrentUserId(auth);
         return teamRepository.findById(teamId).map(team -> {
-            if (team.getManager().getId().equals(currentUserId))
+            if (team.getManager().getKeycloakId().equals(currentUserId))
                 return true;
-            if (team.getOrganization().getManager().getId().equals(currentUserId))
+            if (team.getOrganization().getManager().getKeycloakId().equals(currentUserId))
                 return true;
             return team.getMembers().stream()
-                    .anyMatch(member -> member.getId().equals(currentUserId));
+                    .anyMatch(member -> member.getKeycloakId().equals(currentUserId));
         }).orElse(false);
     }
 
@@ -38,9 +38,9 @@ public class TeamSecurity {
         if (Utils.isAdmin(auth))
             return true;
 
-        Integer currentUserId = Utils.getCurrentUserId(auth);
+        String currentUserId = Utils.getCurrentUserId(auth);
         return teamRepository.findById(teamId)
-                .map(team -> team.getOrganization().getManager().getId().equals(currentUserId))
+                .map(team -> team.getOrganization().getManager().getKeycloakId().equals(currentUserId))
                 .orElse(false);
     }
 }

@@ -363,7 +363,7 @@ public class UserServiceTests {
     }
 
     @Test
-    void testCreateUser_Valid() {
+    void testCreateUser_WithoutRole() {
         String keycloakId = "keycloak-uuid-1";
         User user = User.builder()
                 .keycloakId(keycloakId)
@@ -382,132 +382,152 @@ public class UserServiceTests {
                 "User1",
                 "Example",
                 "User",
-                "+407777777777"
+                "+407777777777",
+                null
         );
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(savedUser);
 
-        when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
+
         when(userRepository.existsByEmail(user.getEmail())).thenReturn(false);
         when(userRepository.existsByUsername(user.getUsername())).thenReturn(false);
         when(keycloakAdminService.createUser(createDto)).thenReturn(user.getKeycloakId());
         when(userRepository.existsByKeycloakId(keycloakId)).thenReturn(false);
+        doNothing().when(keycloakAdminService).assignRole(keycloakId, Role.USER);
+        when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
         when(userRepository.save(user)).thenReturn(savedUser);
         when(userMapper.toResponseDto(savedUser)).thenReturn(responseDto);
 
         UserResponseDto result = userService.createUser(createDto);
 
         assertEquals(responseDto, result);
-        verify(userMapper, times(1)).toEntity(createDto, keycloakId);
         verify(userRepository, times(1)).existsByEmail(user.getEmail());
         verify(userRepository, times(1)).existsByUsername(user.getUsername());
         verify(keycloakAdminService, times(1)).createUser(createDto);
         verify(userRepository, times(1)).existsByKeycloakId(user.getKeycloakId());
+        verify(keycloakAdminService, times(1)).assignRole(keycloakId, Role.USER);
+        verify(userMapper, times(1)).toEntity(createDto, keycloakId);
+        verify(userRepository, times(1)).save(user);
+        verify(userMapper, times(1)).toResponseDto(savedUser);
+    }
+
+    @Test
+    void testCreateUser_WithRole() {
+        String keycloakId = "keycloak-uuid-1";
+        User user = User.builder()
+                .keycloakId(keycloakId)
+                .email("user1@example.com")
+                .username("User1")
+                .firstName("Example")
+                .lastName("User")
+                .phoneNumber("+407777777777")
+                .role(Role.MANAGER)
+                .active(false)
+                .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
+                .build();
+        User savedUser = BuildInstances.buildUser();
+        UserCreateDto createDto = new UserCreateDto(
+                "user1@example.com",
+                "password",
+                "User1",
+                "Example",
+                "User",
+                "+407777777777",
+                Role.MANAGER
+        );
+        UserResponseDto responseDto = BuildDtos.buildUserResponseDto(savedUser);
+
+        when(userRepository.existsByEmail(createDto.getEmail())).thenReturn(false);
+        when(userRepository.existsByUsername(createDto.getUsername())).thenReturn(false);
+        when(keycloakAdminService.createUser(createDto)).thenReturn(keycloakId);
+        when(userRepository.existsByKeycloakId(keycloakId)).thenReturn(false);
+        doNothing().when(keycloakAdminService).assignRole(keycloakId, Role.MANAGER);
+        when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
+        when(userRepository.save(user)).thenReturn(savedUser);
+        when(userMapper.toResponseDto(savedUser)).thenReturn(responseDto);
+
+        UserResponseDto result = userService.createUser(createDto);
+
+        assertEquals(responseDto, result);
+        verify(userRepository, times(1)).existsByEmail(user.getEmail());
+        verify(userRepository, times(1)).existsByUsername(user.getUsername());
+        verify(keycloakAdminService, times(1)).createUser(createDto);
+        verify(userRepository, times(1)).existsByKeycloakId(user.getKeycloakId());
+        verify(keycloakAdminService, times(1)).assignRole(keycloakId, Role.MANAGER);
+        verify(userMapper, times(1)).toEntity(createDto, keycloakId);
         verify(userRepository, times(1)).save(user);
         verify(userMapper, times(1)).toResponseDto(savedUser);
     }
 
     @Test
     void testCreateUser_EmailAlreadyExists() {
-        String keycloakId = "keycloak-uuid-1";
-        User user = User.builder()
-                .keycloakId(keycloakId)
-                .email("user1@example.com")
-                .username("User1")
-                .firstName("Example")
-                .lastName("User")
-                .phoneNumber("+407777777777")
-                .active(false)
-                .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
-                .build();
-
         UserCreateDto createDto = new UserCreateDto(
                 "user1@example.com",
                 "password",
                 "User1",
                 "Example",
                 "User",
-                "+407777777777"
+                "+407777777777",
+                null
         );
 
-        when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
-        when(userRepository.existsByEmail(user.getEmail())).thenReturn(true);
+        when(userRepository.existsByEmail(createDto.getEmail())).thenReturn(true);
 
         DuplicateAttributeException exception = assertThrows(DuplicateAttributeException.class,
                 () -> userService.createUser(createDto));
 
         assertEquals(String.format("Email %s already exists", createDto.getEmail()), exception.getMessage());
+        verify(keycloakAdminService, never()).createUser(any());
     }
 
     @Test
     void testCreateUser_UsernameAlreadyExists() {
-        String keycloakId = "keycloak-uuid-1";
-        User user = User.builder()
-                .keycloakId(keycloakId)
-                .email("user1@example.com")
-                .username("User1")
-                .firstName("Example")
-                .lastName("User")
-                .phoneNumber("+407777777777")
-                .active(false)
-                .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
-                .build();
-
         UserCreateDto createDto = new UserCreateDto(
                 "user1@example.com",
                 "password",
                 "User1",
                 "Example",
                 "User",
-                "+407777777777"
+                "+407777777777",
+                null
         );
 
-        when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
-        when(userRepository.existsByEmail(user.getEmail())).thenReturn(false);
-        when(userRepository.existsByUsername(user.getUsername())).thenReturn(true);
+        when(userRepository.existsByEmail(createDto.getEmail())).thenReturn(false);
+        when(userRepository.existsByUsername(createDto.getUsername())).thenReturn(true);
 
         DuplicateAttributeException exception = assertThrows(DuplicateAttributeException.class,
                 () -> userService.createUser(createDto));
 
         assertEquals(String.format("Username %s already exists", createDto.getUsername()), exception.getMessage());
+        verify(keycloakAdminService, never()).createUser(any());
     }
 
     @Test
     void testCreateUser_UserAlreadyExists() {
         String keycloakId = "keycloak-uuid-1";
-        User user = User.builder()
-                .keycloakId(keycloakId)
-                .email("user1@example.com")
-                .username("User1")
-                .firstName("Example")
-                .lastName("User")
-                .phoneNumber("+407777777777")
-                .active(false)
-                .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
-                .build();
-
         UserCreateDto createDto = new UserCreateDto(
                 "user1@example.com",
                 "password",
                 "User1",
                 "Example",
                 "User",
-                "+407777777777"
+                "+407777777777",
+                null
         );
 
-        when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
-        when(userRepository.existsByEmail(user.getEmail())).thenReturn(false);
-        when(userRepository.existsByUsername(user.getUsername())).thenReturn(false);
-        when(keycloakAdminService.createUser(createDto)).thenReturn(user.getKeycloakId());
+        when(userRepository.existsByEmail(createDto.getEmail())).thenReturn(false);
+        when(userRepository.existsByUsername(createDto.getUsername())).thenReturn(false);
+        when(keycloakAdminService.createUser(createDto)).thenReturn(keycloakId);
         when(userRepository.existsByKeycloakId(keycloakId)).thenReturn(true);
 
         DuplicateAttributeException exception = assertThrows(DuplicateAttributeException.class,
                 () -> userService.createUser(createDto));
 
         assertEquals("User already registered", exception.getMessage());
+        verify(keycloakAdminService, never()).assignRole(any(), any());
     }
 
     @Test
-    void testUpdateUser_Valid() {
+    void testUpdateUser_WithoutRole() {
         User user = BuildInstances.buildUser();
         User updatedUser = User.builder()
                 .id(1)
@@ -524,7 +544,8 @@ public class UserServiceTests {
                 "User1 Actualizat",
                 "Example",
                 "User",
-                "+407777777777"
+                "+407777777777",
+                null
         );
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(updatedUser);
 
@@ -541,6 +562,49 @@ public class UserServiceTests {
         verify(userRepository, times(1)).findById(user.getId());
         verify(userRepository, times(1)).existsByEmail(updateDto.getEmail());
         verify(userRepository, times(1)).existsByUsername(updatedUser.getUsername());
+        verify(keycloakAdminService, never()).updateUserRole(any(), any());
+        verify(userMapper, times(1)).updateEntityFromDto(updateDto, user);
+        verify(userRepository, times(1)).save(user);
+        verify(userMapper, times(1)).toResponseDto(updatedUser);
+    }
+
+    @Test
+    void testUpdateUser_WithRole() {
+        User user = BuildInstances.buildUser();
+        User updatedUser = User.builder()
+                .id(1)
+                .email(user.getEmail())
+                .username(user.getUsername())
+                .firstName("Example")
+                .lastName("User")
+                .phoneNumber("+407777777777")
+                .role(Role.MANAGER)
+                .active(false)
+                .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
+                .build();
+        UserUpdateDto updateDto = new UserUpdateDto(
+                null,
+                null,
+                "Example",
+                "User",
+                "+407777777777",
+                Role.MANAGER
+        );
+        UserResponseDto responseDto = BuildDtos.buildUserResponseDto(updatedUser);
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        doNothing().when(keycloakAdminService).updateUserRole(user.getKeycloakId(), Role.MANAGER);
+        doNothing().when(userMapper).updateEntityFromDto(updateDto, user);
+        when(userRepository.save(user)).thenReturn(updatedUser);
+        when(userMapper.toResponseDto(updatedUser)).thenReturn(responseDto);
+
+        UserResponseDto result = userService.updateUser(user.getId(), updateDto);
+
+        assertEquals(responseDto, result);
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(userRepository, never()).existsByEmail(any());
+        verify(userRepository, never()).existsByUsername(any());
+        verify(keycloakAdminService, times(1)).updateUserRole(user.getKeycloakId(), Role.MANAGER);
         verify(userMapper, times(1)).updateEntityFromDto(updateDto, user);
         verify(userRepository, times(1)).save(user);
         verify(userMapper, times(1)).toResponseDto(updatedUser);
@@ -564,11 +628,11 @@ public class UserServiceTests {
                 "User1",
                 "Example",
                 "User",
-                "+407777777777"
+                "+407777777777",
+                null
         );
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(updatedUser);
 
-        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         doNothing().when(userMapper).updateEntityFromDto(updateDto, user);
         when(userRepository.save(user)).thenReturn(updatedUser);
@@ -578,8 +642,9 @@ public class UserServiceTests {
 
         assertEquals(responseDto, result);
         verify(userRepository, times(1)).findById(user.getId());
-        verify(userRepository, times(0)).existsByEmail(updateDto.getEmail());
-        verify(userRepository, times(0)).existsByUsername(updatedUser.getUsername());
+        verify(userRepository, never()).existsByEmail(any());
+        verify(userRepository, never()).existsByUsername(updatedUser.getUsername());
+        verify(keycloakAdminService, never()).updateUserRole(any(), any());
         verify(userMapper, times(1)).updateEntityFromDto(updateDto, user);
         verify(userRepository, times(1)).save(user);
         verify(userMapper, times(1)).toResponseDto(updatedUser);
@@ -603,7 +668,8 @@ public class UserServiceTests {
                 null,
                 "Example",
                 "User",
-                "+407777777777"
+                "+407777777777",
+                null
         );
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(updatedUser);
 
@@ -618,7 +684,8 @@ public class UserServiceTests {
         assertEquals(responseDto, result);
         verify(userRepository, times(1)).findById(user.getId());
         verify(userRepository, times(1)).existsByEmail(updateDto.getEmail());
-        verify(userRepository, times(0)).existsByUsername(updatedUser.getUsername());
+        verify(userRepository, never()).existsByUsername(any());
+        verify(keycloakAdminService, never()).updateUserRole(any(), any());
         verify(userMapper, times(1)).updateEntityFromDto(updateDto, user);
         verify(userRepository, times(1)).save(user);
         verify(userMapper, times(1)).toResponseDto(updatedUser);
@@ -631,7 +698,8 @@ public class UserServiceTests {
                 "User1 Actualizat",
                 "Example",
                 "User",
-                "+407777777777"
+                "+407777777777",
+                null
         );
 
         when(userRepository.findById(1)).thenReturn(Optional.empty());
@@ -650,7 +718,8 @@ public class UserServiceTests {
                 "User1",
                 "Example",
                 "User",
-                "+407777777777"
+                "+407777777777",
+                null
         );
 
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
@@ -670,7 +739,8 @@ public class UserServiceTests {
                 "User1 Actualizat",
                 "Example",
                 "User",
-                "+407777777777"
+                "+407777777777",
+                null
         );
 
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));

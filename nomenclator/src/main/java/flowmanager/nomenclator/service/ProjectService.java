@@ -76,38 +76,37 @@ public class ProjectService {
         return projectMapper.toResponseDto(projectRepository.save(project));
     }
 
+    @Transactional
     public ProjectResponseDto updateProject(Integer projectId, ProjectUpdateDto projectUpdateDto) {
         Project project = getProject(projectId);
+
         User manager = project.getManager();
         if(projectUpdateDto.getManagerId() != null) {
             manager = userRepository.findById(projectUpdateDto.getManagerId()).orElseThrow(
                     () -> new NotFoundException(String.format("Manager with id %d not found", projectUpdateDto.getManagerId()))
             );
         }
+
+        if(projectUpdateDto.getTeamsIds() != null && !projectUpdateDto.getTeamsIds().isEmpty()) {
+            List<Team> previousTeams = project.getTeams();
+            List<Team> newTeams = getTeams(projectUpdateDto.getTeamsIds());
+
+            previousTeams.forEach(team -> {
+                if (!newTeams.contains(team)) {
+                    team.getProjects().remove(project);
+                }
+            });
+
+            newTeams.forEach(team -> {
+                if (!team.getProjects().contains(project)) {
+                    team.getProjects().add(project);
+                }
+            });
+
+            project.setTeams(newTeams);
+        }
+
         projectMapper.updateEntityFromDto(projectUpdateDto, project, manager);
-
-        return projectMapper.toResponseDto(projectRepository.save(project));
-    }
-
-    @Transactional
-    public ProjectResponseDto assignTeams(Integer projectId, ProjectAssignDto projectAssignDto) {
-        Project project = getProject(projectId);
-        List<Team> previousTeams = project.getTeams();
-        List<Team> newTeams = getTeams(projectAssignDto.getTeamsIds());
-
-        previousTeams.forEach(team -> {
-            if (!newTeams.contains(team)) {
-                team.getProjects().remove(project);
-            }
-        });
-
-        newTeams.forEach(team -> {
-            if (!team.getProjects().contains(project)) {
-                team.getProjects().add(project);
-            }
-        });
-
-        project.setTeams(newTeams);
         return projectMapper.toResponseDto(projectRepository.save(project));
     }
 

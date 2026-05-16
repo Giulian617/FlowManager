@@ -12,16 +12,14 @@ public class OrganizationSecurity {
     private final OrganizationRepository organizationRepository;
 
     public boolean canView(Authentication auth, Integer organizationId) {
-        if (Utils.isNotAuthenticated(auth))
-            return false;
-        if (Utils.isAdmin(auth))
-            return true;
+        if (Utils.isNotAuthenticated(auth)) return false;
+        if (Utils.isAdmin(auth)) return true;
 
-        Integer currentUserId = Utils.getCurrentUserId(auth);
-        return organizationRepository.existsByIdAndManagerId(organizationId, currentUserId);
+        String currentUserId = Utils.getCurrentUserId(auth);
+        return organizationRepository.existsByIdAndManagerKeycloakId(organizationId, currentUserId);
     }
 
-    public boolean canModify(Authentication auth, Integer teamId) {
-        return canView(auth, teamId);
+    public boolean canModify(Authentication auth, Integer organizationId) {
+        return canView(auth, organizationId);
     }
 }

@@ -42,7 +42,8 @@ public class CommentMapper {
         User author = comment.getAuthor();
         return new UserSummaryDto(
                 author.getId(),
-                author.getUsername()
+                author.getUsername(),
+                author.getRole()
         );
     }
 

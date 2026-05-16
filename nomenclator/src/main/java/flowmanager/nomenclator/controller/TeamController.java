@@ -76,17 +76,7 @@ public class TeamController {
     ) {
         return ResponseEntity.ok(teamService.updateTeam(teamId, teamUpdateDto));
     }
-
-    @PreAuthorize("@teamSecurity.canModify(authentication, #teamId)")
-    @PutMapping("/{teamId}/assignees")
-    @ResponseBody
-    public ResponseEntity<TeamResponseDto> assignUsers(
-            @PathVariable Integer teamId,
-            @RequestBody @Valid TeamAssignDto teamAssignDto
-    ) {
-        return ResponseEntity.ok(teamService.assignUsers(teamId, teamAssignDto));
-    }
-
+    
     @PreAuthorize("@teamSecurity.canDelete(authentication, #teamId)")
     @DeleteMapping("/{teamId}")
     @ResponseBody

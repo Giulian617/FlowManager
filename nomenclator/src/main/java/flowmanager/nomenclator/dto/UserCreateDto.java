@@ -1,5 +1,6 @@
 package flowmanager.nomenclator.dto;
 
+import flowmanager.nomenclator.model.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -28,4 +29,6 @@ public class UserCreateDto {
 
     @NotBlank(message = "phoneNumber is required and cannot be blank")
     private String phoneNumber;
+
+    private Role role;
 }

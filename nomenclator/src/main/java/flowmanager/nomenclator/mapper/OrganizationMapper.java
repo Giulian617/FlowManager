@@ -43,7 +43,8 @@ public class OrganizationMapper {
         User manager = organization.getManager();
         UserSummaryDto managerDto = new UserSummaryDto(
                 manager.getId(),
-                manager.getUsername()
+                manager.getUsername(),
+                manager.getRole()
         );
 
         List<TeamSummaryOrganizationDto> teamsDto = new ArrayList<>();
@@ -55,7 +56,8 @@ public class OrganizationMapper {
                                     team.getName(),
                                     new UserSummaryDto(
                                             team.getManager().getId(),
-                                            team.getManager().getUsername()
+                                            team.getManager().getUsername(),
+                                            team.getManager().getRole()
                                     )
                             )
                     )

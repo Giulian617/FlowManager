@@ -4,6 +4,7 @@ import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.DuplicateAttributeException;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.*;
+import flowmanager.nomenclator.model.Role;
 import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.CommentRepository;
 import flowmanager.nomenclator.repository.UserRepository;
@@ -115,6 +116,9 @@ public class UserService {
         if(userRepository.existsByKeycloakId(keycloakId))
             throw new DuplicateAttributeException("User already registered");
 
+        Role role = userCreateDto.getRole() != null ? userCreateDto.getRole() : Role.USER;
+        keycloakAdminService.assignRole(keycloakId, role);
+
         User user = userMapper.toEntity(userCreateDto, keycloakId);
         return userMapper.toResponseDto(userRepository.save(user));
     }
@@ -129,6 +133,10 @@ public class UserService {
         if (userUpdateDto.getUsername() != null && !userUpdateDto.getUsername().equals(user.getUsername()) &&
                 userRepository.existsByUsername(userUpdateDto.getUsername())) {
             throw new DuplicateAttributeException(String.format("Username %s already exists", userUpdateDto.getUsername()));
+        }
+
+        if (userUpdateDto.getRole() != null) {
+            keycloakAdminService.updateUserRole(user.getKeycloakId(), userUpdateDto.getRole());
         }
 
         userMapper.updateEntityFromDto(userUpdateDto, user);

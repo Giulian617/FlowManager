@@ -17,12 +17,12 @@ public class CommentSecurity {
         if (Utils.isAdmin(auth))
             return true;
 
-        Integer currentUserId = Utils.getCurrentUserId(auth);
+        String currentUserId = Utils.getCurrentUserId(auth);
         return commentRepository.findById(commentId).map(comment -> {
-            if (comment.getAuthor().getId().equals(currentUserId)) {
+            if (comment.getAuthor().getKeycloakId().equals(currentUserId)) {
                 return true;
             }
-            return comment.getWorkItem().getReporter().getId().equals(currentUserId);
+            return comment.getWorkItem().getReporter().getKeycloakId().equals(currentUserId);
         }).orElse(false);
     }
 }
