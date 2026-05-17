@@ -1,17 +1,22 @@
 meta {
   name: Update team
   type: http
-  seq: 4
+  seq: 7
 }
 
 put {
   url: {{url}}/teams/1
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }
 
 body:json {
   {
-    "description": "Actualizare"
+    "description": "Actualizare",
+    "membersIds": [1,2]
   }
 }

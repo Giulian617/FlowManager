@@ -1,5 +1,6 @@
 package flowmanager.nomenclator.dto;
 
+import flowmanager.nomenclator.model.Role;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,4 +14,5 @@ public class UserUpdateDto {
     private String firstName;
     private String lastName;
     private String phoneNumber;
+    private Role role;
 }

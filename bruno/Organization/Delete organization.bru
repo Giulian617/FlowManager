@@ -1,11 +1,15 @@
 meta {
   name: Delete organization
   type: http
-  seq: 6
+  seq: 9
 }
 
 delete {
   url: {{url}}/organizations/1
-  body: json
-  auth: none
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }

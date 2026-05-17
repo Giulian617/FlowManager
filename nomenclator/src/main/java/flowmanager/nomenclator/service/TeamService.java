@@ -2,7 +2,10 @@ package flowmanager.nomenclator.service;
 
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
+import flowmanager.nomenclator.mapper.ProjectMapper;
 import flowmanager.nomenclator.mapper.TeamMapper;
+import flowmanager.nomenclator.mapper.UserMapper;
+import flowmanager.nomenclator.mapper.WorkItemMapper;
 import flowmanager.nomenclator.model.Organization;
 import flowmanager.nomenclator.model.Team;
 import flowmanager.nomenclator.model.User;
@@ -13,7 +16,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -23,6 +25,9 @@ public class TeamService {
     private final UserRepository userRepository;
     private final OrganizationRepository organizationRepository;
     private final TeamMapper teamMapper;
+    private final UserMapper userMapper;
+    private final ProjectMapper projectMapper;
+    private final WorkItemMapper workItemMapper;
 
     private Team getTeam(Integer teamId) {
         return teamRepository.findById(teamId).orElseThrow(
@@ -35,6 +40,32 @@ public class TeamService {
                 .findAll()
                 .stream()
                 .map(teamMapper::toSummaryDto)
+                .toList();
+    }
+
+    public List<UserSummaryDto> findAllMembersByTeamId(Integer teamId) {
+        Team team = getTeam(teamId);
+
+        return team.getMembers().stream()
+                .map(userMapper::toSummaryDto)
+                .toList();
+    }
+
+    public List<ProjectSummaryDto> findAllProjectsByTeamId(Integer teamId) {
+        Team team = getTeam(teamId);
+
+        return team.getProjects().stream()
+                .map(projectMapper::toSummaryDto)
+                .toList();
+    }
+
+    public List<WorkItemSummaryDto> findAllWorkItemsByTeamId(Integer teamId) {
+        Team team = getTeam(teamId);
+
+        return team.getMembers().stream()
+                .flatMap(member -> member.getAssignedWorkItems().stream())
+                .distinct()
+                .map(workItemMapper::toSummaryDto)
                 .toList();
     }
 
@@ -54,11 +85,14 @@ public class TeamService {
     }
 
     @Transactional
-    public TeamResponseDto createTeam(TeamCreateDto teamCreateDto) {
+    public TeamResponseDto createTeam(TeamCreateDto teamCreateDto, String keycloakId) {
         Organization organization = organizationRepository.findById(teamCreateDto.getOrganizationId()).orElseThrow(
                 () -> new NotFoundException(String.format("Organization with id %d not found", teamCreateDto.getOrganizationId()))
         );
-        Team team = teamMapper.toEntity(teamCreateDto, organization);
+        User user = userRepository.findByKeycloakId(keycloakId).orElseThrow(
+                () -> new NotFoundException("User not found")
+        );
+        Team team = teamMapper.toEntity(teamCreateDto, organization, user);
         if (teamCreateDto.getMembersIds() != null && !teamCreateDto.getMembersIds().isEmpty()) {
             List<User> members = getMembers(teamCreateDto.getMembersIds());
             team.setMembers(members);
@@ -66,44 +100,45 @@ public class TeamService {
         return teamMapper.toResponseDto(teamRepository.save(team));
     }
 
+    @Transactional
     public TeamResponseDto updateTeam(Integer teamId, TeamUpdateDto teamUpdateDto) {
         Team team = getTeam(teamId);
+
         Organization organization = team.getOrganization();
         if(teamUpdateDto.getOrganizationId() != null) {
             organization = organizationRepository.findById(teamUpdateDto.getOrganizationId()).orElseThrow(
                     () -> new NotFoundException(String.format("Organization with id %d not found", teamUpdateDto.getOrganizationId()))
             );
         }
+
         User manager = team.getManager();
         if(teamUpdateDto.getManagerId() != null) {
             manager = userRepository.findById(teamUpdateDto.getManagerId()).orElseThrow(
                     () -> new NotFoundException(String.format("Manager with id %d not found", teamUpdateDto.getManagerId()))
             );
         }
+
+        if(teamUpdateDto.getMembersIds() != null) {
+            List<User> previousMembers = team.getMembers();
+            List<User> newMembers = getMembers(teamUpdateDto.getMembersIds());
+
+            previousMembers.forEach(user -> {
+                if (!newMembers.contains(user)) {
+                    user.getAssignedTeams().remove(team);
+                }
+            });
+
+            newMembers.forEach(user -> {
+                if (!user.getAssignedTeams().contains(team)) {
+                    user.getAssignedTeams().add(team);
+                }
+            });
+
+            team.setMembers(newMembers);
+        }
+
         teamMapper.updateEntityFromDto(teamUpdateDto, team, organization, manager);
 
-        return teamMapper.toResponseDto(teamRepository.save(team));
-    }
-
-    @Transactional
-    public TeamResponseDto assignUsers(Integer teamId, TeamAssignDto teamAssignDto) {
-        Team team = getTeam(teamId);
-        List<User> previousMembers = team.getMembers();
-        List<User> newMembers = getMembers(teamAssignDto.getMembersIds());
-
-        previousMembers.forEach(user -> {
-            if (!newMembers.contains(user)) {
-                user.getAssignedTeams().remove(team);
-            }
-        });
-
-        newMembers.forEach(user -> {
-            if (!user.getAssignedTeams().contains(team)) {
-                user.getAssignedTeams().add(team);
-            }
-        });
-
-        team.setMembers(newMembers);
         return teamMapper.toResponseDto(teamRepository.save(team));
     }
 

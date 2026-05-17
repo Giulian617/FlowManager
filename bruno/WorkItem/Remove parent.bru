@@ -1,11 +1,15 @@
 meta {
   name: Remove parent
   type: http
-  seq: 8
+  seq: 9
 }
 
-delete {
+put {
   url: {{url}}/work-items/2/parent
   body: none
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }

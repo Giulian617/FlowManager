@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +23,7 @@ public class UserController {
         return ResponseEntity.ok(userService.findAllUsers());
     }
 
+    @PreAuthorize("@userSecurity.canView(authentication, #userId)")
     @GetMapping("/{userId}/comments")
     @ResponseBody
     public ResponseEntity<List<CommentResponseUserDto>> getAllCommentsByUserId(
@@ -30,6 +32,7 @@ public class UserController {
         return ResponseEntity.ok(userService.findAllCommentsByUserId(userId));
     }
 
+    @PreAuthorize("@userSecurity.canView(authentication, #userId)")
     @GetMapping("/{userId}/projects")
     @ResponseBody
     public ResponseEntity<List<ProjectSummaryDto>> getAllProjectsByUserId(
@@ -38,6 +41,7 @@ public class UserController {
         return ResponseEntity.ok(userService.findAllProjectsByUserId(userId));
     }
 
+    @PreAuthorize("@userSecurity.canView(authentication, #userId)")
     @GetMapping("/{userId}/organizations")
     @ResponseBody
     public ResponseEntity<List<OrganizationSummaryDto>> getAllOrganizationsByUserId(
@@ -46,6 +50,7 @@ public class UserController {
         return ResponseEntity.ok(userService.findAllOrganizationsByUserId(userId));
     }
 
+    @PreAuthorize("@userSecurity.canView(authentication, #userId)")
     @GetMapping("/{userId}/teams/manager")
     @ResponseBody
     public ResponseEntity<List<TeamSummaryUserDto>> getAllManagedTeamsByUserId(
@@ -54,6 +59,7 @@ public class UserController {
         return ResponseEntity.ok(userService.findAllManagedTeamsByUserId(userId));
     }
 
+    @PreAuthorize("@userSecurity.canView(authentication, #userId)")
     @GetMapping("/{userId}/teams/assignee")
     @ResponseBody
     public ResponseEntity<List<TeamSummaryUserDto>> getAllAssignedTeamsByUserId(
@@ -62,6 +68,7 @@ public class UserController {
         return ResponseEntity.ok(userService.findAllAssignedTeamsByUserId(userId));
     }
 
+    @PreAuthorize("@userSecurity.canView(authentication, #userId)")
     @GetMapping("/{userId}/work-items/reporter")
     @ResponseBody
     public ResponseEntity<List<WorkItemSummaryDto>> getAllReportedWorkItemsByUserId(
@@ -70,6 +77,7 @@ public class UserController {
         return ResponseEntity.ok(userService.findAllReportedWorkItemsByUserId(userId));
     }
 
+    @PreAuthorize("@userSecurity.canView(authentication, #userId)")
     @GetMapping("/{userId}/work-items/assignee")
     @ResponseBody
     public ResponseEntity<List<WorkItemSummaryDto>> getAllAssignedWorkItemsByUserId(
@@ -78,6 +86,7 @@ public class UserController {
         return ResponseEntity.ok(userService.findAllAssignedWorkItemsByUserId(userId));
     }
 
+    @PreAuthorize("@userSecurity.canView(authentication, #userId)")
     @GetMapping("/{userId}")
     @ResponseBody
     public ResponseEntity<UserResponseDto> getUserById(
@@ -94,6 +103,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(userCreateDto));
     }
 
+    @PreAuthorize("@userSecurity.canUpdate(authentication, #userId, #userUpdateDto)")
     @PutMapping("/{userId}")
     @ResponseBody
     public ResponseEntity<UserResponseDto> updateUser(

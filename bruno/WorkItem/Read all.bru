@@ -7,11 +7,15 @@ meta {
 get {
   url: {{url}}/work-items?itemType=Epic&status=To_do&severity=Low
   body: none
-  auth: none
+  auth: bearer
 }
 
 params:query {
   itemType: Epic
   status: To_do
   severity: Low
+}
+
+auth:bearer {
+  token: {{token}}
 }

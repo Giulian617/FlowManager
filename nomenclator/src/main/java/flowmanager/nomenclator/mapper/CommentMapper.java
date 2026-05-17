@@ -1,11 +1,9 @@
 package flowmanager.nomenclator.mapper;
 
 import flowmanager.nomenclator.dto.*;
-import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.model.Comment;
 import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.model.WorkItem;
-import flowmanager.nomenclator.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -15,15 +13,12 @@ import java.util.Optional;
 @Component
 @RequiredArgsConstructor
 public class CommentMapper {
-    private final UserRepository userRepository;
-
-    public Comment toEntity(CommentCreateDto dto, WorkItem workItem) {
+    public Comment toEntity(CommentCreateDto dto, WorkItem workItem, User author) {
         return Comment.builder()
                 .content(dto.getContent())
                 .createdAt(LocalDateTime.now())
                 .workItem(workItem)
-                .author(userRepository.findById(1).orElseThrow(
-                        () -> new NotFoundException(String.format("User with id %d not found", 1)))) // TODO: get from context
+                .author(author)
                 .build();
     }
 
@@ -47,7 +42,8 @@ public class CommentMapper {
         User author = comment.getAuthor();
         return new UserSummaryDto(
                 author.getId(),
-                author.getUsername()
+                author.getUsername(),
+                author.getRole()
         );
     }
 

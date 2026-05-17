@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @SuperBuilder
@@ -19,7 +20,8 @@ import java.time.LocalDate;
         "description",
         "status",
         "severity",
-        "dueDate"
+        "dueDate",
+        "assigneesIds"
 })
 public class WorkItemUpdateDto {
     private String title;
@@ -27,4 +29,5 @@ public class WorkItemUpdateDto {
     private Status status;
     private Severity severity;
     private LocalDate dueDate;
+    private List<Integer> assigneesIds;
 }

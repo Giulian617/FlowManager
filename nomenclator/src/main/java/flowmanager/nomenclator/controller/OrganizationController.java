@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,14 +22,40 @@ public class OrganizationController {
         return ResponseEntity.ok(organizationService.findAllOrganizations());
     }
 
+    @PreAuthorize("@organizationSecurity.canView(authentication, #organizationId)")
     @GetMapping("/{organizationId}/teams")
     @ResponseBody
-    public ResponseEntity<List<TeamSummaryOrganizationDto>> getAllTeamsByUserId(
+    public ResponseEntity<List<TeamSummaryOrganizationDto>> getAllTeamsByOrganizationId(
             @PathVariable Integer organizationId
     ) {
         return ResponseEntity.ok(organizationService.findAllTeamsByOrganizationId(organizationId));
     }
 
+    @PreAuthorize("@organizationSecurity.canView(authentication, #organizationId)")
+    @GetMapping("/{organizationId}/users")
+    public ResponseEntity<List<UserSummaryDto>> getAllUsersByOrganizationId(
+            @PathVariable Integer organizationId
+    ) {
+        return ResponseEntity.ok(organizationService.findAllUsersByOrganizationId(organizationId));
+    }
+
+    @PreAuthorize("@organizationSecurity.canView(authentication, #organizationId)")
+    @GetMapping("/{organizationId}/projects")
+    public ResponseEntity<List<ProjectSummaryDto>> getAllProjectsByOrganizationId(
+            @PathVariable Integer organizationId
+    ) {
+        return ResponseEntity.ok(organizationService.findAllProjectsByOrganizationId(organizationId));
+    }
+
+    @PreAuthorize("@organizationSecurity.canView(authentication, #organizationId)")
+    @GetMapping("/{organizationId}/work-items")
+    public ResponseEntity<List<WorkItemSummaryDto>> getAllWorkItemsByOrganizationId(
+            @PathVariable Integer organizationId
+    ) {
+        return ResponseEntity.ok(organizationService.findAllWorkItemsByOrganizationId(organizationId));
+    }
+
+    @PreAuthorize("@organizationSecurity.canView(authentication, #organizationId)")
     @GetMapping("/{organizationId}")
     public ResponseEntity<OrganizationResponseDto> getOrganizationById(
             @PathVariable Integer organizationId
@@ -44,6 +71,7 @@ public class OrganizationController {
                 .body(organizationService.createOrganization(organizationCreateDto));
     }
 
+    @PreAuthorize("@organizationSecurity.canModify(authentication, #organizationId)")
     @PutMapping("/{organizationId}")
     public ResponseEntity<OrganizationResponseDto> updateOrganization(
             @PathVariable Integer organizationId,

@@ -4,9 +4,11 @@ import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.DuplicateAttributeException;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.*;
+import flowmanager.nomenclator.model.Role;
 import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.CommentRepository;
 import flowmanager.nomenclator.repository.UserRepository;
+import flowmanager.nomenclator.security.KeycloakAdminService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,7 @@ public class UserService {
     private final TeamService teamService;
     private final OrganizationService organizationService;
     private final WorkItemService workItemService;
+    private final KeycloakAdminService keycloakAdminService;
 
     private User getUser(Integer userId) {
         return userRepository.findById(userId).orElseThrow(
@@ -104,14 +107,26 @@ public class UserService {
     }
 
     public UserResponseDto createUser(UserCreateDto userCreateDto) {
-        User user = userMapper.toEntity(userCreateDto);
+        if(userRepository.existsByEmail(userCreateDto.getEmail()))
+            throw new DuplicateAttributeException(String.format("Email %s already exists", userCreateDto.getEmail()));
+        if(userRepository.existsByUsername(userCreateDto.getUsername()))
+            throw new DuplicateAttributeException(String.format("Username %s already exists", userCreateDto.getUsername()));
 
-        if(userRepository.existsByEmail(user.getEmail()))
-            throw new DuplicateAttributeException(String.format("Email %s already exists", user.getEmail()));
-        if(userRepository.existsByUsername(user.getUsername()))
-            throw new DuplicateAttributeException(String.format("Username %s already exists", user.getUsername()));
+        String keycloakId = keycloakAdminService.createUser(userCreateDto);
 
-        return userMapper.toResponseDto(userRepository.save(user));
+        try {
+            if (userRepository.existsByKeycloakId(keycloakId))
+                throw new DuplicateAttributeException("User already registered");
+
+            Role role = userCreateDto.getRole() != null ? userCreateDto.getRole() : Role.USER;
+            keycloakAdminService.assignRole(keycloakId, role);
+
+            User user = userMapper.toEntity(userCreateDto, keycloakId);
+            return userMapper.toResponseDto(userRepository.save(user));
+        } catch (Exception e) {
+            keycloakAdminService.deleteUser(keycloakId);
+            throw e;
+        }
     }
 
     public UserResponseDto updateUser(Integer userId, UserUpdateDto userUpdateDto) {
@@ -124,6 +139,10 @@ public class UserService {
         if (userUpdateDto.getUsername() != null && !userUpdateDto.getUsername().equals(user.getUsername()) &&
                 userRepository.existsByUsername(userUpdateDto.getUsername())) {
             throw new DuplicateAttributeException(String.format("Username %s already exists", userUpdateDto.getUsername()));
+        }
+
+        if (userUpdateDto.getRole() != null) {
+            keycloakAdminService.updateUserRole(user.getKeycloakId(), userUpdateDto.getRole());
         }
 
         userMapper.updateEntityFromDto(userUpdateDto, user);

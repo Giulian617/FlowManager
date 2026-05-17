@@ -1,0 +1,15 @@
+meta {
+  name: Read all members
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{url}}/teams/1/members
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

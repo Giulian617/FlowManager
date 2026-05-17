@@ -1,0 +1,15 @@
+meta {
+  name: Read all work items
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{url}}/organizations/1/work-items
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

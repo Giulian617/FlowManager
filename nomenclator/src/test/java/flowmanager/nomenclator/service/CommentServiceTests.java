@@ -9,6 +9,7 @@ import flowmanager.nomenclator.model.Comment;
 import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.model.WorkItem;
 import flowmanager.nomenclator.repository.CommentRepository;
+import flowmanager.nomenclator.repository.UserRepository;
 import flowmanager.nomenclator.repository.WorkItemRepository;
 import flowmanager.nomenclator.utils.BuildDtos;
 import flowmanager.nomenclator.utils.BuildInstances;
@@ -33,6 +34,9 @@ public class CommentServiceTests {
 
     @Mock
     private WorkItemRepository workItemRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @Mock
     private CommentMapper commentMapper;
@@ -96,21 +100,24 @@ public class CommentServiceTests {
         CommentResponseDto responseDto = BuildDtos.buildCommentResponseDto(savedComment);
 
         when(workItemRepository.findById(workItem.getId())).thenReturn(Optional.of(workItem));
-        when(commentMapper.toEntity(createDto,workItem)).thenReturn(comment);
+        when(userRepository.findByKeycloakId(author.getKeycloakId())).thenReturn(Optional.of(author));
+        when(commentMapper.toEntity(createDto, workItem, author)).thenReturn(comment);
         when(commentRepository.save(comment)).thenReturn(savedComment);
         when(commentMapper.toResponseDto(savedComment)).thenReturn(responseDto);
 
-        CommentResponseDto result = commentService.createComment(createDto);
+        CommentResponseDto result = commentService.createComment(createDto, author.getKeycloakId());
 
         assertEquals(responseDto, result);
         verify(workItemRepository, times(1)).findById(workItem.getId());
-        verify(commentMapper, times(1)).toEntity(createDto, workItem);
+        verify(userRepository, times(1)).findByKeycloakId(author.getKeycloakId());
+        verify(commentMapper, times(1)).toEntity(createDto, workItem, author);
         verify(commentRepository, times(1)).save(comment);
         verify(commentMapper, times(1)).toResponseDto(savedComment);
     }
 
     @Test
     void testCreateComment_WorkItemNotFound() {
+        String keycloakId = "keycloak-uuid-1";
         CommentCreateDto createDto = new CommentCreateDto(
                 "Comentariul 1",
                 1
@@ -119,9 +126,27 @@ public class CommentServiceTests {
         when(workItemRepository.findById(1)).thenReturn(Optional.empty());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> commentService.createComment(createDto));
+                () -> commentService.createComment(createDto, keycloakId));
 
         assertEquals("WorkItem with id 1 not found", exception.getMessage());
+    }
+
+    @Test
+    void testCreateComment_UserNotFound() {
+        String keycloakId = "keycloak-uuid-1";
+        WorkItem workItem = BuildInstances.buildWorkItem();
+        CommentCreateDto createDto = new CommentCreateDto(
+                "Comentariul 1",
+                1
+        );
+
+        when(workItemRepository.findById(1)).thenReturn(Optional.of(workItem));
+        when(userRepository.findByKeycloakId(keycloakId)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> commentService.createComment(createDto, keycloakId));
+
+        assertEquals("User not found", exception.getMessage());
     }
 
     @Test

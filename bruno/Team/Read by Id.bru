@@ -1,11 +1,15 @@
 meta {
   name: Read by Id
   type: http
-  seq: 2
+  seq: 5
 }
 
 get {
   url: {{url}}/teams/1
   body: none
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }

@@ -1,6 +1,7 @@
 package flowmanager.nomenclator.dto;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import flowmanager.nomenclator.model.Role;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,6 +17,7 @@ import java.util.List;
 @JsonPropertyOrder({
         "id",
         "username",
+        "role",
         "firstName",
         "lastName",
         "email",
@@ -33,10 +35,11 @@ import java.util.List;
 })
 public class UserResponseDto {
     private Integer id;
-    private String email;
     private String username;
+    private Role role;
     private String firstName;
     private String lastName;
+    private String email;
     private String phoneNumber;
     private Boolean active;
     private LocalDateTime createdAt;

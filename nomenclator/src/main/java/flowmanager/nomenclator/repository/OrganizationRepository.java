@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface OrganizationRepository extends JpaRepository<Organization, Integer> {
+    boolean existsByIdAndManagerKeycloakId(Integer organizationId, String keycloakId);
+    boolean existsByManagerKeycloakIdAndTeamsMembersKeycloakId(String managerKeycloakId, String memberKeycloakId);
 }

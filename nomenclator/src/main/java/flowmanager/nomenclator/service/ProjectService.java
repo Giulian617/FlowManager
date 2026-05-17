@@ -3,6 +3,7 @@ package flowmanager.nomenclator.service;
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.ProjectMapper;
+import flowmanager.nomenclator.mapper.WorkItemMapper;
 import flowmanager.nomenclator.model.Project;
 import flowmanager.nomenclator.model.Team;
 import flowmanager.nomenclator.model.User;
@@ -22,6 +23,7 @@ public class ProjectService {
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
     private final ProjectMapper projectMapper;
+    private final WorkItemMapper workItemMapper;
     private final WorkItemService workItemService;
 
     private Project getProject(Integer projectId) {
@@ -35,6 +37,14 @@ public class ProjectService {
                 .findAll()
                 .stream()
                 .map(projectMapper::toSummaryDto)
+                .toList();
+    }
+
+    public List<WorkItemSummaryDto> findAllWorkItemsByProjectId(Integer projectId) {
+        Project project = getProject(projectId);
+
+        return project.getWorkItems().stream()
+                .map(workItemMapper::toSummaryDto)
                 .toList();
     }
 
@@ -52,8 +62,11 @@ public class ProjectService {
     }
 
     @Transactional
-    public ProjectResponseDto createProject(ProjectCreateDto projectCreateDto) {
-        Project project = projectMapper.toEntity(projectCreateDto);
+    public ProjectResponseDto createProject(ProjectCreateDto projectCreateDto, String keycloakId) {
+        User user = userRepository.findByKeycloakId(keycloakId).orElseThrow(
+                () -> new NotFoundException("User not found")
+        );
+        Project project = projectMapper.toEntity(projectCreateDto, user);
 
         if (projectCreateDto.getTeamsIds() != null && !projectCreateDto.getTeamsIds().isEmpty()) {
             List<Team> teams = getTeams(projectCreateDto.getTeamsIds());
@@ -63,38 +76,37 @@ public class ProjectService {
         return projectMapper.toResponseDto(projectRepository.save(project));
     }
 
+    @Transactional
     public ProjectResponseDto updateProject(Integer projectId, ProjectUpdateDto projectUpdateDto) {
         Project project = getProject(projectId);
+
         User manager = project.getManager();
         if(projectUpdateDto.getManagerId() != null) {
             manager = userRepository.findById(projectUpdateDto.getManagerId()).orElseThrow(
                     () -> new NotFoundException(String.format("Manager with id %d not found", projectUpdateDto.getManagerId()))
             );
         }
+
+        if(projectUpdateDto.getTeamsIds() != null) {
+            List<Team> previousTeams = project.getTeams();
+            List<Team> newTeams = getTeams(projectUpdateDto.getTeamsIds());
+
+            previousTeams.forEach(team -> {
+                if (!newTeams.contains(team)) {
+                    team.getProjects().remove(project);
+                }
+            });
+
+            newTeams.forEach(team -> {
+                if (!team.getProjects().contains(project)) {
+                    team.getProjects().add(project);
+                }
+            });
+
+            project.setTeams(newTeams);
+        }
+
         projectMapper.updateEntityFromDto(projectUpdateDto, project, manager);
-
-        return projectMapper.toResponseDto(projectRepository.save(project));
-    }
-
-    @Transactional
-    public ProjectResponseDto assignTeams(Integer projectId, ProjectAssignDto projectAssignDto) {
-        Project project = getProject(projectId);
-        List<Team> previousTeams = project.getTeams();
-        List<Team> newTeams = getTeams(projectAssignDto.getTeamsIds());
-
-        previousTeams.forEach(team -> {
-            if (!newTeams.contains(team)) {
-                team.getProjects().remove(project);
-            }
-        });
-
-        newTeams.forEach(team -> {
-            if (!team.getProjects().contains(project)) {
-                team.getProjects().add(project);
-            }
-        });
-
-        project.setTeams(newTeams);
         return projectMapper.toResponseDto(projectRepository.save(project));
     }
 

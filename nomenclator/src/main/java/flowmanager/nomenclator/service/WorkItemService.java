@@ -62,6 +62,14 @@ public class WorkItemService {
                 .toList();
     }
 
+    public List<WorkItemSummaryDto> findAllChildrenByWorkItemId(Integer workItemId) {
+        WorkItem workItem = getWorkItem(workItemId);
+
+        return workItem.getChildren().stream()
+                .map(workItemMapper::toSummaryDto)
+                .toList();
+    }
+
     public WorkItemResponseDto findWorkItemById(Integer workItemId) {
         return workItemMapper.toResponseDto(getWorkItem(workItemId));
     }
@@ -76,11 +84,14 @@ public class WorkItemService {
     }
 
     @Transactional
-    public WorkItemResponseDto createWorkItem(WorkItemCreateDto workItemCreateDto) {
+    public WorkItemResponseDto createWorkItem(WorkItemCreateDto workItemCreateDto, String keycloakId) {
         Project project = projectRepository.findById(workItemCreateDto.getProjectId()).orElseThrow(
                 () -> new NotFoundException(String.format("Project with id %d not found", workItemCreateDto.getProjectId()))
         );
-        WorkItem workItem = workItemMapper.toEntity(workItemCreateDto, project);
+        User user = userRepository.findByKeycloakId(keycloakId).orElseThrow(
+                () -> new NotFoundException("User not found")
+        );
+        WorkItem workItem = workItemMapper.toEntity(workItemCreateDto, project, user);
 
         if (workItemCreateDto.getAssigneesIds() != null && !workItemCreateDto.getAssigneesIds().isEmpty()) {
             List<User> assignedUsers = getAssignedUsers(workItemCreateDto.getAssigneesIds());
@@ -95,32 +106,31 @@ public class WorkItemService {
         return workItemMapper.toResponseDto(workItem);
     }
 
+    @Transactional
     public WorkItemResponseDto updateWorkItem(Integer workItemId, WorkItemUpdateDto workItemUpdateDto) {
         WorkItem workItem = getWorkItem(workItemId);
+
+        if(workItemUpdateDto.getAssigneesIds() != null) {
+            List<User> previousAssignees = workItem.getAssignees();
+            List<User> newAssignees = getAssignedUsers(workItemUpdateDto.getAssigneesIds());
+
+            previousAssignees.forEach(user -> {
+                if (!newAssignees.contains(user)) {
+                    user.getAssignedWorkItems().remove(workItem);
+                }
+            });
+
+            newAssignees.forEach(user -> {
+                if (!user.getAssignedWorkItems().contains(workItem)) {
+                    user.getAssignedWorkItems().add(workItem);
+                }
+            });
+
+            workItem.setAssignees(newAssignees);
+        }
+
         workItemMapper.updateEntityFromDto(workItemUpdateDto, workItem);
 
-        return workItemMapper.toResponseDto(workItemRepository.save(workItem));
-    }
-
-    @Transactional
-    public WorkItemResponseDto assignUsers(Integer workItemId, WorkItemAssignDto workItemAssignDto) {
-        WorkItem workItem = getWorkItem(workItemId);
-        List<User> previousAssignees = workItem.getAssignees();
-        List<User> newAssignees = getAssignedUsers(workItemAssignDto.getAssigneesIds());
-
-        previousAssignees.forEach(user -> {
-            if (!newAssignees.contains(user)) {
-                user.getAssignedWorkItems().remove(workItem);
-            }
-        });
-
-        newAssignees.forEach(user -> {
-            if (!user.getAssignedWorkItems().contains(workItem)) {
-                user.getAssignedWorkItems().add(workItem);
-            }
-        });
-
-        workItem.setAssignees(newAssignees);
         return workItemMapper.toResponseDto(workItemRepository.save(workItem));
     }
 

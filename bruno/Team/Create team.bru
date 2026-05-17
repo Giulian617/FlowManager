@@ -1,13 +1,17 @@
 meta {
   name: Create team
   type: http
-  seq: 3
+  seq: 6
 }
 
 post {
   url: {{url}}/teams
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }
 
 body:json {

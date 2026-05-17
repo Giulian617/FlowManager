@@ -1,18 +1,23 @@
 meta {
   name: Update project
   type: http
-  seq: 4
+  seq: 5
 }
 
 put {
   url: {{url}}/projects/1
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }
 
 body:json {
   {
     "name": "exemplu modificat",
-    "managerId": 2
+    "managerId": 2,
+    "teamsIds": [1, 2]
   }
 }

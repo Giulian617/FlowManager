@@ -7,13 +7,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public final class BuildInstances {
-
     private BuildInstances() {}
 
     public static List<User> buildUsers() {
         return List.of(
                 User.builder()
                     .id(1)
+                    .keycloakId("keycloak-uuid-1")
                     .email("user1@example.com")
                     .username("User1")
                     .firstName("Example")
@@ -24,6 +24,7 @@ public final class BuildInstances {
                     .build(),
                 User.builder()
                     .id(2)
+                    .keycloakId("keycloak-uuid-2")
                     .email("user2@example.com")
                     .username("User2")
                     .firstName("Example2")

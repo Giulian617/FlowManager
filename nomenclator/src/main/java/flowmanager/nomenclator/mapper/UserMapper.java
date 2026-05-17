@@ -1,10 +1,7 @@
 package flowmanager.nomenclator.mapper;
 
 import flowmanager.nomenclator.dto.*;
-import flowmanager.nomenclator.model.Organization;
-import flowmanager.nomenclator.model.Team;
-import flowmanager.nomenclator.model.User;
-import flowmanager.nomenclator.model.WorkItem;
+import flowmanager.nomenclator.model.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -20,13 +17,15 @@ public class UserMapper {
     private final ProjectMapper projectMapper;
     private final OrganizationMapper organizationMapper;
 
-    public User toEntity(UserCreateDto dto) {
+    public User toEntity(UserCreateDto dto, String keycloakId) {
         return User.builder()
+                .keycloakId(keycloakId)
                 .email(dto.getEmail())
                 .username(dto.getUsername())
                 .firstName(dto.getFirstName())
                 .lastName(dto.getLastName())
                 .phoneNumber(dto.getPhoneNumber())
+                .role(dto.getRole() != null ? dto.getRole() : Role.USER)
                 .active(Boolean.FALSE)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -38,12 +37,14 @@ public class UserMapper {
         Optional.ofNullable(dto.getFirstName()).ifPresent(user::setFirstName);
         Optional.ofNullable(dto.getLastName()).ifPresent(user::setLastName);
         Optional.ofNullable(dto.getPhoneNumber()).ifPresent(user::setPhoneNumber);
+        Optional.ofNullable(dto.getRole()).ifPresent(user::setRole);
     }
 
     public UserSummaryDto toSummaryDto(User user) {
         return UserSummaryDto.builder()
                 .id(user.getId())
                 .username(user.getUsername())
+                .role(user.getRole())
                 .build();
     }
 
@@ -136,6 +137,7 @@ public class UserMapper {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .phoneNumber(user.getPhoneNumber())
+                .role(user.getRole())
                 .active(user.getActive())
                 .createdAt(user.getCreatedAt())
                 .lastLogin(user.getLastLogin())

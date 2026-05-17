@@ -1,13 +1,17 @@
 meta {
   name: Create organization
   type: http
-  seq: 4
+  seq: 7
 }
 
 post {
   url: {{url}}/organizations
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }
 
 body:json {

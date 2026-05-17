@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @SuperBuilder
@@ -17,7 +18,8 @@ import java.time.LocalDate;
         "description",
         "startDate",
         "endDate",
-        "managerId"
+        "managerId",
+        "teamsIds"
 })
 public class ProjectUpdateDto {
     private String name;
@@ -25,4 +27,5 @@ public class ProjectUpdateDto {
     private LocalDate startDate;
     private LocalDate endDate;
     private Integer managerId;
+    private List<Integer> teamsIds;
 }

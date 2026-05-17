@@ -28,6 +28,9 @@ public class User {
     private Integer id;
 
     @Column(unique = true, nullable = false)
+    private String keycloakId;
+
+    @Column(unique = true, nullable = false)
     private String email;
 
     @Column(unique = true, nullable = false)
@@ -41,6 +44,9 @@ public class User {
 
     @Column(nullable = false)
     private String phoneNumber;
+
+    @Column(nullable = false)
+    private Role role;
 
     @Column(nullable = false)
     private Boolean active;

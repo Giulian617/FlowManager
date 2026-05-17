@@ -1,13 +1,17 @@
 meta {
   name: Update organization
   type: http
-  seq: 5
+  seq: 8
 }
 
 put {
   url: {{url}}/organizations/1
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }
 
 body:json {

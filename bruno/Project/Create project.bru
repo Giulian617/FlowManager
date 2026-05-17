@@ -1,13 +1,17 @@
 meta {
   name: Create project
   type: http
-  seq: 3
+  seq: 4
 }
 
 post {
   url: {{url}}/projects
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }
 
 body:json {

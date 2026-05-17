@@ -5,13 +5,18 @@ import flowmanager.nomenclator.dto.ErrorResponseDto;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponseDto handleNotFoundException(NotFoundException ex) {
@@ -24,6 +29,12 @@ public class GlobalExceptionHandler {
         return new ErrorResponseDto(ex.getMessage());
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponseDto handleAccessDenied(AccessDeniedException ex) {
+        return new ErrorResponseDto("Access denied");
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponseDto handleMalformedJson(HttpMessageNotReadableException ex) {
@@ -31,26 +42,13 @@ public class GlobalExceptionHandler {
                 && invalidFormatException.getTargetType().isEnum()) {
 
             String fieldName = invalidFormatException.getPath().getFirst().getFieldName();
+            String acceptedValues = Arrays.stream(invalidFormatException.getTargetType().getEnumConstants())
+                    .map(Object::toString)
+                    .collect(Collectors.joining(", "));
 
-            if ("itemType".equals(fieldName)) {
-                return new ErrorResponseDto(
-                        "Accepted values for itemType: Task, Bug, Epic, User_Story"
-                );
-            }
-
-            if ("status".equals(fieldName)) {
-                return new ErrorResponseDto(
-                        "Accepted values for status: To_do, In_Progress, Testing, Done, Closed"
-                );
-            }
-
-            if ("severity".equals(fieldName)) {
-                return new ErrorResponseDto(
-                        "Accepted values for severity: Low, Medium, High, Critical, Blocker"
-                );
-            }
-
-            return new ErrorResponseDto("Invalid value for field " + fieldName);
+            return new ErrorResponseDto(
+                    "Invalid value for field '" + fieldName + "'. Accepted values: " + acceptedValues
+            );
         }
 
         return new ErrorResponseDto("Malformed JSON request");
@@ -73,5 +71,11 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponseDto handleIllegalArgument(IllegalArgumentException ex) {
         return new ErrorResponseDto(ex.getMessage());
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponseDto handleGenericException(Exception ex) {
+        return new ErrorResponseDto("An unexpected error occurred");
     }
 }

@@ -1,11 +1,15 @@
 meta {
   name: Set parent
   type: http
-  seq: 7
+  seq: 8
 }
 
 put {
   url: {{url}}/work-items/2/parent/1
   body: none
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }

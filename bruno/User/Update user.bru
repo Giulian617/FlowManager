@@ -7,12 +7,17 @@ meta {
 put {
   url: {{url}}/users/1
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }
 
 body:json {
   {
     "firstName": "Test",
-    "lastName": "Example"
+    "lastName": "Example",
+    "role": "ADMIN"
   }
 }
