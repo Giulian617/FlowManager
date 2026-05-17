@@ -76,7 +76,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponseDto handleGenericException(Exception ex) {
-        return new ErrorResponseDto(ex.getMessage());
-//        return new ErrorResponseDto("An unexpected error occurred");
+        return new ErrorResponseDto("An unexpected error occurred");
     }
 }

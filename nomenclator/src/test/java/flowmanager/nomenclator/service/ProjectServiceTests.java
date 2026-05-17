@@ -491,6 +491,7 @@ public class ProjectServiceTests {
 
         when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
         when(userRepository.findById(manager.getId())).thenReturn(Optional.of(manager));
+        when(teamRepository.findAllById(List.of())).thenReturn(List.of());
         doNothing().when(projectMapper).updateEntityFromDto(updateDto, project, manager);
         when(projectRepository.save(project)).thenReturn(updatedProject);
         when(projectMapper.toResponseDto(updatedProject)).thenReturn(responseDto);
@@ -500,7 +501,7 @@ public class ProjectServiceTests {
         assertEquals(responseDto, result);
         verify(projectRepository, times(1)).findById(project.getId());
         verify(userRepository, times(1)).findById(manager.getId());
-        verify(teamRepository, never()).findAllById(any());
+        verify(teamRepository, times(1)).findAllById(List.of());
         verify(projectRepository, times(1)).save(project);
         verify(projectMapper, times(1)).toResponseDto(updatedProject);
     }

@@ -87,7 +87,7 @@ public class ProjectService {
             );
         }
 
-        if(projectUpdateDto.getTeamsIds() != null && !projectUpdateDto.getTeamsIds().isEmpty()) {
+        if(projectUpdateDto.getTeamsIds() != null) {
             List<Team> previousTeams = project.getTeams();
             List<Team> newTeams = getTeams(projectUpdateDto.getTeamsIds());
 

@@ -110,7 +110,7 @@ public class WorkItemService {
     public WorkItemResponseDto updateWorkItem(Integer workItemId, WorkItemUpdateDto workItemUpdateDto) {
         WorkItem workItem = getWorkItem(workItemId);
 
-        if(workItemUpdateDto.getAssigneesIds() != null && !workItemUpdateDto.getAssigneesIds().isEmpty()) {
+        if(workItemUpdateDto.getAssigneesIds() != null) {
             List<User> previousAssignees = workItem.getAssignees();
             List<User> newAssignees = getAssignedUsers(workItemUpdateDto.getAssigneesIds());
 

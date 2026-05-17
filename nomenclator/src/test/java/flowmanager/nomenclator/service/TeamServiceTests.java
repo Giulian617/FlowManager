@@ -747,6 +747,7 @@ public class TeamServiceTests {
         when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
         when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
         when(userRepository.findById(manager.getId())).thenReturn(Optional.of(manager));
+        when(userRepository.findAllById(List.of())).thenReturn(List.of());
         doNothing().when(teamMapper).updateEntityFromDto(updateDto, team, organization, manager);
         when(teamRepository.save(team)).thenReturn(updatedTeam);
         when(teamMapper.toResponseDto(updatedTeam)).thenReturn(responseDto);
@@ -757,7 +758,7 @@ public class TeamServiceTests {
         verify(teamRepository, times(1)).findById(team.getId());
         verify(organizationRepository, times(1)).findById(organization.getId());
         verify(userRepository, times(1)).findById(manager.getId());
-        verify(userRepository, never()).findAllById(any());
+        verify(userRepository, times(1)).findAllById(List.of());
         verify(teamRepository, times(1)).save(team);
         verify(teamMapper, times(1)).toResponseDto(updatedTeam);
     }

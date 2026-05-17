@@ -113,14 +113,20 @@ public class UserService {
             throw new DuplicateAttributeException(String.format("Username %s already exists", userCreateDto.getUsername()));
 
         String keycloakId = keycloakAdminService.createUser(userCreateDto);
-        if(userRepository.existsByKeycloakId(keycloakId))
-            throw new DuplicateAttributeException("User already registered");
 
-        Role role = userCreateDto.getRole() != null ? userCreateDto.getRole() : Role.USER;
-        keycloakAdminService.assignRole(keycloakId, role);
+        try {
+            if (userRepository.existsByKeycloakId(keycloakId))
+                throw new DuplicateAttributeException("User already registered");
 
-        User user = userMapper.toEntity(userCreateDto, keycloakId);
-        return userMapper.toResponseDto(userRepository.save(user));
+            Role role = userCreateDto.getRole() != null ? userCreateDto.getRole() : Role.USER;
+            keycloakAdminService.assignRole(keycloakId, role);
+
+            User user = userMapper.toEntity(userCreateDto, keycloakId);
+            return userMapper.toResponseDto(userRepository.save(user));
+        } catch (Exception e) {
+            keycloakAdminService.deleteUser(keycloakId);
+            throw e;
+        }
     }
 
     public UserResponseDto updateUser(Integer userId, UserUpdateDto userUpdateDto) {

@@ -25,7 +25,7 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.findAllProjects());
     }
 
-    @PreAuthorize("@projectSecurity.canModify(authentication, #projectId)")
+    @PreAuthorize("@projectSecurity.canView(authentication, #projectId)")
     @GetMapping("/{projectId}/work-items")
     public ResponseEntity<List<WorkItemSummaryDto>> getAllWorkItemsByProjectId(
             @PathVariable Integer projectId

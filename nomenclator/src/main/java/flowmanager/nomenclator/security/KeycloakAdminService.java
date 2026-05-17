@@ -11,6 +11,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
@@ -36,12 +38,15 @@ public class KeycloakAdminService {
 
     private final RestTemplate restTemplate;
 
-    private HttpEntity<String> buildTokenRequest() {
+    private HttpEntity<MultiValueMap<String, String>> buildTokenRequest() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        String body = "grant_type=client_credentials" +
-                "&client_id=" + clientId +
-                "&client_secret=" + clientSecret;
+
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("grant_type", "client_credentials");
+        body.add("client_id", clientId);
+        body.add("client_secret", clientSecret);
+
         return new HttpEntity<>(body, headers);
     }
 
@@ -140,5 +145,19 @@ public class KeycloakAdminService {
             } catch (Exception ignored) {}
         });
         assignRole(keycloakId, newRole);
+    }
+
+    public void deleteUser(String keycloakId) {
+        String token = getAdminToken();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+
+        restTemplate.exchange(
+                keycloakUrl + "/admin/realms/" + realm + "/users/" + keycloakId,
+                HttpMethod.DELETE,
+                new HttpEntity<>(headers),
+                Void.class
+        );
     }
 }

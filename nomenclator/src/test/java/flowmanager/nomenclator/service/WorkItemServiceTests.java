@@ -710,6 +710,7 @@ public class WorkItemServiceTests {
         WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(updatedWorkItem);
 
         when(workItemRepository.findById(workItem.getId())).thenReturn(Optional.of(workItem));
+        when(userRepository.findAllById(List.of())).thenReturn(List.of());
         doNothing().when(workItemMapper).updateEntityFromDto(updateDto, workItem);
         when(workItemRepository.save(workItem)).thenReturn(updatedWorkItem);
         when(workItemMapper.toResponseDto(updatedWorkItem)).thenReturn(responseDto);
@@ -718,7 +719,7 @@ public class WorkItemServiceTests {
 
         assertEquals(responseDto, result);
         verify(workItemRepository, times(1)).findById(workItem.getId());
-        verify(userRepository, never()).findAllById(any());
+        verify(userRepository, times(1)).findAllById(List.of());
         verify(workItemMapper, times(1)).updateEntityFromDto(updateDto, workItem);
         verify(workItemRepository, times(1)).save(workItem);
         verify(workItemMapper, times(1)).toResponseDto(updatedWorkItem);

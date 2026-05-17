@@ -7,6 +7,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -26,7 +27,9 @@ public class KeycloakRealmRoleConverter implements Converter<Jwt, Collection<Gra
         return roles.stream()
                 .filter(String.class::isInstance)
                 .map(String.class::cast)
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                .map(String::trim)
+                .filter(role -> !role.isEmpty())
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toUpperCase(Locale.ROOT)))
                 .collect(Collectors.toList());
     }
 }

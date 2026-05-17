@@ -29,7 +29,17 @@ public class TeamSecurity {
     }
 
     public boolean canModify(Authentication auth, Integer teamId) {
-        return canView(auth, teamId);
+        if (Utils.isNotAuthenticated(auth))
+            return false;
+        if (Utils.isAdmin(auth))
+            return true;
+
+        String currentUserId = Utils.getCurrentUserId(auth);
+        return teamRepository.findById(teamId).map(team -> {
+            if (team.getManager().getKeycloakId().equals(currentUserId))
+                return true;
+            return team.getOrganization().getManager().getKeycloakId().equals(currentUserId);
+        }).orElse(false);
     }
 
     public boolean canDelete(Authentication auth, Integer teamId) {

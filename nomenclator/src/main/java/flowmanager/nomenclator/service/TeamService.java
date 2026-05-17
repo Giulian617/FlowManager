@@ -118,7 +118,7 @@ public class TeamService {
             );
         }
 
-        if(teamUpdateDto.getMembersIds() != null && !teamUpdateDto.getMembersIds().isEmpty()) {
+        if(teamUpdateDto.getMembersIds() != null) {
             List<User> previousMembers = team.getMembers();
             List<User> newMembers = getMembers(teamUpdateDto.getMembersIds());
 
