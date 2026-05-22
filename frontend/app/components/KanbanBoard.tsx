@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react"
 import { statusMeta } from "../lib/status"
+import { Bug, CheckSquare, Zap, BookOpen, X, ArrowUp, ArrowDown } from "lucide-react"
 
 const CURRENT_USER_ID = "user-1"
 
@@ -96,22 +97,10 @@ const priorityMeta: Record<string, string> = {
 }
 
 const typeIcons: Record<string, { textClass: string; icon: React.ReactNode }> = {
-  Bug: {
-    textClass: "text-rose-700",
-    icon: <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3.5a6.5 6.5 0 0 0-6.5 6.5c0 1.7.7 3.3 1.8 4.4L8 18a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l.7-3.6A6.5 6.5 0 0 0 18.5 10C18.5 5.8 15.2 3.5 12 3.5z" /><path d="M12 3.5v16" /><path d="M6.5 10h11" /></svg>,
-  },
-  Task: {
-    textClass: "text-sky-700",
-    icon: <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4.5" y="4.5" width="15" height="15" rx="2" /><path d="M8.5 12.5l2 2 5-5" /></svg>,
-  },
-  Epic: {
-    textClass: "text-violet-700",
-    icon: <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="6" width="16" height="4" rx="1" /><path d="M5 9h14" /><rect x="6" y="11.5" width="14" height="4" rx="1" /></svg>,
-  },
-  "User Story": {
-    textClass: "text-emerald-700",
-    icon: <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 7h12" /><path d="M6 12h12" /><path d="M6 17h12" /></svg>,
-  },
+  Bug: { textClass: "text-rose-700", icon: <Bug className="h-3.5 w-3.5" /> },
+  Task: { textClass: "text-sky-700", icon: <CheckSquare className="h-3.5 w-3.5" /> },
+  Epic: { textClass: "text-violet-700", icon: <Zap className="h-3.5 w-3.5" /> },
+  "User Story": { textClass: "text-emerald-700", icon: <BookOpen className="h-3.5 w-3.5" /> },
 }
 
 function getInitials(name?: string) {
@@ -253,9 +242,7 @@ function Toast({ toast, onUndo, onDismiss }: {
         Undo
       </button>
       <button onClick={() => onDismiss(toast.id)} aria-label="Dismiss" className="rounded-full p-0.5 text-slate-300 transition hover:text-white">
-        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
+        <X className="h-3.5 w-3.5" />
       </button>
     </div>
   )
@@ -264,18 +251,17 @@ function Toast({ toast, onUndo, onDismiss }: {
 // KanbanBoard ---------------------------------------------
 
 export default function KanbanBoard({
-  severityFilter = "All",
   sortBy = "Default",
   sortDir = "asc",
+  typeFilter = new Set<string>(),
 }: {
-  severityFilter: string
   sortBy: "Deadline" | "Severity" | "Default"
   sortDir: "asc" | "desc"
-}) {
+  typeFilter?: Set<string>
+}){
   const [items, setItems] = useState<WorkItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [typeFilter, setTypeFilter] = useState("All")
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dragOverCol, setDragOverCol] = useState<ColStatus | null>(null)
   const [toasts, setToasts] = useState<ToastMsg[]>([])
@@ -324,8 +310,7 @@ export default function KanbanBoard({
   // Filtrare ----------------------------------------------
 
   const visibleItems = useMemo(() => items.filter((item) => {
-    if (typeFilter !== "All" && item.type !== typeFilter) return false
-    if (severityFilter !== "All" && (item.severity ?? item.priority ?? "") !== severityFilter) return false
+    if (typeFilter.size > 0 && !typeFilter.has(item.type ?? "")) return false
     {
       if (!item.deadline) return false
       const d = new Date(item.deadline)
@@ -335,7 +320,7 @@ export default function KanbanBoard({
     
     }
     return true
-  }), [items, typeFilter, severityFilter])
+  }), [items, typeFilter])
 
   const SEVERITY_ORDER: Record<string, number> = {
   Blocker: 0, Critical: 1, High: 2, Medium: 3, Low: 4,

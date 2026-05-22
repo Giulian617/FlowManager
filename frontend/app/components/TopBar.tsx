@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react"
 import { useKeycloak } from "@react-keycloak/web"
 import { useNavigate } from "react-router"
+import { Search, Bell, Settings } from "lucide-react"
 
 export default function TopBar() {
   const { keycloak, initialized } = useKeycloak()
@@ -36,10 +37,7 @@ export default function TopBar() {
     <div className="mb-6 rounded-3xl border border-slate-200 bg-slate-50 p-3 shadow-sm">
       <div className="flex items-center gap-3">
         <div className="flex min-w-0 flex-1 items-center rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-          <svg className="mr-3 h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
+          <Search className="mr-3 h-4 w-4 text-slate-400" />
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
@@ -50,17 +48,11 @@ export default function TopBar() {
 
         <button className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm transition hover:bg-slate-100">
           <span className="absolute -top-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-semibold text-white">3</span>
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
+          <Bell className="h-5 w-5" />
         </button>
 
         <button className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm transition hover:bg-slate-100" aria-label="Settings">
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7z" />
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15 1.65 1.65 0 0 0 3 13.6V12a2 2 0 0 1 0-4v-.6A1.65 1.65 0 0 0 4.6 5a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6 1.65 1.65 0 0 0 10.51 5h.09A2 2 0 0 1 15 3h.6a1.65 1.65 0 0 0 1.51 1 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 5 1.65 1.65 0 0 0 21 6.4V7a2 2 0 0 1 0 4v.6a1.65 1.65 0 0 0-1.6 1.4Z" />
-          </svg>
+          <Settings className="h-5 w-5" />
         </button>
 
         <div ref={menuRef} className="relative">

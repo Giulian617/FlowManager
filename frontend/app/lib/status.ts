@@ -28,7 +28,6 @@ export const statusMeta = {
 
 export const workItemStatusMap: Record<string, keyof typeof statusMeta> = {
   "To Do": "ToDo",
-  Open: "ToDo",
   "In progress": "InProgress",
   Done: "Done",
   Closed: "Closed",
