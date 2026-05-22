@@ -21,7 +21,7 @@ export const statusMeta = {
   },
   Closed: {
     label: "Closed",
-    headerClass: "bg-slate-50 border-slate-200 text-slate-700",
+    headerClass: "bg-rose-50 border-rose-200 text-rose-700",
     dotClass: "bg-rose-500",
   },
 } as const

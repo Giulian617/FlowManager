@@ -236,9 +236,20 @@ export default function WorkItems() {
                   setCreatedSearch(v)
                 }
               }}
-              onFocus={() => setCreatedOpen(true)}
-              onBlur={() => setTimeout(() => setCreatedOpen(false), 150)}
-              placeholder=""
+              onFocus={() => {
+                if (createdSearch === "All") setCreatedSearch("")
+                setCreatedOpen(true)
+              }}
+              onBlur={() => {
+                setTimeout(() => {
+                  if (createdSearch === "" || createdSearch.trim() === "") {
+                    setCreatedSearch("All")
+                    setCreatedByFilter("All")
+                  }
+                  setCreatedOpen(false)
+                }, 150)
+              }}
+              placeholder="Search..."
               className="w-[140px] min-w-[140px] box-border flex-none rounded-3xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200 pl-24"
             />
             {createdOpen && (
@@ -272,19 +283,35 @@ export default function WorkItems() {
               </ul>
             )}
           </div>
+
           <div className="relative">
-            <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-sm text-slate-700">Assigned to:</span>
-            <input
-              value={assignedSearch !== "" ? assignedSearch : assignedFilter}
+          <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-sm text-slate-700">Assigned to:</span>
+          <input
+            value={assignedSearch}
               onChange={(e) => {
                 const v = e.target.value
-                setAssignedSearch(v)
                 setAssignedOpen(true)
-                if (v.trim() === "") setAssignedFilter("All")
+                if (v.trim() === "") {
+                  setAssignedFilter("All")
+                  setAssignedSearch("All")
+                } else {
+                  setAssignedSearch(v)
+                }
               }}
-              onFocus={() => setAssignedOpen(true)}
-              onBlur={() => setTimeout(() => setAssignedOpen(false), 150)}
-              placeholder=""
+              onFocus={() => {
+                if (assignedSearch === "All") setAssignedSearch("")
+                setAssignedOpen(true)
+              }}
+              onBlur={() => {
+                setTimeout(() => {
+                  if (assignedSearch === "" || assignedSearch.trim() === "") {
+                    setAssignedSearch("All")
+                    setAssignedFilter("All")
+                  }
+                  setAssignedOpen(false)
+                }, 150)
+              }}
+              placeholder="Search..."
               className="w-[140px] min-w-[140px] box-border flex-none rounded-3xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200 pl-24"
             />
             {assignedOpen && (
@@ -293,7 +320,7 @@ export default function WorkItems() {
                   className="cursor-pointer px-4 py-2 hover:bg-slate-100 text-slate-700 font-normal text-sm"
                   onMouseDown={() => {
                     setAssignedFilter("All")
-                    setAssignedSearch("")
+                    setAssignedSearch("All")
                     setAssignedOpen(false)
                   }}
                 >
@@ -318,22 +345,21 @@ export default function WorkItems() {
               </ul>
             )}
           </div>
-          <div className="ml-16 flex-shrink-0 relative group">
-            <button
-              onClick={clearFilters}
-              title="Clear filters"
-              aria-label="Clear filters"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black bg-white text-slate-700 transition hover:bg-slate-100"
-            >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-            <span className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 -translate-y-full mb-2 hidden rounded-full border border-black bg-white px-3 py-1 text-xs text-slate-900 shadow-sm group-hover:block whitespace-nowrap">
-              Clear filters
-            </span>
-          </div>
+          <div className="ml-4 relative group">
+          <button
+            onClick={clearFilters}
+            aria-label="Clear filters"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+          >
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+          <span className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 -translate-y-full mb-2 hidden rounded-full bg-slate-800 px-3 py-1 text-xs text-white shadow-sm group-hover:block whitespace-nowrap">
+            Clear filters
+          </span>
+        </div>
         </div>
 
         <div className="mb-6">
