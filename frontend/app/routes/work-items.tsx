@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect } from "react"
 import { priorityMeta, statusMeta, statusOptions, workItemStatusMap } from "../lib/status"
-import { ListFilter, Search, Plus, X, Bug, CheckSquare, Zap, BookOpen, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, UserCircle, ChevronDown } from "lucide-react"
+import { ListFilter, Search, Plus, X, Bug, CheckSquare, Zap, BookOpen, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, UserCircle, ChevronDown, ArrowLeft } from "lucide-react"
+import { useNavigate } from "react-router"
 
 const workItems = [
   { id: "13", type: "Bug", title: "Implement attachment feature", createdBy: "Joe Nik", assigned: "Mihai Pop", assignedAvatar: "MP", status: "To Do", priority: "Medium", severity: "Low", deadline: "2026-06-02" },
@@ -12,7 +13,11 @@ const workItems = [
 
 const typeOptions = ["Bug", "Task", "Epic", "User Story"]
 const severityOptions = ["Blocker", "Critical", "High", "Medium", "Low"]
+const priorityOptions = ["Blocker", "Critical", "High", "Medium", "Low"]
 const statusFilterOptions = ["To Do", "In progress", "Testing", "Done", "Closed"]
+const assigneeOptions = ["Unassigned", "Mihai Pop", "Luke Tomson", "Maria Ionescu", "Ana Serban", "Alex Tudor", "Joe Nik"]
+
+type WorkItemType = "Bug" | "Task" | "Epic" | "User Story"
 
 const typeIcons: Record<string, { textClass: string; icon: React.ReactNode }> = {
   Bug: { textClass: "text-rose-700", icon: <Bug className="h-4 w-4" /> },
@@ -21,7 +26,14 @@ const typeIcons: Record<string, { textClass: string; icon: React.ReactNode }> = 
   "User Story": { textClass: "text-emerald-700", icon: <BookOpen className="h-4 w-4" /> },
 }
 
-// ─── Multi-select dropdown ────────────────────────────────────────────────────
+const typeConfig: Record<WorkItemType, { textClass: string; bgClass: string; borderClass: string; icon: React.ReactNode; description: string }> = {
+  Bug:          { textClass: "text-rose-700",    bgClass: "bg-rose-50",    borderClass: "border-rose-200",   icon: <Bug className="h-5 w-5" />,         description: "Track a defect or unexpected behaviour" },
+  Task:         { textClass: "text-sky-700",     bgClass: "bg-sky-50",     borderClass: "border-sky-200",    icon: <CheckSquare className="h-5 w-5" />, description: "A unit of work to be completed" },
+  Epic:         { textClass: "text-violet-700",  bgClass: "bg-violet-50",  borderClass: "border-violet-200", icon: <Zap className="h-5 w-5" />,         description: "A large body of work spanning multiple items" },
+  "User Story": { textClass: "text-emerald-700", bgClass: "bg-emerald-50", borderClass: "border-emerald-200",icon: <BookOpen className="h-5 w-5" />,    description: "Describe functionality from the user's perspective" },
+}
+
+
 
 function MultiSelect({
   label,
@@ -91,7 +103,6 @@ function MultiSelect({
   )
 }
 
-// ─── People multi-select (searchable) ────────────────────────────────────────
 
 function PeopleSelect({
   label,
@@ -184,7 +195,43 @@ function PeopleSelect({
   )
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+function TypeSelectorModal({ onSelect, onClose }: { onSelect: (t: WorkItemType) => void; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-md rounded-3xl border border-slate-200 bg-white shadow-2xl p-6">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">New Work Item</h2>
+            <p className="text-sm text-slate-500 mt-0.5">Select the type of work item to create</p>
+          </div>
+          <button onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-100 transition">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {(typeOptions as WorkItemType[]).map((type) => {
+            const cfg = typeConfig[type]
+            return (
+              <button
+                key={type}
+                onClick={() => onSelect(type)}
+                className={`flex flex-col items-start gap-2 rounded-2xl border-2 p-4 text-left transition hover:shadow-md ${cfg.bgClass} ${cfg.borderClass}`}
+              >
+                <span className={cfg.textClass}>{cfg.icon}</span>
+                <div>
+                  <div className={`font-semibold text-sm ${cfg.textClass}`}>{type}</div>
+                  <div className="text-xs text-slate-500 mt-0.5 leading-snug">{cfg.description}</div>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 
 export default function WorkItems() {
   const [typeFilter, setTypeFilter] = useState<Set<string>>(new Set())
@@ -194,6 +241,10 @@ export default function WorkItems() {
   const [assignedFilter, setAssignedFilter] = useState<Set<string>>(new Set())
   const [query, setQuery] = useState("")
   const [page, setPage] = useState<number>(1)
+  const [modalStep, setModalStep] = useState<null | "type" | WorkItemType>(null)
+  const [selectedType, setSelectedType] = useState<WorkItemType | null>(null)
+  //const [showFormModal, setShowFormModal] = useState(false)
+  const navigate = useNavigate()
   const itemsPerPage = 12
 
   const createdList = useMemo(() => Array.from(new Set(workItems.map((w) => w.createdBy))), [])
@@ -237,7 +288,10 @@ export default function WorkItems() {
             <h1 className="text-3xl font-semibold text-slate-900">Work items</h1>
             <p className="text-sm leading-6 text-slate-600">Filter and review work items by type, status, severity, creator, and assignee.</p>
           </div>
-          <button className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+          <button
+            onClick={() => setModalStep("type")}
+            className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
             <Plus className="h-4 w-4" />
             New Work Item
           </button>
@@ -394,6 +448,18 @@ export default function WorkItems() {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      {modalStep === "type" && (
+        <TypeSelectorModal
+          onSelect={(type) => {
+            setModalStep(null)
+            navigate(`/work-items/new/${type.toLowerCase().replace(" ", "-")}`)
+          }}
+          onClose={() => setModalStep(null)}
+        />
+      )}
+      
     </div>
   )
 }
