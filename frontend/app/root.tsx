@@ -6,73 +6,24 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-} from "react-router";
-
-import type { Route } from "./+types/root";
-import "./app.css";
-import KeycloakProviderWrapper from "./auth/KeycloakProvider";
-import TopBar from "./components/TopBar";
-
-const navItems = [
-  {
-    to: "/",
-    label: "Dashboard",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 13h8V3H3v10Zm10 8h8V3h-8v18Z" />
-      </svg>
-    ),
-  },
-  {
-    to: "/projects",
-    label: "Projects",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 7h18M7 21V7M17 21V7" />
-      </svg>
-    ),
-  },
-  {
-    to: "/teams",
-    label: "Teams",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm10 5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
-      </svg>
-    ),
-  },
-  {
-    to: "/work-items",
-    label: "Work Items",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 7h16M4 12h10M4 17h7" />
-      </svg>
-    ),
-  },
-  {
-    to: "/kanban",
-    label: "Kanban Board",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 4h6v6H4V4Zm10 0h6v10h-6V4Zm0 12h6v4h-6v-4ZM4 14h6v4H4v-4Z" />
-      </svg>
-    ),
-  },
-];
+  useLocation,
+  useNavigate,
+} from "react-router"
+import { useEffect, useState } from "react"
+import type { Route } from "./+types/root"
+import "./app.css"
+import KeycloakProviderWrapper from "./auth/KeycloakProvider"
+import TopBar from "./components/TopBar"
+import { LayoutDashboard, FolderKanban, Users, List, KanbanSquare, Building2, ChevronRight } from "lucide-react"
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  {
-    rel: "preconnect",
-    href: "https://fonts.gstatic.com",
-    crossOrigin: "anonymous",
-  },
+  { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
   {
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
   },
-];
+]
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -89,86 +40,190 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
-  );
+  )
+}
+
+const MOCK_ORGS: Record<string, string> = {
+  "1": "Acme Corporation",
+  "2": "TechFlow SRL",
+  "3": "DevSquad",
+}
+
+const MOCK_PROJECTS: Record<string, string> = {
+  "1": "FlowManager Frontend",
+  "2": "API Gateway",
+  "3": "Mobile App",
+  "4": "Design System",
+}
+
+const noSidebarRoutes = ["/select-org", "/select-project"]
+
+const preProjectNav = [
+  { to: "/", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
+  { to: "/projects", label: "Projects", icon: <FolderKanban className="h-4 w-4" /> },
+  { to: "/teams", label: "Teams", icon: <Users className="h-4 w-4" /> },
+]
+
+const fullNav = [
+  { to: "/", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
+  { to: "/projects", label: "Projects", icon: <FolderKanban className="h-4 w-4" /> },
+  { to: "/teams", label: "Teams", icon: <Users className="h-4 w-4" /> },
+  { to: "/work-items", label: "Work Items", icon: <List className="h-4 w-4" /> },
+  { to: "/kanban", label: "Kanban Board", icon: <KanbanSquare className="h-4 w-4" /> },
+]
+
+function AppShell() {
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  const [orgName, setOrgName] = useState<string | null>(null)
+  const [projectName, setProjectName] = useState<string | null>(null)
+
+  useEffect(() => {
+    const orgId = localStorage.getItem("selectedOrg")
+    const projectId = localStorage.getItem("selectedProject")
+    setOrgName(orgId ? MOCK_ORGS[orgId] ?? null : null)
+    const savedName = localStorage.getItem("selectedProjectName")
+    setProjectName(savedName ?? (projectId ? MOCK_PROJECTS[projectId] ?? null : null))
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (noSidebarRoutes.includes(location.pathname)) return
+    const orgId = localStorage.getItem("selectedOrg")
+    const projectId = localStorage.getItem("selectedProject")
+    if (!orgId) { navigate("/select-org"); return }
+    if (!projectId) { navigate("/select-project"); return }
+  }, [location.pathname])
+
+  const isNoSidebar = noSidebarRoutes.includes(location.pathname)
+  const projectSelected = typeof window !== "undefined" && !!localStorage.getItem("selectedProject")
+  const navItems = projectSelected ? fullNav : preProjectNav
+
+  if (isNoSidebar) return <Outlet />
+
+  return (
+    <div className="min-h-screen flex bg-slate-100 text-slate-900">
+      <aside className="w-[220px] border-r border-slate-200 bg-white shadow-sm flex-none">
+        <div className="flex h-full min-h-screen flex-col px-3 py-4">
+
+          {/* Logo */}
+          <div className="mb-3 flex items-center gap-2.5">
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-slate-900 text-sm font-bold text-white flex-none">F</div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-900">FlowManager</p>
+              <p className="text-[11px] text-slate-400 truncate max-w-[130px]">
+                {projectName ?? "Project workspace"}
+              </p>
+            </div>
+          </div>
+
+          {/* Org + Project info */}
+          {(orgName || projectName) && (
+            <div className="mb-3 rounded-xl border border-slate-100 bg-slate-50 px-2.5 py-2 space-y-1">
+              {orgName && (
+                <button
+                  onClick={() => {
+                    localStorage.removeItem("selectedOrg")
+                    localStorage.removeItem("selectedProject")
+                    navigate("/select-org")
+                  }}
+                  className="flex w-full items-center justify-between gap-2 group"
+                  title="Change organization"
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Building2 className="h-3 w-3 flex-none text-slate-400" />
+                    <span className="text-[11px] text-slate-400 truncate">{orgName}</span>
+                  </div>
+                  <ChevronRight className="h-3 w-3 flex-none text-slate-300 group-hover:text-slate-600 transition" />
+                </button>
+              )}
+              {projectName && (
+                <button
+                  onClick={() => {
+                    localStorage.removeItem("selectedProject")
+                    navigate("/select-project")
+                  }}
+                  className="flex w-full items-center justify-between gap-2 group"
+                  title="Change project"
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <FolderKanban className="h-3 w-3 flex-none text-slate-400" />
+                    <span className="text-[11px] font-medium text-slate-700 truncate">{projectName}</span>
+                  </div>
+                  <ChevronRight className="h-3 w-3 flex-none text-slate-300 group-hover:text-slate-600 transition" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Nav */}
+          <nav className="flex flex-1 flex-col gap-0.5">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to + item.label}
+                to={item.to}
+                end={item.to === "/"}
+                className={({ isActive }) =>
+                  `group flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium transition ${
+                    isActive
+                      ? "bg-slate-900 text-white"
+                      : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                  }`
+                }
+              >
+                <span className={`grid h-7 w-7 place-items-center rounded-lg transition ${
+                  "bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-900"
+                }`}>
+                  {item.icon}
+                </span>
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+
+          <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-400">
+            <p className="font-semibold text-slate-600">Need support?</p>
+            <p className="mt-1 leading-5">Use the sidebar to navigate the app.</p>
+          </div>
+        </div>
+      </aside>
+
+      <main className="flex-1 p-5 lg:p-6">
+        <div className="mx-auto max-w-[1500px]">
+          <TopBar />
+          <Outlet />
+        </div>
+      </main>
+    </div>
+  )
 }
 
 export default function App() {
   return (
     <KeycloakProviderWrapper>
-      <div className="min-h-screen flex bg-slate-50 text-slate-900">
-        <aside className="w-[220px] border-r border-slate-200 bg-white shadow-sm">
-          <div className="flex h-full min-h-screen flex-col px-4 py-6">
-            <div className="mb-8 flex items-center gap-3">
-              <div className="grid h-12 w-12 place-items-center rounded-3xl bg-slate-900 text-lg font-bold text-white">F</div>
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">FlowManager</p>
-                <p className="text-xs text-slate-400">Project workspace</p>
-              </div>
-            </div>
-
-            <nav className="flex flex-1 flex-col gap-2">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === "/"}
-                  className={({ isActive }) =>
-                    `group flex items-center gap-3 rounded-3xl px-4 py-3 text-sm font-semibold transition ${
-                      isActive ? "bg-slate-100 text-slate-900" : "text-slate-600 hover:bg-slate-50"
-                    }`
-                  }
-                >
-                  <span className="grid h-9 w-9 place-items-center rounded-2xl bg-slate-100 text-slate-600 group-hover:bg-slate-200">
-                    {item.icon}
-                  </span>
-                  {item.label}
-                </NavLink>
-              ))}
-            </nav>
-
-            <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-              <p className="font-semibold text-slate-900">Need support?</p>
-              <p className="mt-2 leading-6">Use the sidebar to navigate the app and keep your team’s work visible.</p>
-            </div>
-          </div>
-        </aside>
-
-        <main className="flex-1 p-6 lg:p-8">
-          <div className="mx-auto max-w-[1500px]">
-            <TopBar />
-            <Outlet />
-          </div>
-        </main>
-      </div>
+      <AppShell />
     </KeycloakProviderWrapper>
-  );
+  )
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
-  let stack: string | undefined;
+  let message = "Oops!"
+  let details = "An unexpected error occurred."
+  let stack: string | undefined
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
-    details =
-      error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
+    message = error.status === 404 ? "404" : "Error"
+    details = error.status === 404 ? "The requested page could not be found." : error.statusText || details
   } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
+    details = error.message
+    stack = error.stack
   }
 
   return (
     <main className="pt-16 p-4 container mx-auto">
       <h1>{message}</h1>
       <p>{details}</p>
-      {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
-          <code>{stack}</code>
-        </pre>
-      )}
+      {stack && <pre className="w-full p-4 overflow-x-auto"><code>{stack}</code></pre>}
     </main>
-  );
+  )
 }
