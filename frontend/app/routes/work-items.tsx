@@ -2,6 +2,7 @@ import React, { useMemo, useState, useRef, useEffect } from "react"
 import { priorityMeta, statusMeta, statusOptions, workItemStatusMap } from "../lib/status"
 import { ListFilter, Search, Plus, X, Bug, CheckSquare, Zap, BookOpen, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, UserCircle, ChevronDown, ArrowLeft } from "lucide-react"
 import { useNavigate } from "react-router"
+import { useSearchParams } from "react-router"
 
 const workItems = [
   { id: "5", type: "Bug", title: "Implement attachment feature", createdBy: "Joe Nik", assigned: "Mihai Pop", assignedAvatar: "MP", status: "To Do", priority: "Medium", severity: "Low", deadline: "2026-06-02", description: "Users cannot attach files to work items. The attachment button is visible but clicking it does nothing." },
@@ -27,12 +28,11 @@ const typeIcons: Record<string, { textClass: string; icon: React.ReactNode }> = 
 }
 
 const typeConfig: Record<WorkItemType, { textClass: string; bgClass: string; borderClass: string; icon: React.ReactNode; description: string }> = {
-  Bug:          { textClass: "text-rose-700",    bgClass: "bg-rose-50",    borderClass: "border-rose-200",   icon: <Bug className="h-5 w-5" />,         description: "Track a defect or unexpected behaviour" },
-  Task:         { textClass: "text-sky-700",     bgClass: "bg-sky-50",     borderClass: "border-sky-200",    icon: <CheckSquare className="h-5 w-5" />, description: "A unit of work to be completed" },
-  Epic:         { textClass: "text-violet-700",  bgClass: "bg-violet-50",  borderClass: "border-violet-200", icon: <Zap className="h-5 w-5" />,         description: "A large body of work spanning multiple items" },
-  "User Story": { textClass: "text-emerald-700", bgClass: "bg-emerald-50", borderClass: "border-emerald-200",icon: <BookOpen className="h-5 w-5" />,    description: "Describe functionality from the user's perspective" },
+  Bug: { textClass: "text-rose-700", bgClass: "bg-rose-50", borderClass: "border-rose-200", icon: <Bug className="h-5 w-5" />, description: "Track a defect or unexpected behaviour" },
+  Task: { textClass: "text-sky-700", bgClass: "bg-sky-50", borderClass: "border-sky-200", icon: <CheckSquare className="h-5 w-5" />, description: "A unit of work to be completed" },
+  Epic: { textClass: "text-violet-700",  bgClass: "bg-violet-50",  borderClass: "border-violet-200", icon: <Zap className="h-5 w-5" />, description: "A large body of work spanning multiple items" },
+  "User Story": { textClass: "text-emerald-700", bgClass: "bg-emerald-50", borderClass: "border-emerald-200",icon: <BookOpen className="h-5 w-5" />, description: "Describe functionality from the user's perspective" },
 }
-
 
 
 function MultiSelect({
@@ -243,10 +243,8 @@ export default function WorkItems() {
   const [page, setPage] = useState<number>(1)
   const [modalStep, setModalStep] = useState<null | "type" | WorkItemType>(null)
   const [selectedType, setSelectedType] = useState<WorkItemType | null>(null)
-  //const [showFormModal, setShowFormModal] = useState(false)
   const navigate = useNavigate()
   const itemsPerPage = 12
-
   const createdList = useMemo(() => Array.from(new Set(workItems.map((w) => w.createdBy))), [])
   const assignedList = useMemo(() => Array.from(new Set(workItems.map((w) => w.assigned))), [])
 
@@ -283,6 +281,12 @@ export default function WorkItems() {
     setAssignedFilter(new Set())
     setQuery("")
   }
+
+  const [searchParams] = useSearchParams()
+  useEffect(() => {
+    const q = searchParams.get("search")
+    setQuery(q ?? "")
+  }, [searchParams])
 
   return (
     <div className="space-y-6">
@@ -466,7 +470,6 @@ export default function WorkItems() {
           onClose={() => setModalStep(null)}
         />
       )}
-      
     </div>
   )
 }

@@ -18,4 +18,5 @@ export default [
   route("projects", "routes/org-projects.tsx"),
   route("teams", "routes/org-teams.tsx"),
 ]),
+  route("settings", "routes/settings.tsx"),
 ] satisfies RouteConfig;
