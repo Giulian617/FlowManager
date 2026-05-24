@@ -96,6 +96,7 @@ useEffect(() => {
   setProjectSelected(!!projectId)
 }, [path])
 
+
   useEffect(() => {
     const orgId     = localStorage.getItem("selectedOrg")
     const projectId = localStorage.getItem("selectedProject")
@@ -195,7 +196,9 @@ useEffect(() => {
 
       <main className="flex-1 p-5 lg:p-6">
         <div className="mx-auto max-w-[1500px]">
-          <TopBar />
+          <div className="mx-auto max-w-6xl">
+            <TopBar />
+          </div>
           <Outlet />
         </div>
       </main>

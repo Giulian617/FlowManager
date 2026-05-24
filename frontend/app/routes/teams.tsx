@@ -16,14 +16,14 @@ const LOGGED_IN_USER = MOCK_USERS[0]
 const ORGANIZATIONS = [...new Set(MOCK_USERS.map((u) => u.organization))]
 
 const INITIAL_TEAMS = [
-  { id: "1", name: "Engineering", description: "Frontend delivery and code reviews.", organization: "Acme Corporation", manager: "Mihai Pop", managerId: "1", projectId: "1", createdAt: "2025-03-01T09:00:00" },
-  { id: "2", name: "QA", description: "Manual and automated testing.", organization: "Acme Corporation", manager: "Maria Ionescu", managerId: "5", projectId: "1", createdAt: "2025-03-15T10:30:00" },
-  { id: "3", name: "Design", description: "UI/UX and design system.", organization: "Acme Corporation", manager: "Ana Serban", managerId: "3", projectId: "1", createdAt: "2025-04-01T08:00:00" },
-  { id: "4", name: "Engineering", description: "Backend services and REST API.", organization: "TechFlow SRL", manager: "Luke Tomson", managerId: "2", projectId: "2", createdAt: "2025-02-10T09:00:00" },
-  { id: "5", name: "DevOps", description: "Infrastructure and CI/CD.", organization: "TechFlow SRL", manager: "Alex Tudor", managerId: "6", projectId: "2", createdAt: "2025-02-10T09:00:00" },
-  { id: "6", name: "Mobile Engineering", description: "iOS and Android development.", organization: "DevSquad", manager: "Joe Nik", managerId: "4", projectId: "3", createdAt: "2025-05-01T11:00:00" },
-  { id: "7", name: "QA", description: "Device-specific testing.", organization: "DevSquad", manager: "Maria Ionescu", managerId: "5", projectId: "3", createdAt: "2025-05-10T09:00:00" },
-  { id: "8", name: "Design", description: "Mobile UI and accessibility.", organization: "DevSquad", manager: "Ana Serban", managerId: "3", projectId: "3", createdAt: "2025-05-15T08:00:00" },
+  { id: "1", name: "Engineering", description: "Frontend delivery and code reviews.", organization: "Acme Corporation", manager: "Mihai Pop", managerId: "1", projectId: "1", createdAt: "2025-03-01T09:00:00", memberIds: ["1", "2", "3", "4"] },
+  { id: "2", name: "QA", description: "Manual and automated testing.", organization: "Acme Corporation", manager: "Maria Ionescu", managerId: "5", projectId: "1", createdAt: "2025-03-15T10:30:00", memberIds: ["5", "6"] },
+  { id: "3", name: "Design", description: "UI/UX and design system.", organization: "Acme Corporation", manager: "Ana Serban", managerId: "3", projectId: "1", createdAt: "2025-04-01T08:00:00", memberIds: ["3", "4"] },
+  { id: "4", name: "Engineering", description: "Backend services and REST API.", organization: "TechFlow SRL", manager: "Luke Tomson", managerId: "2", projectId: "2", createdAt: "2025-02-10T09:00:00", memberIds: ["2", "1", "6"] },
+  { id: "5", name: "DevOps", description: "Infrastructure and CI/CD.", organization: "TechFlow SRL", manager: "Alex Tudor", managerId: "6", projectId: "2", createdAt: "2025-02-10T09:00:00", memberIds: ["6"] },
+  { id: "6", name: "Mobile Engineering", description: "iOS and Android development.", organization: "DevSquad", manager: "Joe Nik", managerId: "4", projectId: "3", createdAt: "2025-05-01T11:00:00", memberIds: ["4", "2", "1"] },
+  { id: "7", name: "QA", description: "Device-specific testing.", organization: "DevSquad", manager: "Maria Ionescu", managerId: "5", projectId: "3", createdAt: "2025-05-10T09:00:00", memberIds: ["5", "3"] },
+  { id: "8", name: "Design", description: "Mobile UI and accessibility.", organization: "DevSquad", manager: "Ana Serban", managerId: "3", projectId: "3", createdAt: "2025-05-15T08:00:00", memberIds: ["3"] },
 ]
 
 type Team = typeof INITIAL_TEAMS[0]
@@ -88,9 +88,14 @@ function SearchablePicker({ value, placeholder, options, renderOption, renderSel
           <ul className="max-h-44 overflow-y-auto">
             {options
               .filter((o: any) => {
-                const label = o.label ?? fullName(o) ?? o.name ?? ""
-                return label.toLowerCase().includes(search.toLowerCase()) ||
-                  (o.role ?? "").toLowerCase().includes(search.toLowerCase())
+                const text = [
+                  o.label,
+                  o.firstName && o.lastName ? `${o.firstName} ${o.lastName}` : null,
+                  o.username,
+                  o.name,
+                  o.role,
+                ].filter(Boolean).join(" ").toLowerCase()
+                return text.includes(search.toLowerCase())
               })
               .map((o) => {
                 const isSelected = o.id === value
@@ -105,8 +110,14 @@ function SearchablePicker({ value, placeholder, options, renderOption, renderSel
                 )
               })}
             {options.filter((o: any) => {
-              const label = o.label ?? fullName(o) ?? o.name ?? ""
-              return label.toLowerCase().includes(search.toLowerCase()) || (o.role ?? "").toLowerCase().includes(search.toLowerCase())
+              const text = [
+                o.label,
+                o.firstName && o.lastName ? `${o.firstName} ${o.lastName}` : null,
+                o.username,
+                o.name,
+                o.role,
+              ].filter(Boolean).join(" ").toLowerCase()
+              return text.includes(search.toLowerCase())
             }).length === 0 && (
               <li className="px-3 py-3 text-xs text-slate-400">No results found.</li>
             )}
@@ -151,6 +162,90 @@ function ConfirmDeleteModal({ team, onConfirm, onClose }: {
   )
 }
 
+function MemberPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setSearch("") } }
+    document.addEventListener("mousedown", h)
+    return () => document.removeEventListener("mousedown", h)
+  }, [])
+
+  const filtered = MOCK_USERS.filter((u) =>
+    `${u.firstName} ${u.lastName} ${u.username} ${u.role}`.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const toggle = (id: string) =>
+    value.includes(id) ? onChange(value.filter((v) => v !== id)) : onChange([...value, id])
+
+  const selectedUsers = MOCK_USERS.filter((u) => value.includes(u.id))
+
+  return (
+    <div ref={ref} className="relative">
+      {selectedUsers.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {selectedUsers.map((u) => (
+            <span key={u.id} className="inline-flex items-center gap-1 rounded-lg bg-slate-100 border border-slate-200 pl-1.5 pr-1 py-0.5 text-xs text-slate-700">
+              <div className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-[9px] font-semibold flex-none">
+                {u.firstName[0]}{u.lastName[0]}
+              </div>
+              {u.firstName} {u.lastName}
+              <button type="button" onMouseDown={(e) => { e.preventDefault(); toggle(u.id) }} className="ml-0.5 text-slate-400 hover:text-slate-600">
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => { setOpen((o) => !o); setSearch("") }}
+        className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition hover:border-slate-400"
+      >
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-slate-400" />
+          <span className="text-slate-400">{value.length === 0 ? "Add members…" : "Add more…"}</span>
+        </div>
+        <ChevronDown className="h-4 w-4 text-slate-400" />
+      </button>
+      {open && (
+        <div className="absolute left-0 z-30 mt-1.5 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+          <div className="px-3 py-2 border-b border-slate-100">
+            <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5">
+              <Search className="h-3.5 w-3.5 text-slate-400 flex-none" />
+              <input autoFocus value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…" className="w-full bg-transparent text-xs text-slate-700 outline-none" />
+            </div>
+          </div>
+          <ul className="max-h-44 overflow-auto">
+            {filtered.map((u) => {
+              const selected = value.includes(u.id)
+              return (
+                <li key={u.id}
+                  className={`flex items-center gap-2.5 px-3 py-2.5 text-sm cursor-pointer transition hover:bg-slate-50 ${selected ? "bg-slate-50" : ""}`}
+                  onMouseDown={(e) => { e.preventDefault(); toggle(u.id) }}
+                >
+                  <div className={`h-4 w-4 flex-none rounded border flex items-center justify-center transition-colors ${selected ? "bg-slate-900 border-slate-900" : "border-slate-300 bg-white"}`}>
+                    {selected && <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 6l3 3 5-5" /></svg>}
+                  </div>
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-[10px] font-semibold flex-none">
+                    {u.firstName[0]}{u.lastName[0]}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm text-slate-700">{u.firstName} {u.lastName}</div>
+                    <div className="text-xs text-slate-400">{u.role}</div>
+                  </div>
+                </li>
+              )
+            })}
+            {filtered.length === 0 && <li className="px-3 py-3 text-xs text-slate-400">No results</li>}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
 
 function TeamFormModal({ initial, onClose, onSave }: {
   initial?: Team
@@ -162,6 +257,7 @@ function TeamFormModal({ initial, onClose, onSave }: {
   const [description, setDesc] = useState(initial?.description ?? "")
   const [managerId, setManagerId] = useState(initial?.managerId ?? LOGGED_IN_USER.id)
   const [organization, setOrganization] = useState(initial?.organization ?? LOGGED_IN_USER.organization)
+  const [memberIds, setMemberIds] = useState<string[]>(initial?.memberIds ?? [])
 
   const nameOk = name.trim() !== ""
   const descOk = description.trim() !== ""
@@ -177,6 +273,7 @@ function TeamFormModal({ initial, onClose, onSave }: {
       organization,
       manager: fullName(manager),
       managerId: manager.id,
+      memberIds,
       projectId: initial?.projectId ?? "",
       createdAt: initial?.createdAt ?? new Date().toISOString(),
     })
@@ -296,6 +393,14 @@ function TeamFormModal({ initial, onClose, onSave }: {
             )}
           </div>
 
+          {/* Members */}
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Members
+            </label>
+            <MemberPicker value={memberIds} onChange={setMemberIds} />
+          </div>
+
           {!canSave && (
             <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-700">
               <AlertCircle className="h-4 w-4 flex-none" />
@@ -351,11 +456,14 @@ const filtered = teams.filter((t) => {
   }
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-2">
+    <div className="mx-auto max-w-6xl space-y-6">
+      <header className="flex flex-col gap-1">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Teams</p>
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-semibold text-slate-900">All teams</h1>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold text-slate-900">All teams</h1>
+            <p className="text-sm leading-6 text-slate-600">Manage and review all teams for this project.</p>
+          </div>
           <button
             onClick={() => setShowCreate(true)}
             className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
@@ -406,14 +514,9 @@ const filtered = teams.filter((t) => {
                 </button>
               </div>
 
-              <div className="flex items-start gap-3 mb-4 pr-14">
-                <div className="flex h-10 w-10 flex-none items-center justify-center rounded-2xl bg-slate-900 text-white text-xs font-bold">
-                  {team.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <h2 className="text-base font-semibold text-slate-900 leading-tight truncate">{team.name}</h2>
-                  <p className="text-xs text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">{team.description}</p>
-                </div>
+              <div className="mb-4 pr-14">
+                <h2 className="text-base font-semibold text-slate-900 leading-tight truncate">{team.name}</h2>
+                <p className="text-xs text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">{team.description}</p>
               </div>
 
               <div className="border-t border-slate-100 mb-4" />
@@ -435,6 +538,21 @@ const filtered = teams.filter((t) => {
                   <span className="ml-auto text-xs font-medium text-slate-700">{formatDate(team.createdAt)}</span>
                 </div>
               </div>
+              {team.memberIds && team.memberIds.length > 0 && (
+                  <>
+                    <div className="border-t border-slate-100 my-3" />
+                    <div className="flex flex-wrap gap-1.5">
+                      {MOCK_USERS.filter((u) => team.memberIds.includes(u.id)).map((u) => (
+                        <div key={u.id} className="flex items-center gap-1.5 rounded-lg bg-slate-50 border border-slate-200 pl-1 pr-2.5 py-1">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-[9px] font-semibold flex-none">
+                            {u.firstName[0]}{u.lastName[0]}
+                          </div>
+                          <span className="text-xs text-slate-600">{u.firstName} {u.lastName}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
             </div>
           ))}
         </div>

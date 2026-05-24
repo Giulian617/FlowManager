@@ -1,81 +1,215 @@
 import React, { useEffect, useState } from "react"
-import { Building2, Users, FolderKanban, Calendar, TrendingUp } from "lucide-react"
+import { useNavigate } from "react-router"
+import { FolderKanban, Users, Building2, Calendar, User, ChevronRight, Bug, CheckSquare, Zap, BookOpen } from "lucide-react"
 
 const MOCK_ORGS: Record<string, {
-  name: string; description: string; industry: string
-  createdAt: string; manager: string; members: number; projects: number
+  name: string
+  description: string
+  industry: string
+  createdAt: string
+  manager: string
+  members: number
+  projects: number
+  teams: number
+  recentActivity: { title: string; detail: string; time: string; type: "bug" | "task" | "epic" | "story" }[]
 }> = {
-  "1": { name: "Acme Corporation", description: "Enterprise software solutions provider focused on project management tools.", industry: "Software", createdAt: "2022-03-15", manager: "Joe Nik",     members: 24, projects: 8 },
-  "2": { name: "TechFlow SRL",     description: "Cloud infrastructure and DevOps automation services.",                       industry: "Cloud",    createdAt: "2021-07-01", manager: "Mihai Pop",  members: 12, projects: 4 },
-  "3": { name: "DevSquad",         description: "Boutique agency specializing in mobile and web development.",                industry: "Mobile",   createdAt: "2023-01-10", manager: "Ana Serban", members: 6,  projects: 3 },
+  "1": {
+    name: "Acme Corporation",
+    description: "Enterprise software solutions for global clients.",
+    industry: "Software",
+    createdAt: "2023-01-15T09:00:00",
+    manager: "Joe Nik",
+    members: 24, projects: 8, teams: 6,
+    recentActivity: [
+      { title: "New bug reported", detail: "Login button unresponsive on Safari.", time: "2h ago", type: "bug" },
+      { title: "Sprint planning", detail: "6 tasks added to current sprint.", time: "4h ago", type: "task" },
+      { title: "Q3 Epic created", detail: "New epic for Q3 delivery kick-off.", time: "Yesterday", type: "epic" },
+      { title: "User story refined", detail: "Onboarding flow story estimated.", time: "2 days ago", type: "story" },
+    ],
+  },
+  "2": {
+    name: "TechFlow SRL",
+    description: "Cloud infrastructure and backend services.",
+    industry: "Cloud",
+    createdAt: "2023-06-01T09:00:00",
+    manager: "Mihai Pop",
+    members: 12, projects: 4, teams: 3,
+    recentActivity: [
+      { title: "Pipeline bug fixed", detail: "CI/CD deploy issue resolved.", time: "1h ago", type: "bug" },
+      { title: "API endpoint shipped", detail: "/api/tickets/status deployed.", time: "3h ago", type: "task" },
+      { title: "Infrastructure epic", detail: "Kubernetes migration epic started.", time: "Yesterday", type: "epic" },
+      { title: "Auth story closed", detail: "OAuth2 integration story done.", time: "3 days ago", type: "story" },
+    ],
+  },
+  "3": {
+    name: "DevSquad",
+    description: "Mobile and cross-platform development agency.",
+    industry: "Mobile",
+    createdAt: "2024-02-10T09:00:00",
+    manager: "Ana Serban",
+    members: 6, projects: 3, teams: 3,
+    recentActivity: [
+      { title: "Crash reported", detail: "Null pointer on Android login.", time: "30m ago", type: "bug" },
+      { title: "iOS build shipped", detail: "Version 1.2.0 sent to App Store.", time: "2h ago", type: "task" },
+      { title: "Mobile epic created", detail: "Offline mode epic kick-off.", time: "Yesterday", type: "epic" },
+      { title: "Onboarding story", detail: "User onboarding story approved.", time: "2 days ago", type: "story" },
+    ],
+  },
+}
+
+const activityColors = {
+  bug:   "bg-rose-50 text-rose-700 border-rose-200",
+  task:  "bg-emerald-50 text-emerald-700 border-emerald-200",
+  epic:  "bg-violet-50 text-violet-700 border-violet-200",
+  story: "bg-sky-50 text-sky-700 border-sky-200",
+}
+
+const activityIcons = {
+  bug:   <Bug className="h-4 w-4 flex-none" />,
+  task:  <CheckSquare className="h-4 w-4 flex-none" />,
+  epic:  <Zap className="h-4 w-4 flex-none" />,
+  story: <BookOpen className="h-4 w-4 flex-none" />,
+}
+
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("ro-RO", { day: "2-digit", month: "long", year: "numeric" })
 }
 
 export default function OrgDashboard() {
+  const navigate = useNavigate()
   const [org, setOrg] = useState<typeof MOCK_ORGS[string] | null>(null)
 
   useEffect(() => {
-    const id = localStorage.getItem("selectedOrg")
-    if (id) setOrg(MOCK_ORGS[id] ?? null)
+    const id = localStorage.getItem("selectedOrg") ?? ""
+    setOrg(MOCK_ORGS[id] ?? null)
   }, [])
 
-  if (!org) return null
+  if (!org) return (
+    <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white py-24 shadow-sm text-center gap-3">
+      <Building2 className="h-10 w-10 text-slate-300" />
+      <p className="text-sm font-medium text-slate-600">No organization selected.</p>
+      <button
+        onClick={() => navigate("/select-org")}
+        className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+      >
+        Select organization
+      </button>
+    </div>
+  )
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-2">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Organization</p>
-        <div>
-          <h1 className="text-3xl font-semibold text-slate-900">{org.name}</h1>
-          <p className="text-sm leading-6 text-slate-500 mt-0.5">{org.description}</p>
-        </div>
+      {/* Header */}
+      <header className="flex flex-col gap-1">
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Dashboard</p>
+        <h1 className="text-3xl font-semibold text-slate-900">{org.name}</h1>
+        <p className="max-w-2xl text-sm leading-6 text-slate-600">{org.description}</p>
       </header>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {[
-          { label: "Members",  value: String(org.members),  icon: <Users className="h-5 w-5 text-blue-500" />,          bg: "bg-blue-50"   },
-          { label: "Projects", value: String(org.projects), icon: <FolderKanban className="h-5 w-5 text-violet-500" />, bg: "bg-violet-50" },
-          { label: "Industry", value: org.industry,         icon: <TrendingUp className="h-5 w-5 text-emerald-500" />,  bg: "bg-emerald-50"},
-          { label: "Manager",  value: org.manager,          icon: <Users className="h-5 w-5 text-amber-500" />,         bg: "bg-amber-50"  },
-        ].map((s) => (
-          <div key={s.label} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${s.bg} mb-3`}>
-              {s.icon}
-            </div>
-            <div className="text-lg font-semibold text-slate-900 truncate">{s.value}</div>
-            <div className="text-xs text-slate-500 mt-0.5">{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Details */}
+      {/* Org info card */}
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 mb-4">Organization details</h2>
-        <div className="space-y-3">
+        <div className="grid gap-4 sm:grid-cols-3">
           <div className="flex items-center gap-3">
-            <Building2 className="h-4 w-4 flex-none text-slate-400" />
-            <span className="text-sm text-slate-500 w-28">Name</span>
-            <span className="text-sm font-medium text-slate-700">{org.name}</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 flex-none">
+              <Building2 className="h-4 w-4 text-slate-500" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">Industry</p>
+              <p className="text-sm font-medium text-slate-800">{org.industry}</p>
+            </div>
           </div>
           <div className="flex items-center gap-3">
-            <TrendingUp className="h-4 w-4 flex-none text-slate-400" />
-            <span className="text-sm text-slate-500 w-28">Industry</span>
-            <span className="text-sm font-medium text-slate-700">{org.industry}</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 flex-none">
+              <User className="h-4 w-4 text-slate-500" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">Manager</p>
+              <p className="text-sm font-medium text-slate-800">{org.manager}</p>
+            </div>
           </div>
           <div className="flex items-center gap-3">
-            <Users className="h-4 w-4 flex-none text-slate-400" />
-            <span className="text-sm text-slate-500 w-28">Manager</span>
-            <span className="text-sm font-medium text-slate-700">{org.manager}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Calendar className="h-4 w-4 flex-none text-slate-400" />
-            <span className="text-sm text-slate-500 w-28">Created</span>
-            <span className="text-sm font-medium text-slate-700">
-              {new Date(org.createdAt).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" })}
-            </span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 flex-none">
+              <Calendar className="h-4 w-4 text-slate-500" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">Created</p>
+              <p className="text-sm font-medium text-slate-800">{formatDate(org.createdAt)}</p>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Stat cards */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div onClick={() => navigate("/org/projects")}
+          className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm cursor-pointer hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 transition duration-150">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm text-slate-500">Projects</span>
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
+              <FolderKanban className="h-4 w-4" />
+            </span>
+          </div>
+          <div className="mt-4 text-4xl font-semibold text-slate-900">{org.projects}</div>
+          <div className="mt-3 flex items-center gap-1 text-xs text-slate-400">
+            <span>View all</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </div>
+        </div>
+
+        <div onClick={() => navigate("/org/teams")}
+          className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm cursor-pointer hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 transition duration-150">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm text-slate-500">Teams</span>
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-violet-100 text-violet-700">
+              <Users className="h-4 w-4" />
+            </span>
+          </div>
+          <div className="mt-4 text-4xl font-semibold text-slate-900">{org.teams}</div>
+          <div className="mt-3 flex items-center gap-1 text-xs text-slate-400">
+            <span>View all</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm text-slate-500">Members</span>
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+              <Building2 className="h-4 w-4" />
+            </span>
+          </div>
+          <div className="mt-4 text-4xl font-semibold text-slate-900">{org.members}</div>
+        </div>
+      </div>
+
+      {/* Recent activity */}
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Recent activity</h2>
+            <p className="text-sm text-slate-500 mt-0.5">Latest work items across the organization</p>
+          </div>
+          <button
+            onClick={() => navigate("/org/projects")}
+            className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            View projects
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          {org.recentActivity.map((event) => (
+            <div key={event.title} className={`flex items-start gap-3 rounded-2xl border p-4 ${activityColors[event.type]}`}>
+              <span className="mt-0.5">{activityIcons[event.type]}</span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">{event.title}</p>
+                <p className="text-xs mt-0.5 opacity-80">{event.detail}</p>
+              </div>
+              <span className="text-[10px] opacity-60 whitespace-nowrap flex-none">{event.time}</span>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   )
 }

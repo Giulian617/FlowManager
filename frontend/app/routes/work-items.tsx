@@ -281,20 +281,22 @@ export default function WorkItems() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-2">
+    <header className="flex flex-col gap-2">
+      <div className="mx-auto max-w-6xl w-full">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Work Items</p>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold text-slate-900">Work items</h1>
-            <p className="text-sm leading-6 text-slate-600">Filter and review work items by type, status, severity, creator, and assignee.</p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-semibold text-slate-900">Work items</h1>
+              <p className="text-sm leading-6 text-slate-600">Filter and review work items by type, status, severity, creator, and assignee.</p>
+            </div>
+            <button
+              onClick={() => setModalStep("type")}
+              className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              <Plus className="h-4 w-4" />
+              New Work Item
+            </button>
           </div>
-          <button
-            onClick={() => setModalStep("type")}
-            className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-          >
-            <Plus className="h-4 w-4" />
-            New Work Item
-          </button>
         </div>
       </header>
 

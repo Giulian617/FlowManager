@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
 import { NavLink, Outlet, Navigate, useNavigate } from "react-router"
 import { LayoutDashboard, FolderKanban, Users, ChevronDown, LogOut, Building2 } from "lucide-react"
+import TopBar from "../components/TopBar"
 
 const MOCK_ORGS = [
   { id: "1", name: "Acme Corporation", avatar: "AC" },
@@ -133,7 +134,8 @@ export default function OrgLayout() {
       {/* Main content */}
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-6xl px-8 py-8">
-          <Outlet />
+            <TopBar />
+            <Outlet />
         </div>
       </main>
     </div>

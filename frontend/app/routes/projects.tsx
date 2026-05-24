@@ -521,11 +521,14 @@ const loggedInOrg = MOCK_ORGS.find((o) => o.id === selectedOrgId)?.name
   }
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-2">
+    <div className="mx-auto max-w-6xl space-y-6">
+      <header className="flex flex-col gap-1">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Projects</p>
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-semibold text-slate-900">Project portfolio</h1>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold text-slate-900">Project portfolio</h1>
+            <p className="text-sm leading-6 text-slate-600">Manage and review all projects for this organization.</p>
+          </div>
           <button
             onClick={() => setShowCreate(true)}
             className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"

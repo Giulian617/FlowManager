@@ -127,7 +127,8 @@ export default function Kanban() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-2">
+    <header className="flex flex-col gap-2">
+      <div className="mx-auto max-w-6xl w-full">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Kanban Board</p>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -141,6 +142,7 @@ export default function Kanban() {
             <Plus className="h-4 w-4" />
             New Work Item
           </button>
+        </div>
         </div>
 
         <div className="flex items-center gap-2 rounded-3xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm">

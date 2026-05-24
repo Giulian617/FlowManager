@@ -48,10 +48,11 @@ function initials(name: string) {
 
 function MembersPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
   const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setSearch("") } }
     document.addEventListener("mousedown", h)
     return () => document.removeEventListener("mousedown", h)
   }, [])
@@ -60,24 +61,33 @@ function MembersPicker({ value, onChange }: { value: string[]; onChange: (v: str
     value.includes(name) ? onChange(value.filter((v) => v !== name)) : onChange([...value, name])
 
   const allNames = MOCK_USERS.map(fullName)
+  const filtered = allNames.filter((n) => n.toLowerCase().includes(search.toLowerCase()))
 
   return (
     <div ref={ref} className="relative">
       {value.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-2">
-          {value.map((m) => (
-            <span key={m} className="inline-flex items-center gap-1 rounded-lg bg-slate-100 border border-slate-200 pl-2 pr-1 py-0.5 text-xs text-slate-700">
-              {m}
-              <button type="button" onMouseDown={(e) => { e.preventDefault(); toggle(m) }} className="ml-0.5 text-slate-400 hover:text-slate-600">
-                <X className="h-3 w-3" />
-              </button>
-            </span>
-          ))}
+          {value.map((m) => {
+            const ini = m.split(" ").map((n) => n[0]).join("").toUpperCase()
+            return (
+              <span key={m} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 border border-slate-200 pl-1 pr-1.5 py-0.5 text-xs text-slate-700">
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-[9px] font-semibold flex-none">
+                  {ini}
+                </div>
+                {m}
+                <button type="button" onMouseDown={(e) => { e.preventDefault(); toggle(m) }} className="ml-0.5 text-slate-400 hover:text-slate-600">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )
+          })}
         </div>
       )}
+
+      {/* Trigger */}
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => { setOpen((o) => !o); setSearch("") }}
         className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition hover:border-slate-400"
       >
         <div className="flex items-center gap-2">
@@ -86,32 +96,63 @@ function MembersPicker({ value, onChange }: { value: string[]; onChange: (v: str
         </div>
         <ChevronDown className="h-4 w-4 text-slate-400" />
       </button>
+
+      {/* Dropdown */}
       {open && (
-        <ul className="absolute left-0 z-30 mt-1.5 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden max-h-48 overflow-y-auto">
-          {allNames.map((name) => {
-            const selected = value.includes(name)
-            return (
-              <li key={name}
-                className={`flex items-center gap-2.5 px-3 py-2.5 text-sm cursor-pointer transition hover:bg-slate-50 ${selected ? "bg-slate-50" : ""}`}
-                onMouseDown={(e) => { e.preventDefault(); toggle(name) }}
-              >
-                <div className={`h-4 w-4 flex-none rounded border flex items-center justify-center transition-colors ${selected ? "bg-slate-900 border-slate-900" : "border-slate-300 bg-white"}`}>
-                  {selected && (
-                    <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M2 6l3 3 5-5" />
-                    </svg>
-                  )}
-                </div>
-                <span className="text-slate-700">{name}</span>
-              </li>
-            )
-          })}
-        </ul>
+        <div className="absolute left-0 z-30 mt-1.5 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100">
+            <Search className="h-3.5 w-3.5 text-slate-400 flex-none" />
+            <input
+              autoFocus
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search…"
+              className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+            />
+            {search && (
+              <button onMouseDown={(e) => { e.preventDefault(); setSearch("") }} className="text-slate-300 hover:text-slate-500">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          <ul className="max-h-48 overflow-y-auto">
+            {filtered.length === 0 ? (
+              <li className="px-3 py-3 text-xs text-slate-400">No results</li>
+            ) : (
+              filtered.map((name) => {
+                const selected = value.includes(name)
+                const user = MOCK_USERS.find((u) => fullName(u) === name)
+                const ini = name.split(" ").map((n) => n[0]).join("").toUpperCase()
+                return (
+                  <li
+                    key={name}
+                    className={`flex items-center gap-2.5 px-3 py-2.5 text-sm cursor-pointer transition hover:bg-slate-50 ${selected ? "bg-slate-50" : ""}`}
+                    onMouseDown={(e) => { e.preventDefault(); toggle(name) }}
+                  >
+                    <div className={`h-4 w-4 flex-none rounded border flex items-center justify-center transition-colors ${selected ? "bg-slate-900 border-slate-900" : "border-slate-300 bg-white"}`}>
+                      {selected && (
+                        <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M2 6l3 3 5-5" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-[10px] font-semibold flex-none">
+                      {ini}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm text-slate-700">{name}</div>
+                      {user && <div className="text-xs text-slate-400">{user.role}</div>}
+                    </div>
+                  </li>
+                )
+              })
+            )}
+          </ul>
+        </div>
       )}
     </div>
   )
 }
-
 
 function ManagerPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   const [open, setOpen] = useState(false)
