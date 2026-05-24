@@ -332,20 +332,39 @@ function CommentSection() {
   )
 }
 
-export default function NewBugPage() {
-  const navigate = useNavigate()
+type WorkItemData = { id?: string; title?: string; description?: string; severity?: string; assigned?: string[]; deadline?: string; parent?: string; status?: string }
 
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [severity, setSeverity] = useState("")
-  const [assignees, setAssignees] = useState<string[]>([])
-  const [deadline, setDeadline] = useState("")
-  const [parent, setParent] = useState("")
+export default function NewBugPage({ initialData }: { initialData?: WorkItemData }) {
+  const navigate = useNavigate()
+  const isEdit = !!initialData
+  const [title, setTitle] = useState(initialData?.title ?? "")
+  const [description, setDescription] = useState(initialData?.description ?? "")
+  const [severity, setSeverity] = useState(initialData?.severity ?? "")
+  const [assignees, setAssignees] = useState<string[]>(initialData?.assigned ?? [])
+  const [deadline, setDeadline] = useState(initialData?.deadline ?? "")
+  const [parent, setParent] = useState(initialData?.parent ?? "")
+  
+  const [baseline, setBaseline] = useState({
+  title: initialData?.title ?? "",
+  description: initialData?.description ?? "",
+  severity: initialData?.severity ?? "",
+  deadline: initialData?.deadline ?? "",
+  parent: initialData?.parent ?? "",
+  assignees: JSON.stringify(initialData?.assigned ?? []),
+})
+
+const isDirty =
+  title !== baseline.title ||
+  description !== baseline.description ||
+  severity !== baseline.severity ||
+  deadline !== baseline.deadline ||
+  parent !== baseline.parent ||
+  JSON.stringify(assignees) !== baseline.assignees
 
   const titleOk = title.trim() !== ""
   const descOk = description.trim() !== ""
   const severityOk = severity !== ""
-  const canSave = titleOk && descOk && severityOk
+  const canSave = titleOk && descOk && severityOk && (!isEdit || isDirty)
 
   return (
     <div className="space-y-6">
@@ -362,7 +381,7 @@ export default function NewBugPage() {
             <Bug className="h-5 w-5 text-rose-700" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">New Work Item</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{isEdit ? "Edit Work Item" : "New Work Item"}</p>
             <h1 className="text-2xl font-semibold text-slate-900">Bug Report</h1>
           </div>
         </div>
@@ -398,7 +417,7 @@ export default function NewBugPage() {
                 }`}
               />
             </div>
-            {!canSave && (
+            {(!titleOk || !descOk || !severityOk) && (
               <div className="flex items-center gap-2 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-700">
                 <AlertCircle className="h-4 w-4 flex-none" />
                 <span>Title, description, and severity are required to save.</span>
@@ -489,9 +508,15 @@ export default function NewBugPage() {
             <button
               type="button"
               disabled={!canSave}
+              onClick={() => {
+                if (isEdit) {
+                  setBaseline({ title, description, severity, deadline, parent, assignees: JSON.stringify(assignees) })
+                }
+              }}
               className="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
+
             >
-              Save Bug
+              {isEdit ? "Save Changes" : "Save Bug"}
             </button>
             <button
               type="button"

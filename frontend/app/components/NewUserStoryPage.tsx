@@ -276,20 +276,42 @@ function CommentSection() {
   )
 }
 
-export default function NewUserStoryPage() {
-  const navigate = useNavigate()
-  const [title, setTitle]               = useState("")
-  const [description, setDescription]   = useState("")
-  const [acceptanceCriteria, setAC]     = useState("")
-  const [severity, setSeverity]         = useState("")
-  const [assignees, setAssignees]       = useState<string[]>([])
-  const [deadline, setDeadline]         = useState("")
-  const [parent, setParent]             = useState("")
+type WorkItemData = { id?: string; title?: string; description?: string; acceptanceCriteria?: string; severity?: string; assigned?: string[]; deadline?: string; parent?: string; status?: string }
 
-  const titleOk    = title.trim() !== ""
-  const descOk     = description.trim() !== ""
+export default function NewUserStoryPage({ initialData }: { initialData?: WorkItemData }) {
+  const navigate = useNavigate()
+  const isEdit = !!initialData
+  const [title, setTitle] = useState(initialData?.title ?? "")
+  const [description, setDescription] = useState(initialData?.description ?? "")
+  const [acceptanceCriteria, setAC] = useState(initialData?.acceptanceCriteria ?? "")
+  const [severity, setSeverity] = useState(initialData?.severity ?? "")
+  const [assignees, setAssignees] = useState<string[]>(initialData?.assigned ?? [])
+  const [deadline, setDeadline] = useState(initialData?.deadline ?? "")
+  const [parent, setParent] = useState(initialData?.parent ?? "")
+
+  const [baseline, setBaseline] = useState({
+  title: initialData?.title ?? "",
+  description: initialData?.description ?? "",
+  acceptanceCriteria: initialData?.acceptanceCriteria ?? "",
+  severity: initialData?.severity ?? "",
+  deadline: initialData?.deadline ?? "",
+  parent: initialData?.parent ?? "",
+  assignees: JSON.stringify(initialData?.assigned ?? []),
+})
+
+const isDirty =
+  title !== baseline.title ||
+  description !== baseline.description ||
+  acceptanceCriteria !== baseline.acceptanceCriteria ||
+  severity !== baseline.severity ||
+  deadline !== baseline.deadline ||
+  parent !== baseline.parent ||
+  JSON.stringify(assignees) !== baseline.assignees
+
+  const titleOk = title.trim() !== ""
+  const descOk = description.trim() !== ""
   const severityOk = severity !== ""
-  const canSave    = titleOk && descOk && severityOk        
+  const canSave = titleOk && descOk && severityOk && (!isEdit || isDirty)
 
   return (
     <div className="space-y-6">
@@ -302,7 +324,7 @@ export default function NewUserStoryPage() {
             <BookOpen className="h-5 w-5 text-emerald-700" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">New Work Item</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{isEdit ? "Edit Work Item" : "New Work Item"}</p>
             <h1 className="text-2xl font-semibold text-slate-900">User Story</h1>
           </div>
         </div>
@@ -344,7 +366,7 @@ export default function NewUserStoryPage() {
                 placeholder={"Given… When… Then…\n- Criterion 1\n- Criterion 2"} rows={5}
                 className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-200 font-mono" />
             </div>
-            {!canSave && (
+            {(!titleOk || !descOk || !severityOk) && (
               <div className="flex items-center gap-2 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-700">
                 <AlertCircle className="h-4 w-4 flex-none" />
                 <span>Title, description, and severity are required to save.</span>
@@ -405,7 +427,15 @@ export default function NewUserStoryPage() {
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <button type="button" disabled={!canSave} className="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed">Save User Story</button>
+            <button type="button" disabled={!canSave}
+              onClick={() => {
+                if (isEdit) {
+                  setBaseline({ title, description, acceptanceCriteria, severity, deadline, parent, assignees: JSON.stringify(assignees) })
+                }
+              }}
+              className="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed">
+              {isEdit ? "Save Changes" : "Save User Story"}
+            </button>
             <button type="button" onClick={() => navigate(-1)} className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Cancel</button>
           </div>
         </div>

@@ -4,11 +4,11 @@ import { ListFilter, Search, Plus, X, Bug, CheckSquare, Zap, BookOpen, ChevronLe
 import { useNavigate } from "react-router"
 
 const workItems = [
-  { id: "13", type: "Bug", title: "Implement attachment feature", createdBy: "Joe Nik", assigned: "Mihai Pop", assignedAvatar: "MP", status: "To Do", priority: "Medium", severity: "Low", deadline: "2026-06-02" },
-  { id: "12", type: "Task", title: "Drop-down button not working", createdBy: "Maria Ionescu", assigned: "Unassigned", assignedAvatar: "U", status: "Closed", priority: "Blocker", severity: "Blocker", deadline: "2026-05-21" },
-  { id: "11", type: "Epic", title: "Save settings button not working", createdBy: "Ana Serban", assigned: "Unassigned", assignedAvatar: "U", status: "Closed", priority: "Low", severity: "Low", deadline: "2026-06-10" },
-  { id: "10", type: "User Story", title: "Implement user settings", createdBy: "Joe Nik", assigned: "Luke Tomson", assignedAvatar: "LT", status: "In progress", priority: "High", severity: "High", deadline: "2026-05-29" },
-  { id: "9", type: "Bug", title: "Login functionality not working", createdBy: "Alex Tudor", assigned: "Luke Tomson", assignedAvatar: "LT", status: "Testing", priority: "Low", severity: "Low", deadline: "2026-05-26" },
+  { id: "5", type: "Bug", title: "Implement attachment feature", createdBy: "Joe Nik", assigned: "Mihai Pop", assignedAvatar: "MP", status: "To Do", priority: "Medium", severity: "Low", deadline: "2026-06-02", description: "Users cannot attach files to work items. The attachment button is visible but clicking it does nothing." },
+  { id: "4", type: "Task", title: "Drop-down button not working", createdBy: "Maria Ionescu", assigned: "Unassigned", assignedAvatar: "U", status: "Closed", priority: "Blocker", severity: "Blocker", deadline: "2026-05-21", description: "The drop-down component in the settings panel does not respond to click events in Chrome and Firefox." },
+  { id: "3", type: "Epic", title: "Save settings button not working", createdBy: "Ana Serban", assigned: "Unassigned", assignedAvatar: "U", status: "Closed", priority: "Low", severity: "Low", deadline: "2026-06-10", description: "Epic covering all issues related to the settings page save functionality across browsers and devices." },
+  { id: "2", type: "User Story", title: "Implement user settings", createdBy: "Joe Nik", assigned: "Luke Tomson", assignedAvatar: "LT", status: "In progress", priority: "High", severity: "High", deadline: "2026-05-29", description: "As a user, I want to be able to update my profile settings including name, email, and notification preferences." },
+  { id: "1", type: "Bug", title: "Login functionality not working", createdBy: "Alex Tudor", assigned: "Luke Tomson", assignedAvatar: "LT", status: "Testing", priority: "Low", severity: "Low", deadline: "2026-05-26", description: "Login button becomes unresponsive after the first failed attempt. Requires page refresh to try again." },
 ]
 
 const typeOptions = ["Bug", "Task", "Epic", "User Story"]
@@ -257,7 +257,12 @@ export default function WorkItems() {
       if (severityFilter.size > 0 && !severityFilter.has(item.severity)) return false
       if (createdByFilter.size > 0 && !createdByFilter.has(item.createdBy)) return false
       if (assignedFilter.size > 0 && !assignedFilter.has(item.assigned)) return false
-      if (query && !item.title.toLowerCase().includes(query.toLowerCase())) return false
+      if (query) {
+        const q = query.toLowerCase().replace(/^#/, "")
+        const matchesId = item.id.toString().includes(q)
+        const matchesTitle = item.title.toLowerCase().includes(q)
+        if (!matchesId && !matchesTitle) return false
+      }
       return true
     })
   }, [typeFilter, statusFilter, severityFilter, createdByFilter, assignedFilter, query])
@@ -335,7 +340,7 @@ export default function WorkItems() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search..."
+              placeholder="Search Work Items..."
               className="w-full bg-transparent text-sm text-slate-700 outline-none"
             />
           </div>
@@ -359,7 +364,7 @@ export default function WorkItems() {
                 const priorityClass = priorityMeta[item.priority as keyof typeof priorityMeta]
                 const typeMeta = typeIcons[item.type]
                 return (
-                  <tr key={item.id} className="hover:bg-slate-50">
+                  <tr key={item.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => navigate(`/work-items/${item.id}/edit`)}>
                     <td className="whitespace-nowrap px-4 py-3 font-semibold text-slate-900">{item.id}</td>
                     <td className="px-4 py-3 text-slate-900">
                       <div className="flex items-center gap-2">

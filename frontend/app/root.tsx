@@ -139,12 +139,11 @@ useEffect(() => {
                 >
                   <div className="flex items-center gap-1.5 min-w-0">
                     <Building2 className="h-3 w-3 flex-none text-slate-400" />
-                    <span className="text-[11px] text-slate-400 truncate">{orgName}</span>
-                  </div>
+                    <span className="text-[11px] text-slate-400 truncate group-hover:text-slate-900 transition">{orgName}</span>                  </div>
                   <ChevronRight className="h-3 w-3 flex-none text-slate-300 group-hover:text-slate-600 transition" />
                 </button>
               )}
-              {projectName && (
+              {/* {projectName && (
                 <button
                   onClick={() => {
                     localStorage.removeItem("selectedProject")
@@ -160,7 +159,7 @@ useEffect(() => {
                   </div>
                   <ChevronRight className="h-3 w-3 flex-none text-slate-300 group-hover:text-slate-600 transition" />
                 </button>
-              )}
+              )} */}
             </div>
           )}
 

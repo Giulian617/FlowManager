@@ -8,6 +8,7 @@ export default [
   route("projects", "routes/projects.tsx"),
   route("teams", "routes/teams.tsx"),
   route("work-items", "routes/work-items.tsx"),
+  route("work-items/:id/edit", "routes/work-items-edit.tsx"),
   route("work-items/new/:type", "routes/work-items-new.tsx"),
   route("kanban", "routes/kanban.tsx"),
   route("profile", "routes/profile.tsx"),

@@ -277,21 +277,45 @@ function CommentSection() {
   )
 }
 
-export default function NewEpicPage() {
+type WorkItemData = { id?: string; title?: string; description?: string; severity?: string; assigned?: string[]; startDate?: string; endDate?: string; parent?: string; children?: string[]; status?: string }
+
+export default function NewEpicPage({ initialData }: { initialData?: WorkItemData }) {
   const navigate = useNavigate()
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [severity, setSeverity] = useState("")
-  const [assignees, setAssignees] = useState<string[]>([])
-  const [startDate, setStartDate] = useState("")
-  const [endDate, setEndDate] = useState("")
-  const [parent, setParent] = useState("")
-  const [children, setChildren] = useState<string[]>([])
+  const isEdit = !!initialData
+  const [title, setTitle] = useState(initialData?.title ?? "")
+  const [description, setDescription] = useState(initialData?.description ?? "")
+  const [severity, setSeverity] = useState(initialData?.severity ?? "")
+  const [assignees, setAssignees] = useState<string[]>(initialData?.assigned ?? [])
+  const [startDate, setStartDate] = useState(initialData?.startDate ?? "")
+  const [endDate, setEndDate] = useState(initialData?.endDate ?? "")
+  const [parent, setParent] = useState(initialData?.parent ?? "")
+  const [children, setChildren] = useState<string[]>(initialData?.children ?? [])
+  
+  const [baseline, setBaseline] = useState({
+  title: initialData?.title ?? "",
+  description: initialData?.description ?? "",
+  severity: initialData?.severity ?? "",
+  startDate: initialData?.startDate ?? "",
+  endDate: initialData?.endDate ?? "",
+  parent: initialData?.parent ?? "",
+  assignees: JSON.stringify(initialData?.assigned ?? []),
+  children: JSON.stringify(initialData?.children ?? []),
+})
+
+const isDirty =
+  title !== baseline.title ||
+  description !== baseline.description ||
+  severity !== baseline.severity ||
+  startDate !== baseline.startDate ||
+  endDate !== baseline.endDate ||
+  parent !== baseline.parent ||
+  JSON.stringify(assignees) !== baseline.assignees ||
+  JSON.stringify(children) !== baseline.children
    
   const titleOk = title.trim() !== ""
   const descOk = description.trim() !== ""
   const severityOk = severity !== ""
-  const canSave = titleOk && descOk && severityOk
+  const canSave = titleOk && descOk && severityOk && (!isEdit || isDirty)
 
   return (
     <div className="space-y-6">
@@ -304,7 +328,7 @@ export default function NewEpicPage() {
             <Zap className="h-5 w-5 text-violet-700" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">New Work Item</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{isEdit ? "Edit Work Item" : "New Work Item"}</p>
             <h1 className="text-2xl font-semibold text-slate-900">Epic</h1>
           </div>
         </div>
@@ -340,7 +364,7 @@ export default function NewEpicPage() {
                 }`}
                 />
             </div>
-            {!canSave && (
+            {(!titleOk || !descOk || !severityOk) && (
               <div className="flex items-center gap-2 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-700">
                 <AlertCircle className="h-4 w-4 flex-none" />
                 <span>Title, description, and severity are required to save.</span>
@@ -415,7 +439,15 @@ export default function NewEpicPage() {
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <button type="button" disabled={!canSave} className="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed">Save Epic</button>
+            <button type="button" disabled={!canSave}
+                onClick={() => {
+                    if (isEdit) {
+                    setBaseline({ title, description, severity, startDate, endDate, parent, assignees: JSON.stringify(assignees), children: JSON.stringify(children) })
+                    }
+                }}
+                className="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed">
+                {isEdit ? "Save Changes" : "Save Epic"}
+            </button>
             <button type="button" onClick={() => navigate(-1)} className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Cancel</button>
           </div>
         </div>

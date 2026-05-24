@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react"
+import { useNavigate } from "react-router"
 import { statusMeta } from "../lib/status"
 import { Bug, CheckSquare, Zap, BookOpen, X, ArrowUp, ArrowDown } from "lucide-react"
 
@@ -50,7 +51,7 @@ const MOCK_TICKETS = [
     status: "Closed", assigneeId: "user-1", assigneeName: "Mihai Pop",
     priority: "Low", severity: "Low", deadline: "2026-05-18",
   },
-  // Alt user — nu apare pe board
+ 
   {
     id: "8", type: "Task", title: "Update onboarding flow",
     status: "ToDo", assigneeId: "user-2", assigneeName: "Ana Serban",
@@ -89,11 +90,11 @@ const typeOptions = ["All", "Bug", "Task", "Epic", "User Story"]
 // Stiluri ----------------------------------------------
 
 const priorityMeta: Record<string, string> = {
-  Blocker:  "bg-slate-200 text-slate-900",
+  Blocker: "bg-slate-200 text-slate-900",
   Critical: "bg-rose-600/10 text-rose-700",
-  High:     "bg-amber-600/10 text-amber-700",
-  Medium:   "bg-sky-600/10 text-sky-700",
-  Low:      "bg-emerald-600/10 text-emerald-700",
+  High:"bg-amber-600/10 text-amber-700",
+  Medium: "bg-sky-600/10 text-sky-700",
+  Low: "bg-emerald-600/10 text-emerald-700",
 }
 
 const typeIcons: Record<string, { textClass: string; icon: React.ReactNode }> = {
@@ -126,10 +127,11 @@ function isOverdue(d?: string, status?: string) {
 
 // Card ---------------------------------------------
 
-function KanbanCard({ item, isDragging, onDragStart }: {
+function KanbanCard({ item, isDragging, onDragStart, onClick }: {
   item: WorkItem
   isDragging: boolean
   onDragStart: (e: React.DragEvent, id: string) => void
+  onClick: (id: string) => void
 }) {
   const typeMeta = item.type ? typeIcons[item.type] : undefined
   const prio = item.priority ?? item.severity
@@ -139,10 +141,11 @@ function KanbanCard({ item, isDragging, onDragStart }: {
     <div
       draggable
       onDragStart={(e) => onDragStart(e, item.id)}
+      onClick={() => onClick(item.id)}
       className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm cursor-grab active:cursor-grabbing select-none transition-all duration-150 ${
         isDragging ? "opacity-40 scale-95 rotate-1" : "hover:shadow-md hover:-translate-y-0.5"
       }`}
-      >
+    >
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1">
           <span className={typeMeta?.textClass ?? "text-slate-500"}>{typeMeta?.icon}</span>
@@ -185,12 +188,13 @@ function KanbanCard({ item, isDragging, onDragStart }: {
 
 //Column ---------------------------------------------
 
-function KanbanColumn({ col, items, draggingId, isOver, onDragStart, onDragOver, onDrop, onDragLeave }: {
+function KanbanColumn({ col, items, draggingId, isOver, onDragStart, onDragOver, onDrop, onDragLeave, onCardClick }: {
   col: ColStatus
   items: WorkItem[]
   draggingId: string | null
   isOver: boolean
   onDragStart: (e: React.DragEvent, id: string) => void
+  onCardClick: (id: string) => void
   onDragOver: (e: React.DragEvent, col: ColStatus) => void
   onDrop: (e: React.DragEvent, col: ColStatus) => void
   onDragLeave: (e: React.DragEvent) => void
@@ -215,7 +219,7 @@ function KanbanColumn({ col, items, draggingId, isOver, onDragStart, onDragOver,
       </div>
       <div className={`flex flex-col gap-3 p-4 min-h-[220px] rounded-b-3xl transition-colors duration-150 ${isOver ? "bg-slate-100" : "bg-slate-50"}`}>
         {items.map((item) => (
-          <KanbanCard key={item.id} item={item} isDragging={draggingId === item.id} onDragStart={onDragStart} />
+          <KanbanCard key={item.id} item={item} isDragging={draggingId === item.id} onDragStart={onDragStart} onClick={onCardClick} />
         ))}
         {isOver && items.every((i) => i.id !== draggingId) && (
           <div className="rounded-2xl border-2 border-dashed border-slate-300 py-6 text-center text-xs text-slate-400">Drop here</div>
@@ -266,6 +270,7 @@ export default function KanbanBoard({
   const [dragOverCol, setDragOverCol] = useState<ColStatus | null>(null)
   const [toasts, setToasts] = useState<ToastMsg[]>([])
   const toastTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const navigate = useNavigate()
 
   const dismissToast = useCallback((id: string) => {
     clearTimeout(toastTimers.current[id])
@@ -459,6 +464,7 @@ const byColumn = useMemo(() => {
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             onDragLeave={handleDragLeave}
+            onCardClick={(id) => navigate(`/work-items/${id}/edit`)}
           />
         ))}
       </div>
