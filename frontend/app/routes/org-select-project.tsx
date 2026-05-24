@@ -30,7 +30,7 @@ export default function SelectProject() {
 
       <div className="w-full max-w-md">
         <button
-          onClick={() => navigate("/org/projects")}
+          onClick={() => navigate("/select-org")}
           className="mb-4 flex items-center gap-2 text-sm text-slate-500 transition hover:text-slate-700"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -59,8 +59,8 @@ export default function SelectProject() {
               onClick={() => {
                 localStorage.setItem("selectedProject", project.id)
                 localStorage.setItem("selectedProjectName", project.name)
-                navigate("/dashboard")
-              }}
+                navigate("/dashboard", { replace: true })
+                }}
               className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:border-slate-300 hover:shadow-md"
             >
               <div className={`flex h-10 w-10 flex-none items-center justify-center rounded-2xl ${project.color}`}>

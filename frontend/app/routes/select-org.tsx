@@ -49,7 +49,9 @@ export default function SelectOrg() {
               key={org.id}
               onClick={() => {
                 localStorage.setItem("selectedOrg", org.id)
-                navigate("/select-project")
+                localStorage.setItem("selectedOrgName", org.name)
+                localStorage.setItem("selectedOrgAvatar", org.avatar)
+                navigate("/org/projects")
                 }}
               className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:border-slate-300 hover:shadow-md"
             >

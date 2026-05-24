@@ -1,14 +1,4 @@
-import {
-  isRouteErrorResponse,
-  Links,
-  Meta,
-  NavLink,
-  Outlet,
-  Scripts,
-  ScrollRestoration,
-  useLocation,
-  useNavigate,
-} from "react-router"
+import {isRouteErrorResponse, Links, Meta, NavLink, Outlet, Scripts, ScrollRestoration, useLocation, useNavigate} from "react-router"
 import { useEffect, useState } from "react"
 import type { Route } from "./+types/root"
 import "./app.css"
@@ -56,48 +46,63 @@ const MOCK_PROJECTS: Record<string, string> = {
   "4": "Design System",
 }
 
-const noSidebarRoutes = ["/select-org", "/select-project"]
-
-const preProjectNav = [
-  { to: "/", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
-  { to: "/projects", label: "Projects", icon: <FolderKanban className="h-4 w-4" /> },
-  { to: "/teams", label: "Teams", icon: <Users className="h-4 w-4" /> },
-]
-
 const fullNav = [
-  { to: "/", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
-  { to: "/projects", label: "Projects", icon: <FolderKanban className="h-4 w-4" /> },
-  { to: "/teams", label: "Teams", icon: <Users className="h-4 w-4" /> },
-  { to: "/work-items", label: "Work Items", icon: <List className="h-4 w-4" /> },
-  { to: "/kanban", label: "Kanban Board", icon: <KanbanSquare className="h-4 w-4" /> },
+  { to: "/dashboard",  label: "Dashboard",   icon: <LayoutDashboard className="h-4 w-4" /> },
+  { to: "/projects",   label: "Projects",    icon: <FolderKanban className="h-4 w-4" /> },
+  { to: "/teams",      label: "Teams",       icon: <Users className="h-4 w-4" /> },
+  { to: "/work-items", label: "Work Items",  icon: <List className="h-4 w-4" /> },
+  { to: "/kanban",     label: "Kanban Board",icon: <KanbanSquare className="h-4 w-4" /> },
 ]
+
+const NO_SIDEBAR_PREFIXES = ["/select-org", "/select-project", "/org"]
+const NO_PROJECT_REQUIRED = ["/projects"]
+const NO_AUTH_REQUIRED = ["/select-org", "/select-project"]
 
 function AppShell() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const [orgName, setOrgName] = useState<string | null>(null)
+  const [orgName, setOrgName]       = useState<string | null>(null)
   const [projectName, setProjectName] = useState<string | null>(null)
+  const [projectSelected, setProjectSelected] = useState(false)
+
+  const path = location.pathname
+
+  const isNoSidebar = NO_SIDEBAR_PREFIXES.some((p) =>
+    path === p || path.startsWith(p + "/") || path.startsWith(p)
+  )
+
+useEffect(() => {
+  const noAuth = NO_AUTH_REQUIRED.some((p) => path.startsWith(p))
+  if (noAuth || path.startsWith("/org")) return
+
+  const orgId     = localStorage.getItem("selectedOrg")
+  const projectId = localStorage.getItem("selectedProject")
+
+  if (!orgId) {
+    navigate("/select-org", { replace: true })
+    return
+  }
+
+  const noProjectRequired = NO_PROJECT_REQUIRED.some((p) => path === p)
+  if (!projectId && !noProjectRequired) {
+    navigate("/projects", { replace: true })
+    return
+  }
+
+  const savedName = localStorage.getItem("selectedProjectName")
+  setOrgName(MOCK_ORGS[orgId] ?? null)
+  setProjectName(savedName ?? (projectId ? MOCK_PROJECTS[projectId] ?? null : null))
+  setProjectSelected(!!projectId)
+}, [path])
 
   useEffect(() => {
-    const orgId = localStorage.getItem("selectedOrg")
+    const orgId     = localStorage.getItem("selectedOrg")
     const projectId = localStorage.getItem("selectedProject")
     setOrgName(orgId ? MOCK_ORGS[orgId] ?? null : null)
-    const savedName = localStorage.getItem("selectedProjectName")
-    setProjectName(savedName ?? (projectId ? MOCK_PROJECTS[projectId] ?? null : null))
-  }, [location.pathname])
-
-  useEffect(() => {
-    if (noSidebarRoutes.includes(location.pathname)) return
-    const orgId = localStorage.getItem("selectedOrg")
-    const projectId = localStorage.getItem("selectedProject")
-    if (!orgId) { navigate("/select-org"); return }
-    if (!projectId) { navigate("/select-project"); return }
-  }, [location.pathname])
-
-  const isNoSidebar = noSidebarRoutes.includes(location.pathname)
-  const projectSelected = typeof window !== "undefined" && !!localStorage.getItem("selectedProject")
-  const navItems = projectSelected ? fullNav : preProjectNav
+    setProjectName(localStorage.getItem("selectedProjectName") ?? (projectId ? MOCK_PROJECTS[projectId] ?? null : null))
+    setProjectSelected(!!projectId)
+  }, [path])
 
   if (isNoSidebar) return <Outlet />
 
@@ -125,6 +130,7 @@ function AppShell() {
                   onClick={() => {
                     localStorage.removeItem("selectedOrg")
                     localStorage.removeItem("selectedProject")
+                    localStorage.removeItem("selectedProjectName")
                     navigate("/select-org")
                   }}
                   className="flex w-full items-center justify-between gap-2 group"
@@ -141,7 +147,8 @@ function AppShell() {
                 <button
                   onClick={() => {
                     localStorage.removeItem("selectedProject")
-                    navigate("/select-project")
+                    localStorage.removeItem("selectedProjectName")
+                    navigate("/projects")
                   }}
                   className="flex w-full items-center justify-between gap-2 group"
                   title="Change project"
@@ -158,11 +165,11 @@ function AppShell() {
 
           {/* Nav */}
           <nav className="flex flex-1 flex-col gap-0.5">
-            {navItems.map((item) => (
+            {fullNav.map((item) => (
               <NavLink
-                key={item.to + item.label}
+                key={item.to}
                 to={item.to}
-                end={item.to === "/"}
+                end
                 className={({ isActive }) =>
                   `group flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium transition ${
                     isActive
@@ -171,9 +178,7 @@ function AppShell() {
                   }`
                 }
               >
-                <span className={`grid h-7 w-7 place-items-center rounded-lg transition ${
-                  "bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-900"
-                }`}>
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-900 transition">
                   {item.icon}
                 </span>
                 {item.label}

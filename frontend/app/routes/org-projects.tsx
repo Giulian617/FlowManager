@@ -253,7 +253,6 @@ function TeamsPicker({ projectId, value, onChange }: {
   )
 }
 
-
 function ConfirmDeleteModal({ project, onConfirm, onClose }: {
   project: Project
   onConfirm: () => void
@@ -470,6 +469,7 @@ function ProjectFormModal({ initial, onClose, onSave }: {
   )
 }
 
+
 export default function Projects() {
   const navigate = useNavigate()
   const [projects, setProjects] = useState(INITIAL_PROJECTS)
@@ -479,34 +479,38 @@ export default function Projects() {
   const [deleteProject, setDeleteProject] = useState<Project | null>(null)
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null)
 
-useEffect(() => {
-  setSelectedOrgId(localStorage.getItem("selectedOrg"))
-}, [])
-  const MOCK_ORGS = [
+  useEffect(() => {
+    setSelectedOrgId(localStorage.getItem("selectedOrg"))
+  }, [])
+
+  const MOCK_ORGS_MAP = [
     { id: "1", name: "Acme Corporation" },
     { id: "2", name: "TechFlow SRL" },
     { id: "3", name: "DevSquad" },
   ]
-const loggedInOrg = MOCK_ORGS.find((o) => o.id === selectedOrgId)?.name
+
+  const loggedInOrg = MOCK_ORGS_MAP.find((o) => o.id === selectedOrgId)?.name
+
   const filtered = projects.filter((p) => {
-  const q = query.toLowerCase()
-  const teams = PROJECT_TEAMS[p.id] ?? []
-  const matchesOrg = (PROJECT_TEAMS[p.id] ?? []).some((t) => t.organization === loggedInOrg)
-  return (
-    matchesOrg &&
-    (
-      p.name.toLowerCase().includes(q) ||
-      p.description.toLowerCase().includes(q) ||
-      p.manager.toLowerCase().includes(q) ||
-      teams.some((t) => t.name.toLowerCase().includes(q))
+    const q = query.toLowerCase()
+    const teams = PROJECT_TEAMS[p.id] ?? []
+    const matchesOrg = selectedOrgId
+      ? (PROJECT_TEAMS[p.id] ?? []).some((t) => t.organization === loggedInOrg)
+      : true
+    return (
+      matchesOrg && (
+        p.name.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        p.manager.toLowerCase().includes(q) ||
+        teams.some((t) => t.name.toLowerCase().includes(q))
+      )
     )
-  )
-})
+  })
 
   const handleSelect = (project: Project) => {
   localStorage.setItem("selectedProject", project.id)
   localStorage.setItem("selectedProjectName", project.name)
-  navigate("/dashboard", { replace: true })
+  navigate("/dashboard")
 }
 
   const handleCreate = (p: Project) => setProjects((prev) => [...prev, p])
