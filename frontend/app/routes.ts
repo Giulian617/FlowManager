@@ -12,12 +12,12 @@ export default [
   route("work-items/new/:type", "routes/work-items-new.tsx"),
   route("kanban", "routes/kanban.tsx"),
   route("profile", "routes/profile.tsx"),
+  route("settings", "routes/settings.tsx"),
   route("org", "routes/org.tsx", [
     index("routes/org-dashboard.tsx"),
-    route("dashboard", "routes/org-dashboard.tsx", { id: "org-dashboard-route" }),
     route("projects", "routes/org-projects.tsx"),
     route("teams", "routes/org-teams.tsx"),
-    route("users", "routes/org-users.tsx"), 
+    route("settings", "routes/org-settings.tsx"),
+    route("profile", "routes/org-profile.tsx"),
   ]),
-  route("settings", "routes/settings.tsx"),
 ] satisfies RouteConfig;

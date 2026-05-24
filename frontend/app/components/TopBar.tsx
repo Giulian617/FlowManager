@@ -1,356 +1,137 @@
-import React, { useEffect, useRef, useState } from "react"
-import { useKeycloak } from "@react-keycloak/web"
-import { useNavigate } from "react-router"
-import {Search, Bell, Settings, X,Check, Info, AlertTriangle, ChevronRight, User, Moon, Sun,
-  Monitor, Shield, LogOut, Bug, BookOpen, Zap, CheckSquare} from "lucide-react"
+import React, { useEffect, useState } from "react"
+import { NavLink, useNavigate } from "react-router"
+import { LayoutDashboard, FolderKanban, Users, ChevronDown, LogOut, Building2, UserCircle } from "lucide-react"
 
-const MOCK_WORK_ITEMS = [
-  { id: "5", type: "Bug", title: "Implement attachment feature", createdBy: "Joe Nik", assigned: "Mihai Pop", assignedAvatar: "MP", status: "To Do", priority: "Medium", severity: "Low", deadline: "2026-06-02", description: "Users cannot attach files to work items. The attachment button is visible but clicking it does nothing." },
-  { id: "4", type: "Task", title: "Drop-down button not working", createdBy: "Maria Ionescu", assigned: "Unassigned", assignedAvatar: "U", status: "Closed", priority: "Blocker", severity: "Blocker", deadline: "2026-05-21", description: "The drop-down component in the settings panel does not respond to click events in Chrome and Firefox." },
-  { id: "3", type: "Epic", title: "Save settings button not working", createdBy: "Ana Serban", assigned: "Unassigned", assignedAvatar: "U", status: "Closed", priority: "Low", severity: "Low", deadline: "2026-06-10", description: "Epic covering all issues related to the settings page save functionality across browsers and devices." },
-  { id: "2", type: "User Story", title: "Implement user settings", createdBy: "Joe Nik", assigned: "Luke Tomson", assignedAvatar: "LT", status: "In progress", priority: "High", severity: "High", deadline: "2026-05-29", description: "As a user, I want to be able to update my profile settings including name, email, and notification preferences." },
-  { id: "1", type: "Bug", title: "Login functionality not working", createdBy: "Alex Tudor", assigned: "Luke Tomson", assignedAvatar: "LT", status: "Testing", priority: "Low", severity: "Low", deadline: "2026-05-26", description: "Login button becomes unresponsive after the first failed attempt. Requires page refresh to try again." },
+const MOCK_ORGS = [
+  { id: "1", name: "Acme Corporation", avatar: "AC" },
+  { id: "2", name: "TechFlow SRL", avatar: "TF" },
+  { id: "3", name: "DevSquad", avatar: "DS" },
 ]
 
-const WORK_ITEM_ICONS: Record<string, { textClass: string; icon: React.ReactNode }> = {
-  Bug: { textClass: "text-rose-700", icon: <Bug className="h-4 w-4" /> },
-  Task: { textClass: "text-sky-700", icon: <CheckSquare className="h-4 w-4" /> },
-  Epic: { textClass: "text-violet-700", icon: <Zap className="h-4 w-4" /> },
-  "User Story": { textClass: "text-emerald-700", icon: <BookOpen className="h-4 w-4" /> },
-}
-
-const MOCK_NOTIFICATIONS = [
-  { id: "1", type: "info", title: "New comment on WI #2", desc: "Mihai Pop left a comment on your task.", time: "2m ago", read: false, workItemId: "2" },
-  { id: "2", type: "success", title: "WI #3 marked as Done", desc: "API rate limiting was completed.", time: "1h ago", read: false, workItemId: "3" },
-  { id: "3", type: "warning", title: "Deadline approaching", desc: "FlowManager Frontend ends in 3 days.", time: "3h ago", read: false, workItemId: null },
-  { id: "4", type: "info", title: "You were added to Mobile App", desc: "Joe Nik added you to the project.", time: "1d ago", read: true, workItemId: null },
-  { id: "5", type: "success", title: "WI #5 moved in Testing", desc: "Auth token refresh bug is in testing.", time: "2d ago", read: true, workItemId: "5" },
+const navItems = [
+  { to: "/org/projects", icon: FolderKanban, label: "Projects" },
+  { to: "/org/teams", icon: Users, label: "Teams" },
+  { to: "/org/users", icon: UserCircle, label: "Users" },
+  { to: "/org/dashboard", icon: LayoutDashboard, label: "Dashboard" },
 ]
 
-const WORK_ITEM_COLORS: Record<string, string> = {
-  Bug: "bg-rose-100 text-rose-700",
-  Task: "bg-sky-100 text-sky-700",
-  "User Story": "bg-emerald-100 text-emerald-700",
-  Epic: "bg-violet-100 text-violet-700",
-}
-
-function SearchDropdown({ query, onNavigate }: { query: string; onNavigate: () => void }) {
+export default function OrgSidebar() {
   const navigate = useNavigate()
-  const q = query.toLowerCase()
-
-  const results = MOCK_WORK_ITEMS.filter(
-    (w) => w.title.toLowerCase().includes(q) || w.id.toLowerCase().includes(q)
-  ).slice(0, 5)
-
-  return (
-    <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden">
-      {results.length === 0 ? (
-        <div className="px-4 py-5 text-center">
-          <p className="text-sm text-slate-400">No work items found for "<span className="font-medium text-slate-600">{query}</span>"</p>
-        </div>
-      ) : (
-        <>
-          <p className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Work Items</p>
-          {results.map((w) => (
-            <button
-              key={w.id}
-              onMouseDown={(e) => {
-                e.preventDefault()
-                navigate(`/work-items?search=${encodeURIComponent(w.title)}`)
-                onNavigate()
-              }}
-              className="flex w-full items-center gap-3 px-4 py-2.5 hover:bg-slate-100 transition"
-            >
-              <div className={`flex h-6 w-6 flex-none items-center justify-center rounded-lg ${WORK_ITEM_COLORS[w.type]}`}>
-                {WORK_ITEM_ICONS[w.type]?.icon}
-              </div>
-              <span className="text-xs font-semibold text-slate-400 flex-none">{w.id}</span>
-              <span className="text-sm text-slate-700 flex-1 text-left truncate">{w.title}</span>
-              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md flex-none border ${WORK_ITEM_COLORS[w.type]}`}>{w.type}</span>
-            </button>
-          ))}
-          <div className="border-t border-slate-100">
-            <button
-              onMouseDown={(e) => {
-                e.preventDefault()
-                navigate(`/work-items?search=${encodeURIComponent(query)}`)
-                onNavigate()
-              }}
-              className="flex w-full items-center justify-between px-4 py-2.5 hover:bg-slate-50 transition"
-            >
-              <span className="text-sm text-slate-500">See all results for "<span className="font-medium text-slate-700">{query}</span>"</span>
-              <ChevronRight className="h-4 w-4 text-slate-400" />
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
-
-
-function NotificationsPopup({ onClose, notifications, setNotifications }: {
-  onClose: () => void
-  notifications: typeof MOCK_NOTIFICATIONS
-  setNotifications: React.Dispatch<React.SetStateAction<typeof MOCK_NOTIFICATIONS>>
-}) {
-  const navigate = useNavigate()
-  const markAllRead = () => setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-  const unreadCount = notifications.filter((n) => !n.read).length
-
-  const iconMap: Record<string, React.ReactNode> = {
-    info: <Info className="h-4 w-4 text-sky-500" />,
-    success: <Check className="h-4 w-4 text-emerald-500" />,
-    warning: <AlertTriangle className="h-4 w-4 text-amber-500" />,
-  }
-
-  return (
-    <div className="absolute right-0 top-full mt-2 z-50 w-80 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-slate-900">Notifications</span>
-          {unreadCount > 0 && (
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-semibold text-white">{unreadCount}</span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {unreadCount > 0 && (
-            <button onClick={markAllRead} className="text-xs text-slate-400 hover:text-slate-600 transition">Mark all read</button>
-          )}
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-      <div className="max-h-80 overflow-y-auto">
-        {notifications.map((n) => (
-          <div
-            key={n.id}
-            onClick={() => {
-              setNotifications((prev) => prev.map((x) => x.id === n.id ? { ...x, read: true } : x))
-              if (n.workItemId) {
-                  navigate(`/work-items/${n.workItemId}/edit`)
-                onClose()
-              }
-            }}
-            className={`flex items-start gap-3 px-4 py-3 border-b border-slate-50 transition hover:bg-slate-50 cursor-pointer ${!n.read ? "bg-sky-50/40" : ""}`}
-          >
-            <div className="flex h-7 w-7 flex-none items-center justify-center rounded-xl bg-slate-100 mt-0.5">
-              {iconMap[n.type]}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className={`text-sm ${!n.read ? "font-semibold text-slate-900" : "font-medium text-slate-700"}`}>{n.title}</p>
-              <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{n.desc}</p>
-              <p className="text-[10px] text-slate-300 mt-1">{n.time}</p>
-            </div>
-            {!n.read && <div className="h-2 w-2 rounded-full bg-sky-500 flex-none mt-1.5" />}
-          </div>
-        ))}
-      </div>
-      <div className="px-4 py-2.5 border-t border-slate-100">
-        <button className="text-xs text-slate-400 hover:text-slate-600 transition w-full text-center">View all notifications</button>
-      </div>
-    </div>
-  )
-}
-
-
-function SettingsPopup({ onClose }: { onClose: () => void }) {
-  const navigate = useNavigate()
-  const [theme, setTheme] = useState<"light" | "dark" | "system">("light")
-
-  return (
-    <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-        <span className="text-sm font-semibold text-slate-900">Settings</span>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition">
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-
-      {/* Theme */}
-      <div className="px-4 py-3 border-b border-slate-100">
-        <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-2">Appearance</p>
-        <div className="flex gap-2">
-          {([["light", Sun, "Light"], ["dark", Moon, "Dark"], ["system", Monitor, "System"]] as const).map(([val, Icon, label]) => (
-            <button
-              key={val}
-              onClick={() => setTheme(val)}
-              className={`flex flex-1 flex-col items-center gap-1 rounded-xl border py-2.5 text-xs font-medium transition ${
-                theme === val ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 text-slate-500 hover:bg-slate-50"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Notifications settings*/}
-      <button
-        onClick={() => { navigate("/settings"); onClose() }}
-        className="flex w-full items-center justify-between px-4 py-3 hover:bg-slate-50 transition"
-      >
-        <div className="flex items-center gap-2.5">
-          <Bell className="h-4 w-4 text-slate-400" />
-          <span className="text-sm text-slate-700">Notification settings</span>
-        </div>
-        <ChevronRight className="h-4 w-4 text-slate-400" />
-      </button>
-    </div>
-  )
-}
-
-
-export default function TopBar() {
-  const { keycloak, initialized } = useKeycloak()
-  const navigate = useNavigate()
-
-  const [search, setSearch] = useState("")
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
-  const [notifOpen, setNotifOpen] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [searchFocused, setSearchFocused] = useState(false)
-
-  const searchRef = useRef<HTMLDivElement>(null)
-  const notifRef = useRef<HTMLDivElement>(null)
-  const settingsRef = useRef<HTMLDivElement>(null)
-  const profileRef = useRef<HTMLDivElement>(null)
-
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS)
+  const [orgId, setOrgId] = useState("")
+  const [orgName, setOrgName] = useState("")
+  const [orgAvatar, setOrgAvatar] = useState("")
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
-    const h = (e: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchFocused(false)
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false)
-      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setSettingsOpen(false)
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileMenuOpen(false)
-    }
-    document.addEventListener("mousedown", h)
-    return () => document.removeEventListener("mousedown", h)
+    setOrgId(localStorage.getItem("selectedOrg") ?? "")
+    setOrgName(localStorage.getItem("selectedOrgName") ?? "")
+    setOrgAvatar(localStorage.getItem("selectedOrgAvatar") ?? "")
   }, [])
 
-  const userName = initialized && keycloak?.authenticated
-    ? keycloak.tokenParsed?.name || keycloak.tokenParsed?.preferred_username || "User"
-    : "Guest"
-  const initials = userName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()
-
-  const unreadCount = notifications.filter((n) => !n.read).length
-
   return (
-    <div className="mb-6 rounded-3xl border border-slate-200 bg-slate-50 p-3 shadow-sm">
-      <div className="flex items-center gap-3">
+    <aside style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "240px",
+      height: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      borderRight: "1px solid #e2e8f0",
+      backgroundColor: "white",
+      zIndex: 10,
+      overflow: "hidden",
+    }}>
 
-        {/* Search */}
-        <div ref={searchRef} className="relative flex min-w-0 flex-1">
-          <div className="flex w-full items-center rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-            <Search className="mr-3 h-4 w-4 flex-none text-slate-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onClick={() => { if (search.length > 0) setSearchFocused(true) }}
-              placeholder="Search work items..."
-              className="w-full bg-transparent text-sm text-slate-700 outline-none"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && search.trim()) {
-                  navigate(`/work-items?search=${encodeURIComponent(search.trim())}`)
-                  setSearch("")
-                  setSearchFocused(false)
-                }
-              }}
-            />
-            {search && (
-              <button onClick={() => setSearch("")} className="text-slate-300 hover:text-slate-500 transition">
-                <X className="h-4 w-4" />
-              </button>
-            )}
+      {/* Org selector */}
+      <div style={{ position: "relative", borderBottom: "1px solid #f1f5f9", flexShrink: 0 }}>
+        <button
+          onClick={() => setMenuOpen((o) => !o)}
+          className="flex w-full items-center gap-3 px-4 py-4 transition hover:bg-slate-50"
+        >
+          <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-slate-900 text-xs font-bold text-white">
+            {orgAvatar}
           </div>
-          {search.length > 0 && (
-            <SearchDropdown
-              query={search}
-              onNavigate={() => { setSearch("") }}
-            />
-          )}
-        </div>
+          <div className="flex-1 min-w-0 text-left">
+            <p className="text-sm font-semibold text-slate-900 truncate">{orgName}</p>
+            <p className="text-xs text-slate-400">Organization</p>
+          </div>
+          <ChevronDown className={`h-4 w-4 flex-none text-slate-400 transition-transform ${menuOpen ? "rotate-180" : ""}`} />
+        </button>
 
-        {/* Notifications */}
-        <div ref={notifRef} className="relative">
-          <button
-            onClick={() => { setNotifOpen((o) => !o); setSettingsOpen(false); setProfileMenuOpen(false) }}
-            className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm transition hover:bg-slate-100"
-          >          
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-semibold text-white">{unreadCount}</span>
-            )}
-            <Bell className="h-5 w-5" />
-          </button>
-          {notifOpen && <NotificationsPopup onClose={() => setNotifOpen(false)} notifications={notifications} setNotifications={setNotifications} />}
-        </div>
-
-        {/* Settings */}
-        <div ref={settingsRef} className="relative">
-          <button
-            onClick={() => { setSettingsOpen((o) => !o); setNotifOpen(false); setProfileMenuOpen(false) }}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm transition hover:bg-slate-100"
-          >
-            <Settings className="h-5 w-5" />
-          </button>
-          {settingsOpen && <SettingsPopup onClose={() => setSettingsOpen(false)} />}
-        </div>
-
-        {/* Profile */}
-        <div ref={profileRef} className="relative">
-          <button
-            onClick={() => { setProfileMenuOpen((o) => !o); setNotifOpen(false); setSettingsOpen(false) }}
-            className="inline-flex items-center gap-2 rounded-3xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
-          >
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-100 text-blue-900 border border-blue-200 text-xs font-semibold">
-              {initials}
-            </span>
-            <span className="truncate max-w-[100px] text-left text-sm text-slate-900">{userName}</span>
-          </button>
-          {profileMenuOpen && (
-            <div className="absolute right-0 z-20 mt-2 w-48 rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100">
-                <p className="text-sm font-semibold text-slate-900 truncate">{userName}</p>
-                <p className="text-xs text-slate-400 truncate">{keycloak?.tokenParsed?.email ?? "user@example.com"}</p>
-              </div>
+        {menuOpen && (
+          <div className="absolute left-0 top-full z-20 w-full border border-slate-200 bg-white shadow-lg rounded-b-2xl overflow-hidden">
+            {MOCK_ORGS.filter((o) => o.id !== orgId).map((org) => (
               <button
-                onClick={() => { setProfileMenuOpen(false); navigate("/profile") }}
-                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"
+                key={org.id}
+                onClick={() => {
+                  localStorage.setItem("selectedOrg", org.id)
+                  localStorage.setItem("selectedOrgName", org.name)
+                  localStorage.setItem("selectedOrgAvatar", org.avatar)
+                  localStorage.removeItem("selectedProject")
+                  localStorage.removeItem("selectedProjectName")
+                  setOrgId(org.id)
+                  setOrgName(org.name)
+                  setOrgAvatar(org.avatar)
+                  setMenuOpen(false)
+                  navigate("/org/dashboard")
+                }}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
               >
-                <User className="h-4 w-4 text-slate-400" />
-                View profile
+                <div className="flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-700">
+                  {org.avatar}
+                </div>
+                <span className="text-sm text-slate-700">{org.name}</span>
               </button>
+            ))}
+            <div className="border-t border-slate-100">
               <button
-                onClick={() => { setProfileMenuOpen(false); navigate("/profile") }}
-                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"
+                onClick={() => { navigate("/select-org"); setMenuOpen(false) }}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
               >
-                <Shield className="h-4 w-4 text-slate-400" />
-                Security
+                <Building2 className="h-4 w-4 text-slate-400" />
+                <span className="text-sm text-slate-500">All organizations</span>
               </button>
-              <div className="border-t border-slate-100">
-                <button
-                  onClick={() => {
-                    setProfileMenuOpen(false)
-                    localStorage.removeItem("isLoggedIn")
-                    localStorage.removeItem("selectedOrg")
-                    localStorage.removeItem("selectedProject")
-                    localStorage.removeItem("selectedProjectName")
-                    window.location.href = "/"
-                  }}
-                  className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Log out
-                </button>
-              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-    </div>
+
+      {/* Nav */}
+      <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: "2px", overflow: "hidden" }}>
+        {navItems.map(({ to, icon: Icon, label }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                isActive ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              }`
+            }
+          >
+            <Icon className="h-4 w-4 flex-none" />
+            {label}
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* Footer */}
+      <div style={{ borderTop: "1px solid #f1f5f9", padding: "12px", flexShrink: 0 }}>
+        <button
+          onClick={() => {
+            localStorage.removeItem("selectedOrg")
+            localStorage.removeItem("selectedOrgName")
+            localStorage.removeItem("selectedOrgAvatar")
+            localStorage.removeItem("selectedProject")
+            localStorage.removeItem("selectedProjectName")
+            navigate("/select-org")
+          }}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+        >
+          <LogOut className="h-4 w-4" />
+          Switch organization
+        </button>
+      </div>
+    </aside>
   )
 }
