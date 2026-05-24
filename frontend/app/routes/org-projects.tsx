@@ -554,10 +554,19 @@ export default function Projects() {
 
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white py-20 shadow-sm text-center gap-2">
-          <p className="text-sm font-medium text-slate-600">No projects match your search.</p>
-          <p className="text-xs text-slate-400">Try a different name, manager, or team.</p>
+            {query ? (
+            <>
+                <p className="text-sm font-medium text-slate-600">No projects match your search.</p>
+                <p className="text-xs text-slate-400">Try a different name, manager, or team.</p>
+            </>
+            ) : (
+            <>
+                <p className="text-sm font-medium text-slate-600">No projects for this organization.</p>
+                <p className="text-xs text-slate-400">Create a new project to get started.</p>
+            </>
+            )}
         </div>
-      ) : (
+        ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((project) => {
             const overdue = isOverdue(project.endDate)

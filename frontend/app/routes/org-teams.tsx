@@ -234,7 +234,7 @@ function ConfirmDeleteModal({ team, onConfirm, onClose }: { team: Team; onConfir
           Are you sure you want to delete <span className="font-semibold text-slate-900">"{team.name}"</span>?
         </p>
         <div className="flex gap-2">
-          <button onClick={onConfirm} className="flex-1 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700">Delete</button>
+          <button onClick={onConfirm} className="flex-1 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700">Delete</button>
           <button onClick={onClose} className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Cancel</button>
         </div>
       </div>
@@ -419,6 +419,7 @@ export default function OrgTeams() {
       {orgTeams.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white py-20 shadow-sm text-center gap-2">
           <p className="text-sm font-medium text-slate-600">No teams found for this organization.</p>
+          <p className="text-xs text-slate-400">Create a new team to get started.</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white py-20 shadow-sm text-center gap-2">

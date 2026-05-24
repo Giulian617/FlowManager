@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { NavLink, Outlet, Navigate, useNavigate } from "react-router"
-import { LayoutDashboard, FolderKanban, Users, ChevronDown, LogOut, Building2 } from "lucide-react"
+import { LayoutDashboard, FolderKanban, Users, ChevronDown, LogOut, Building2, UserCircle } from "lucide-react"
 import TopBar from "../components/TopBar"
 
 const MOCK_ORGS = [
@@ -30,9 +30,10 @@ export default function OrgLayout() {
 }, [])
 
   const navItems = [
-  { to: "/org/projects",  icon: FolderKanban,     label: "Projects"  },
-  { to: "/org/teams",     icon: Users,             label: "Teams"     },
-  { to: "/org/dashboard", icon: LayoutDashboard,   label: "Dashboard" },
+  { to: "/org/projects",  icon: FolderKanban,   label: "Projects"  },
+  { to: "/org/teams",     icon: Users,           label: "Teams"     },
+  { to: "/org/users",     icon: UserCircle,      label: "Users"     },
+  { to: "/org/dashboard", icon: LayoutDashboard, label: "Dashboard" },
 ]
 
   return (

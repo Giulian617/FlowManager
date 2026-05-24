@@ -150,7 +150,7 @@ function ConfirmDeleteModal({ team, onConfirm, onClose }: {
           Are you sure you want to delete <span className="font-semibold text-slate-900">"{team.name}"</span>?
         </p>
         <div className="flex gap-2">
-          <button onClick={onConfirm} className="flex-1 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700">
+          <button onClick={onConfirm} className="flex-1 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700">
             Delete
           </button>
           <button onClick={onClose} className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">

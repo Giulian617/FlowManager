@@ -332,7 +332,14 @@ export default function TopBar() {
               </button>
               <div className="border-t border-slate-100">
                 <button
-                  onClick={() => { setProfileMenuOpen(false); keycloak?.authenticated ? keycloak.logout() : keycloak?.login() }}
+                  onClick={() => {
+                    setProfileMenuOpen(false)
+                    localStorage.removeItem("isLoggedIn")
+                    localStorage.removeItem("selectedOrg")
+                    localStorage.removeItem("selectedProject")
+                    localStorage.removeItem("selectedProjectName")
+                    window.location.href = "/"
+                  }}
                   className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition"
                 >
                   <LogOut className="h-4 w-4" />
