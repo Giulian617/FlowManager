@@ -4,11 +4,11 @@ import { useNavigate } from "react-router"
 import { Search, Bell, Settings, X, Check, Info, AlertTriangle, ChevronRight, User, Moon, Sun, Monitor, Shield, LogOut, Bug, BookOpen, Zap, CheckSquare } from "lucide-react"
 
 const MOCK_WORK_ITEMS = [
-  { id: "5", type: "Bug", title: "Implement attachment feature", status: "To Do" },
-  { id: "4", type: "Task", title: "Drop-down button not working", status: "Closed" },
-  { id: "3", type: "Epic", title: "Save settings button not working", status: "Closed" },
-  { id: "2", type: "User Story", title: "Implement user settings", status: "In progress" },
-  { id: "1", type: "Bug", title: "Login functionality not working", status: "Testing" },
+  { id: "5", projectId: "1", type: "Bug", title: "Implement attachment feature", status: "To Do" },
+  { id: "4", projectId: "1", type: "Task", title: "Drop-down button not working", status: "Closed" },
+  { id: "3", projectId: "2", type: "Epic", title: "Save settings button not working", status: "Closed" },
+  { id: "2", projectId: "2", type: "User Story", title: "Implement user settings", status: "In progress" },
+  { id: "1", projectId: "1", type: "Bug", title: "Login functionality not working", status: "Testing" },
 ]
 
 const WORK_ITEM_ICONS: Record<string, { textClass: string; icon: React.ReactNode }> = {
@@ -36,8 +36,14 @@ const WORK_ITEM_COLORS: Record<string, string> = {
 function SearchDropdown({ query, onNavigate }: { query: string; onNavigate: () => void }) {
   const navigate = useNavigate()
   const q = query.toLowerCase()
-  const results = MOCK_WORK_ITEMS.filter(
-    (w) => w.title.toLowerCase().includes(q) || w.id.toLowerCase().includes(q)
+
+  const projectId = typeof window !== "undefined"
+    ? localStorage.getItem("selectedProject")
+    : null
+
+  const results = MOCK_WORK_ITEMS.filter((w) =>
+    (!projectId || w.projectId === projectId) &&
+    (w.title.toLowerCase().includes(q) || w.id.toLowerCase().includes(q))
   ).slice(0, 5)
 
   return (
