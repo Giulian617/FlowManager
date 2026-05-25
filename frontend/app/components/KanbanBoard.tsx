@@ -7,62 +7,21 @@ const CURRENT_USER_ID = "user-1"
 
 // Mock data ---------------------------------------------
 const MOCK_TICKETS = [
-  {
-  id: "1", type: "Bug", title: "Login button unresponsive on Safari",
-  status: "ToDo", assigneeId: "user-1", assigneeName: "Mihai Pop",
-  assignees: [
-    { id: "user-1", name: "Mihai Pop" },
-    { id: "user-2", name: "Ana Serban" },
-    { id: "user-3", name: "Luke Tomson" },
-  ],
-  priority: "High", severity: "High", deadline: "2026-05-25",
-  },
-  {
-    id: "2", type: "Task", title: "Implement dark mode toggle",
-    status: "ToDo", assigneeId: "user-1", assigneeName: "Mihai Pop",
-    priority: "Medium", severity: "Medium", deadline: "2026-06-10",
-  },
-  {
-  id: "3", type: "User Story", title: "As a user I can export reports as PDF",
-  status: "InProgress", assigneeId: "user-1", assigneeName: "Mihai Pop",
-  assignees: [
-    { id: "user-1", name: "Mihai Pop" },
-    { id: "user-2", name: "Ana Serban" },
-  ],
-  priority: "High", severity: "High", deadline: "2026-05-30",
-  },
-  {
-    id: "4", type: "Epic", title: "Notification system redesign",
-    status: "InProgress", assigneeId: "user-1", assigneeName: "Mihai Pop",
-    priority: "Blocker", severity: "Blocker", deadline: "2026-05-22",
-  },
-  {
-    id: "5", type: "Bug", title: "Dropdown closes on hover outside",
-    status: "Testing", assigneeId: "user-1", assigneeName: "Mihai Pop",
-    priority: "Low", severity: "Low", deadline: "2026-06-15",
-  },
-  {
-    id: "6", type: "Task", title: "Migrate API calls to React Query",
-    status: "Done", assigneeId: "user-1", assigneeName: "Mihai Pop",
-    priority: "Medium", severity: "Medium", deadline: "2026-05-20",
-  },
-  {
-    id: "7", type: "Bug", title: "Avatar initials wrong for CJK names",
-    status: "Closed", assigneeId: "user-1", assigneeName: "Mihai Pop",
-    priority: "Low", severity: "Low", deadline: "2026-05-18",
-  },
- 
-  {
-    id: "8", type: "Task", title: "Update onboarding flow",
-    status: "ToDo", assigneeId: "user-2", assigneeName: "Ana Serban",
-    priority: "Medium", severity: "Medium", deadline: "2026-06-05",
-  },
+  { id: "1", projectId: "1", type: "Bug", title: "Login button unresponsive on Safari", status: "ToDo", assigneeId: "user-1", assigneeName: "Mihai Pop", assignees: [{ id: "user-1", name: "Mihai Pop" }, { id: "user-2", name: "Ana Serban" }, { id: "user-3", name: "Luke Tomson" }], priority: "High", severity: "High", deadline: "2026-05-25" },
+  { id: "2", projectId: "1", type: "Task", title: "Implement dark mode toggle", status: "ToDo", assigneeId: "user-1", assigneeName: "Mihai Pop", priority: "Medium", severity: "Medium", deadline: "2026-06-10" },
+  { id: "3", projectId: "1", type: "User Story", title: "As a user I can export reports as PDF", status: "InProgress", assigneeId: "user-1", assigneeName: "Mihai Pop", assignees: [{ id: "user-1", name: "Mihai Pop" }, { id: "user-2", name: "Ana Serban" }], priority: "High", severity: "High", deadline: "2026-05-30" },
+  { id: "4", projectId: "2", type: "Epic", title: "Notification system redesign", status: "InProgress", assigneeId: "user-1", assigneeName: "Mihai Pop", priority: "Blocker", severity: "Blocker", deadline: "2026-05-22" },
+  { id: "5", projectId: "2", type: "Bug", title: "Dropdown closes on hover outside", status: "Testing", assigneeId: "user-1", assigneeName: "Mihai Pop", priority: "Low", severity: "Low", deadline: "2026-06-15" },
+  { id: "6", projectId: "3", type: "Task", title: "Migrate API calls to React Query", status: "Done", assigneeId: "user-1", assigneeName: "Mihai Pop", priority: "Medium", severity: "Medium", deadline: "2026-05-20" },
+  { id: "7", projectId: "3", type: "Bug", title: "Avatar initials wrong for CJK names", status: "Closed", assigneeId: "user-1", assigneeName: "Mihai Pop", priority: "Low", severity: "Low", deadline: "2026-05-18" },
+  { id: "8", projectId: "4", type: "Task", title: "Update onboarding flow", status: "ToDo", assigneeId: "user-2", assigneeName: "Ana Serban", priority: "Medium", severity: "Medium", deadline: "2026-06-05" },
 ]
 
 // Types ---------------------------------------------
 
 type WorkItem = {
   id: string
+  projectId?: string
   type?: string
   title: string
   status: string
@@ -297,12 +256,24 @@ export default function KanbanBoard({
   //   }
   // }, [])
 
+  const [projectId, setProjectId] = useState<string | null>(null)
+
+  useEffect(() => {
+    setProjectId(localStorage.getItem("selectedProject"))
+  }, [])
+
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      await new Promise((r) => setTimeout(r, 400)) // simulează latență
-      setItems(MOCK_TICKETS.filter((t) => t.assigneeId === CURRENT_USER_ID))
+      await new Promise((r) => setTimeout(r, 400))
+      const pid = localStorage.getItem("selectedProject")
+      setItems(
+        MOCK_TICKETS.filter((t) =>
+          t.assigneeId === CURRENT_USER_ID &&
+          (!pid || t.projectId === pid)
+        )
+      )
     } catch (err: any) {
       setError(err.message ?? "Error fetching tickets")
     } finally {
