@@ -1,6 +1,7 @@
 import React, { useState } from "react"
 import { useNavigate } from "react-router"
 import { FolderKanban, ChevronRight, Search, ArrowLeft, Plus } from "lucide-react"
+import TopBar from "../components/TopBar"
 
 const MOCK_PROJECTS = [
   { id: "1", name: "FlowManager Frontend", description: "React frontend application", items: 34, members: 5, color: "bg-sky-500" },

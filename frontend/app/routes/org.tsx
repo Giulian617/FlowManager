@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { NavLink, Outlet, Navigate, useNavigate } from "react-router"
-import { LayoutDashboard, FolderKanban, Users, ChevronDown, LogOut, Building2, UserCircle } from "lucide-react"
+import { LayoutDashboard, FolderKanban, Users, ChevronDown, LogOut, Building2, UserCircle, ArrowLeft } from "lucide-react"
 import TopBar from "../components/TopBar"
 
 const MOCK_ORGS = [
@@ -114,21 +114,21 @@ export default function OrgLayout() {
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-slate-100 px-3 py-3">
-          <button
+        <div className="border-t border-slate-100 px-3 py-3 space-y-0.5">
+        <button
             onClick={() => {
-              localStorage.removeItem("selectedOrg")
-              localStorage.removeItem("selectedOrgName")
-              localStorage.removeItem("selectedOrgAvatar")
-              localStorage.removeItem("selectedProject")
-              localStorage.removeItem("selectedProjectName")
-              navigate("/select-org")
+            localStorage.removeItem("selectedOrg")
+            localStorage.removeItem("selectedOrgName")
+            localStorage.removeItem("selectedOrgAvatar")
+            localStorage.removeItem("selectedProject")
+            localStorage.removeItem("selectedProjectName")
+            navigate("/select-org")
             }}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-          >
+        >
             <LogOut className="h-4 w-4" />
             Switch organization
-          </button>
+        </button>
         </div>
       </aside>
 

@@ -4,7 +4,7 @@ import type { Route } from "./+types/root"
 import "./app.css"
 import KeycloakProviderWrapper from "./auth/KeycloakProvider"
 import TopBar from "./components/TopBar"
-import { LayoutDashboard, FolderKanban, Users, List, KanbanSquare, Building2, ChevronRight } from "lucide-react"
+import { LayoutDashboard, FolderKanban, Users, List, KanbanSquare, Building2, ChevronRight, ArrowLeft } from "lucide-react"
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -170,18 +170,19 @@ function AppShell() {
             ))}
           </nav>
 
-          <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-400">
-            <p className="font-semibold text-slate-600">Need support?</p>
-            <p className="mt-1 leading-5">Use the sidebar to navigate the app.</p>
-          </div>
+          <button
+            onClick={() => navigate("/org/dashboard")}
+            className="mt-4 flex w-full items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 flex-none" />
+            <span className="font-medium">See organization details</span>
+          </button>
         </div>
       </aside>
 
       <main className="flex-1 p-5 lg:p-6">
         <div className="mx-auto max-w-[1500px]">
-          <div className="mx-auto max-w-6xl">
-            <TopBar />
-          </div>
+          <TopBar />
           <Outlet />
         </div>
       </main>
