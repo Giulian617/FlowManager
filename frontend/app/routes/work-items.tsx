@@ -5,11 +5,11 @@ import { useNavigate } from "react-router"
 import { useSearchParams } from "react-router"
 
 const workItems = [
-  { id: "5", type: "Bug", title: "Implement attachment feature", createdBy: "Joe Nik", assigned: "Mihai Pop", assignedAvatar: "MP", status: "To Do", priority: "Medium", severity: "Low", deadline: "2026-06-02", description: "Users cannot attach files to work items. The attachment button is visible but clicking it does nothing." },
-  { id: "4", type: "Task", title: "Drop-down button not working", createdBy: "Maria Ionescu", assigned: "Unassigned", assignedAvatar: "U", status: "Closed", priority: "Blocker", severity: "Blocker", deadline: "2026-05-21", description: "The drop-down component in the settings panel does not respond to click events in Chrome and Firefox." },
-  { id: "3", type: "Epic", title: "Save settings button not working", createdBy: "Ana Serban", assigned: "Unassigned", assignedAvatar: "U", status: "Closed", priority: "Low", severity: "Low", deadline: "2026-06-10", description: "Epic covering all issues related to the settings page save functionality across browsers and devices." },
-  { id: "2", type: "User Story", title: "Implement user settings", createdBy: "Joe Nik", assigned: "Luke Tomson", assignedAvatar: "LT", status: "In progress", priority: "High", severity: "High", deadline: "2026-05-29", description: "As a user, I want to be able to update my profile settings including name, email, and notification preferences." },
-  { id: "1", type: "Bug", title: "Login functionality not working", createdBy: "Alex Tudor", assigned: "Luke Tomson", assignedAvatar: "LT", status: "Testing", priority: "Low", severity: "Low", deadline: "2026-05-26", description: "Login button becomes unresponsive after the first failed attempt. Requires page refresh to try again." },
+  { id: "5", type: "Bug", title: "Implement attachment feature", projectId: "1", createdBy: "Joe Nik", assigned: "Mihai Pop", assignedAvatar: "MP", status: "To Do", priority: "Medium", severity: "Low", deadline: "2026-06-02", description: "Users cannot attach files to work items. The attachment button is visible but clicking it does nothing." },
+  { id: "4", type: "Task", title: "Drop-down button not working", projectId: "1", createdBy: "Maria Ionescu", assigned: "Unassigned", assignedAvatar: "U", status: "Closed", priority: "Blocker", severity: "Blocker", deadline: "2026-05-21", description: "The drop-down component in the settings panel does not respond to click events in Chrome and Firefox." },
+  { id: "3", type: "Epic", title: "Save settings button not working", projectId: "2", createdBy: "Ana Serban", assigned: "Unassigned", assignedAvatar: "U", status: "Closed", priority: "Low", severity: "Low", deadline: "2026-06-10", description: "Epic covering all issues related to the settings page save functionality across browsers and devices." },
+  { id: "2", type: "User Story", title: "Implement user settings", projectId: "2", createdBy: "Joe Nik", assigned: "Luke Tomson", assignedAvatar: "LT", status: "In progress", priority: "High", severity: "High", deadline: "2026-05-29", description: "As a user, I want to be able to update my profile settings including name, email, and notification preferences." },
+  { id: "1", type: "Bug", title: "Login functionality not working", projectId: "1", createdBy: "Alex Tudor", assigned: "Luke Tomson", assignedAvatar: "LT", status: "Testing", priority: "Low", severity: "Low", deadline: "2026-05-26", description: "Login button becomes unresponsive after the first failed attempt. Requires page refresh to try again." },
 ]
 
 const typeOptions = ["Bug", "Task", "Epic", "User Story"]
@@ -248,8 +248,11 @@ export default function WorkItems() {
   const createdList = useMemo(() => Array.from(new Set(workItems.map((w) => w.createdBy))), [])
   const assignedList = useMemo(() => Array.from(new Set(workItems.map((w) => w.assigned))), [])
 
+  const selectedProjectId = localStorage.getItem("selectedProject")
+
   const filteredItems = useMemo(() => {
     return workItems.filter((item) => {
+      if (selectedProjectId && item.projectId !== selectedProjectId) return false
       if (typeFilter.size > 0 && !typeFilter.has(item.type)) return false
       if (statusFilter.size > 0 && !statusFilter.has(item.status)) return false
       if (severityFilter.size > 0 && !severityFilter.has(item.severity)) return false
