@@ -108,9 +108,9 @@ function AppShell() {
   if (isNoSidebar) return <Outlet />
 
   return (
-    <div className="min-h-screen flex bg-slate-100 text-slate-900">
-      <aside className="w-[220px] border-r border-slate-200 bg-white shadow-sm flex-none">
-        <div className="flex h-full min-h-screen flex-col px-3 py-4">
+  <div className="flex bg-slate-100 text-slate-900" style={{ height: "100vh", overflow: "hidden" }}>
+    <aside className="w-[220px] border-r border-slate-200 bg-white shadow-sm flex-none" style={{ height: "100vh", overflow: "hidden" }}>
+      <div className="flex flex-col px-3 py-4" style={{ height: "100vh", overflow: "hidden" }}>
 
           {/* Logo */}
           <div className="mb-3 flex items-center gap-2.5">
@@ -180,8 +180,8 @@ function AppShell() {
         </div>
       </aside>
 
-      <main className="flex-1 p-5 lg:p-6">
-        <div className="mx-auto max-w-[1500px]">
+      <main className="flex-1 p-5 lg:p-6" style={{ height: "100vh", overflowY: "auto" }}>
+          <div className="mx-auto max-w-[1500px]">
           <TopBar />
           <Outlet />
         </div>
