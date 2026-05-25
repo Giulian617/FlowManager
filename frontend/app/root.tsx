@@ -108,9 +108,10 @@ function AppShell() {
   if (isNoSidebar) return <Outlet />
 
   return (
-  <div className="flex bg-slate-100 text-slate-900" style={{ height: "100vh", overflow: "hidden" }}>
-    <aside className="w-[220px] border-r border-slate-200 bg-white shadow-sm flex-none" style={{ height: "100vh", overflow: "hidden" }}>
-      <div className="flex flex-col px-3 py-4" style={{ height: "100vh", overflow: "hidden" }}>
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
+      {/* Sidebar */}
+      <aside className="flex w-60 flex-col border-r border-slate-200 bg-white">
+        <div className="flex flex-col px-3 py-4" style={{ height: "100vh", overflow: "hidden" }}>
 
           {/* Logo */}
           <div className="mb-3 flex items-center gap-2.5">
@@ -172,7 +173,7 @@ function AppShell() {
 
           <button
             onClick={() => navigate("/org/dashboard")}
-            className="mt-4 flex w-full items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
           >
             <ArrowLeft className="h-3.5 w-3.5 flex-none" />
             <span className="font-medium">See organization details</span>

@@ -11,8 +11,8 @@ const MOCK_ORGS = [
 
 export default function OrgLayout() {
   const navigate = useNavigate()
-  const [selectedOrgId, setSelectedOrgId]       = useState<string | null>(null)
-  const [selectedOrgName, setSelectedOrgName]   = useState("")
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null)
+  const [selectedOrgName, setSelectedOrgName] = useState("")
   const [selectedOrgAvatar, setSelectedOrgAvatar] = useState("")
   const [orgMenuOpen, setOrgMenuOpen] = useState(false)
 
@@ -30,11 +30,11 @@ export default function OrgLayout() {
 }, [])
 
   const navItems = [
-  { to: "/org/projects",  icon: FolderKanban,   label: "Projects"  },
-  { to: "/org/teams",     icon: Users,           label: "Teams"     },
-  { to: "/org/users",     icon: UserCircle,      label: "Users"     },
-  { to: "/org/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-]
+    { to: "/org/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { to: "/org/projects", icon: FolderKanban, label: "Projects" },
+    { to: "/org/teams", icon: Users, label: "Teams"},
+    { to: "/org/users", icon: UserCircle, label: "Users" },
+ ]
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">

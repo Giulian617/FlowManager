@@ -11,7 +11,7 @@ const MOCK_ORGS: Record<string, {
   members: number
   projects: number
   teams: number
-  recentActivity: { title: string; detail: string; time: string; type: "bug" | "task" | "epic" | "story" }[]
+  recentActivity: { title: string; detail: string; time: string; type: "bug" | "task" | "epic" | "story"; projectId: string; workItemId: string }[]
 }> = {
   "1": {
     name: "Acme Corporation",
@@ -21,10 +21,10 @@ const MOCK_ORGS: Record<string, {
     manager: "Joe Nik",
     members: 24, projects: 8, teams: 6,
     recentActivity: [
-      { title: "New bug reported", detail: "Login button unresponsive on Safari.", time: "2h ago", type: "bug" },
-      { title: "Sprint planning", detail: "6 tasks added to current sprint.", time: "4h ago", type: "task" },
-      { title: "Q3 Epic created", detail: "New epic for Q3 delivery kick-off.", time: "Yesterday", type: "epic" },
-      { title: "User story refined", detail: "Onboarding flow story estimated.", time: "2 days ago", type: "story" },
+      { title: "New bug reported", detail: "Login button unresponsive on Safari.", time: "2h ago", type: "bug", projectId: "1", workItemId: "1" },
+      { title: "Sprint planning", detail: "6 tasks added to current sprint.", time: "4h ago", type: "task", projectId: "1", workItemId: "2" },
+      { title: "Q3 Epic created", detail: "New epic for Q3 delivery kick-off.", time: "Yesterday", type: "epic", projectId: "1", workItemId: "3" },
+      { title: "User story refined", detail: "Onboarding flow story estimated.", time: "2 days ago", type: "story", projectId: "1", workItemId: "4" },
     ],
   },
   "2": {
@@ -35,10 +35,10 @@ const MOCK_ORGS: Record<string, {
     manager: "Mihai Pop",
     members: 12, projects: 4, teams: 3,
     recentActivity: [
-      { title: "Pipeline bug fixed", detail: "CI/CD deploy issue resolved.", time: "1h ago", type: "bug" },
-      { title: "API endpoint shipped", detail: "/api/tickets/status deployed.", time: "3h ago", type: "task" },
-      { title: "Infrastructure epic", detail: "Kubernetes migration epic started.", time: "Yesterday", type: "epic" },
-      { title: "Auth story closed", detail: "OAuth2 integration story done.", time: "3 days ago", type: "story" },
+      { title: "Pipeline bug fixed", detail: "CI/CD deploy issue resolved.", time: "1h ago", type: "bug", projectId: "1", workItemId: "1" },
+      { title: "API endpoint shipped", detail: "/api/tickets/status deployed.", time: "3h ago", type: "task", projectId: "1", workItemId: "2" },
+      { title: "Infrastructure epic", detail: "Kubernetes migration epic started.", time: "Yesterday", type: "epic", projectId: "1", workItemId: "3" },
+      { title: "Auth story closed", detail: "OAuth2 integration story done.", time: "3 days ago", type: "story", projectId: "1", workItemId: "4" },
     ],
   },
   "3": {
@@ -49,25 +49,25 @@ const MOCK_ORGS: Record<string, {
     manager: "Ana Serban",
     members: 6, projects: 3, teams: 3,
     recentActivity: [
-      { title: "Crash reported", detail: "Null pointer on Android login.", time: "30m ago", type: "bug" },
-      { title: "iOS build shipped", detail: "Version 1.2.0 sent to App Store.", time: "2h ago", type: "task" },
-      { title: "Mobile epic created", detail: "Offline mode epic kick-off.", time: "Yesterday", type: "epic" },
-      { title: "Onboarding story", detail: "User onboarding story approved.", time: "2 days ago", type: "story" },
+      { title: "Crash reported", detail: "Null pointer on Android login.", time: "30m ago", type: "bug", projectId: "1", workItemId: "1" },
+      { title: "iOS build shipped", detail: "Version 1.2.0 sent to App Store.", time: "2h ago", type: "task", projectId: "1", workItemId: "2" },
+      { title: "Mobile epic created", detail: "Offline mode epic kick-off.", time: "Yesterday", type: "epic", projectId: "1", workItemId: "3" },
+      { title: "Onboarding story", detail: "User onboarding story approved.", time: "2 days ago", type: "story", projectId: "1", workItemId: "4" },
     ],
   },
 }
 
 const activityColors = {
-  bug:   "bg-rose-50 text-rose-700 border-rose-200",
-  task:  "bg-emerald-50 text-emerald-700 border-emerald-200",
-  epic:  "bg-violet-50 text-violet-700 border-violet-200",
-  story: "bg-sky-50 text-sky-700 border-sky-200",
+  bug: "bg-rose-50 text-rose-700 border-rose-200",
+  task: "bg-sky-50 text-sky-700 border-sky-200",
+  epic: "bg-violet-50 text-violet-700 border-violet-200",
+  story: "bg-emerald-50 text-emerald-700 border-emerald-200",
 }
 
 const activityIcons = {
-  bug:   <Bug className="h-4 w-4 flex-none" />,
-  task:  <CheckSquare className="h-4 w-4 flex-none" />,
-  epic:  <Zap className="h-4 w-4 flex-none" />,
+  bug: <Bug className="h-4 w-4 flex-none" />,
+  task: <CheckSquare className="h-4 w-4 flex-none" />,
+  epic: <Zap className="h-4 w-4 flex-none" />,
   story: <BookOpen className="h-4 w-4 flex-none" />,
 }
 
@@ -199,15 +199,27 @@ export default function OrgDashboard() {
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           {org.recentActivity.map((event) => (
-            <div key={event.title} className={`flex items-start gap-3 rounded-2xl border p-4 ${activityColors[event.type]}`}>
-              <span className="mt-0.5">{activityIcons[event.type]}</span>
-              <div className="min-w-0 flex-1">
+            <div
+                key={event.title}
+                onClick={() => {
+                localStorage.setItem("selectedProject", event.projectId)
+                localStorage.setItem("selectedProjectName",
+                    event.projectId === "1" ? "FlowManager Frontend" :
+                    event.projectId === "2" ? "API Gateway" :
+                    event.projectId === "3" ? "Mobile App" : "Design System"
+                )
+                navigate(`/work-items/${event.workItemId}/edit`)
+                }}
+                className={`flex items-start gap-3 rounded-2xl border p-4 cursor-pointer transition hover:opacity-80 ${activityColors[event.type]}`}
+            >
+                <span className="mt-0.5">{activityIcons[event.type]}</span>
+                <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold">{event.title}</p>
                 <p className="text-xs mt-0.5 opacity-80">{event.detail}</p>
-              </div>
-              <span className="text-[10px] opacity-60 whitespace-nowrap flex-none">{event.time}</span>
+                </div>
+                <span className="text-[10px] opacity-60 whitespace-nowrap flex-none">{event.time}</span>
             </div>
-          ))}
+            ))}
         </div>
       </section>
     </div>
