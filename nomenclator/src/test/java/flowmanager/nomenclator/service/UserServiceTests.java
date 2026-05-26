@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -102,6 +104,45 @@ public class UserServiceTests {
 
         assertEquals(0, result.size());
         verify(userRepository, times(1)).findAll();
+        verify(userMapper, never()).toSummaryDto(any());
+    }
+
+    @Test
+    void testGetCurrentUser_Valid() {
+        User user = BuildInstances.buildUser();
+        UserSummaryDto summaryDto = BuildDtos.buildUserSummaryDto(user);
+
+        Authentication auth = mock(Authentication.class);
+        Jwt jwt = mock(Jwt.class);
+
+        when(auth.getPrincipal()).thenReturn(jwt);
+        when(jwt.getSubject()).thenReturn(user.getKeycloakId());
+        when(userRepository.findByKeycloakId(user.getKeycloakId())).thenReturn(Optional.of(user));
+        when(userMapper.toSummaryDto(user)).thenReturn(summaryDto);
+
+        UserSummaryDto result = userService.getCurrentUser(auth);
+
+        assertEquals(summaryDto, result);
+        verify(userRepository, times(1)).findByKeycloakId(user.getKeycloakId());
+        verify(userMapper, times(1)).toSummaryDto(user);
+    }
+
+    @Test
+    void testGetCurrentUser_UserNotFound() {
+        User user = BuildInstances.buildUser();
+
+        Authentication auth = mock(Authentication.class);
+        Jwt jwt = mock(Jwt.class);
+
+        when(auth.getPrincipal()).thenReturn(jwt);
+        when(jwt.getSubject()).thenReturn(user.getKeycloakId());
+        when(userRepository.findByKeycloakId(user.getKeycloakId())).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> userService.getCurrentUser(auth));
+
+        assertEquals("User not found", exception.getMessage());
+        verify(userRepository, times(1)).findByKeycloakId(user.getKeycloakId());
         verify(userMapper, never()).toSummaryDto(any());
     }
 

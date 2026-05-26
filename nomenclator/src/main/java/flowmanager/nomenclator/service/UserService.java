@@ -9,8 +9,10 @@ import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.CommentRepository;
 import flowmanager.nomenclator.repository.UserRepository;
 import flowmanager.nomenclator.security.KeycloakAdminService;
+import flowmanager.nomenclator.security.Utils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -44,6 +46,14 @@ public class UserService {
                 .stream()
                 .map(userMapper::toSummaryDto)
                 .toList();
+    }
+
+    public UserSummaryDto getCurrentUser(Authentication auth) {
+        String keycloakId = Utils.getCurrentUserId(auth);
+        User user = userRepository.findByKeycloakId(keycloakId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        return userMapper.toSummaryDto(user);
     }
 
     public List<CommentResponseUserDto> findAllCommentsByUserId(Integer userId) {

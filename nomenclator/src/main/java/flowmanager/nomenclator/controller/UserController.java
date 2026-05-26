@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +23,13 @@ public class UserController {
     @ResponseBody
     public ResponseEntity<List<UserSummaryDto>> getAllUsers() {
         return ResponseEntity.ok(userService.findAllUsers());
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserSummaryDto> getCurrentUser(
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(userService.getCurrentUser(authentication));
     }
 
     @PreAuthorize("@userSecurity.canView(authentication, #userId)")

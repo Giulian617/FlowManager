@@ -22,12 +22,13 @@ public class GatewayConfig {
     public RouterFunction<ServerResponse> routes() {
         return route("nomenclator-route")
                 .route(
-                        path("/users/**")
-                                .or(path("/organizations/**"))
-                                .or(path("/teams/**"))
-                                .or(path("/projects/**"))
-                                .or(path("/work-items/**"))
-                                .or(path("/comments/**")),
+                        path("/auth/**")
+                            .or(path("/users/**"))
+                            .or(path("/organizations/**"))
+                            .or(path("/teams/**"))
+                            .or(path("/projects/**"))
+                            .or(path("/work-items/**"))
+                            .or(path("/comments/**")),
                         http()
                 )
                 .before(uri("http://localhost:8082"))
