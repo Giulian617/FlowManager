@@ -344,13 +344,26 @@ export default function TopBar() {
               </button>
               <div className="border-t border-slate-100">
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setProfileMenuOpen(false)
-                    localStorage.removeItem("isLoggedIn")
-                    localStorage.removeItem("selectedOrg")
-                    localStorage.removeItem("selectedProject")
-                    localStorage.removeItem("selectedProjectName")
-                    window.location.href = "/"
+                    try {
+                      await fetch("http://localhost:8081/auth/logout", {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          "Authorization": `Bearer ${localStorage.getItem("accessToken")}`,
+                        },
+                        body: JSON.stringify({ refreshToken: localStorage.getItem("refreshToken") }),
+                      })
+                    } finally {
+                      localStorage.removeItem("accessToken")
+                      localStorage.removeItem("refreshToken")
+                      localStorage.removeItem("tokenExpiry")
+                      localStorage.removeItem("selectedOrg")
+                      localStorage.removeItem("selectedProject")
+                      localStorage.removeItem("selectedProjectName")
+                      window.location.href = "/"
+                    }
                   }}
                   className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition"
                 >
