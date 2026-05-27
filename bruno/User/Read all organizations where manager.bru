@@ -1,11 +1,11 @@
 meta {
-  name: Read all organizations
+  name: Read all organizations where manager
   type: http
   seq: 7
 }
 
 get {
-  url: {{url}}/users/1/organizations
+  url: {{url}}/users/3/organizations/manager
   body: none
   auth: bearer
 }

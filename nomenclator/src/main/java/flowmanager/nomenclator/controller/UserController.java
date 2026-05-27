@@ -1,6 +1,8 @@
 package flowmanager.nomenclator.controller;
 
 import flowmanager.nomenclator.dto.*;
+import flowmanager.nomenclator.model.ItemType;
+import flowmanager.nomenclator.model.Role;
 import flowmanager.nomenclator.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +23,10 @@ public class UserController {
 
     @GetMapping("")
     @ResponseBody
-    public ResponseEntity<List<UserSummaryDto>> getAllUsers() {
-        return ResponseEntity.ok(userService.findAllUsers());
+    public ResponseEntity<List<UserSummaryDto>> getAllUsers(
+            @RequestParam(required = false) Role role
+    ) {
+        return ResponseEntity.ok(userService.findAllUsers(role));
     }
 
     @GetMapping("/me")
@@ -51,12 +55,21 @@ public class UserController {
     }
 
     @PreAuthorize("@userSecurity.canView(authentication, #userId)")
-    @GetMapping("/{userId}/organizations")
+    @GetMapping("/{userId}/organizations/manager")
     @ResponseBody
-    public ResponseEntity<List<OrganizationSummaryDto>> getAllOrganizationsByUserId(
+    public ResponseEntity<List<OrganizationSummaryDto>> getAllManagedOrganizationsByUserId(
             @PathVariable Integer userId
     ) {
-        return ResponseEntity.ok(userService.findAllOrganizationsByUserId(userId));
+        return ResponseEntity.ok(userService.findAllManagedOrganizationsByUserId(userId));
+    }
+
+    @PreAuthorize("@userSecurity.canView(authentication, #userId)")
+    @GetMapping("/{userId}/organizations/assignee")
+    @ResponseBody
+    public ResponseEntity<List<OrganizationSummaryDto>> getAllAssignedOrganizationsByUserId(
+            @PathVariable Integer userId
+    ) {
+        return ResponseEntity.ok(userService.findAllAssignedOrganizationsByUserId(userId));
     }
 
     @PreAuthorize("@userSecurity.canView(authentication, #userId)")

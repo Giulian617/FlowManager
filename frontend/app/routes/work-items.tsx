@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from "react"
-import { priorityMeta, statusMeta, statusOptions, workItemStatusMap } from "../lib/status"
+import { priorityMeta, statusMeta, statusOptions, workItemStatusMap } from "../src/status"
 import { ListFilter, Search, Plus, X, Bug, CheckSquare, Zap, BookOpen, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, UserCircle, ChevronDown, ArrowLeft } from "lucide-react"
 import { useNavigate } from "react-router"
 import { useSearchParams } from "react-router"

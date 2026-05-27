@@ -1,7 +1,7 @@
 meta {
   name: Create user
   type: http
-  seq: 11
+  seq: 12
 }
 
 post {
@@ -16,11 +16,12 @@ auth:bearer {
 
 body:json {
   {
-    "email": "example1@gmail.com",
+    "email": "example2@gmail.com",
     "password": "{{default_password}}",
-    "username": "Example1",
+    "username": "Example2",
     "firstName": "Ex",
     "lastName": "Example",
-    "phoneNumber": "+407777777777"
+    "phoneNumber": "+407777777777",
+    "role": "MANAGER"
   }
 }

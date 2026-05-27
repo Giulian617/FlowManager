@@ -1,23 +1,15 @@
-import React, { useState } from "react"
 import { useNavigate } from "react-router"
-import { Building2, ChevronRight, Search, X, AlertCircle, ChevronDown, User, Lock } from "lucide-react"
-
-const MOCK_ORGS = [
-  { id: "1", name: "Acme Corporation", members: 24, projects: 8},
-  { id: "2", name: "TechFlow SRL", members: 12, projects: 4 },
-  { id: "3", name: "DevSquad", members: 6, projects: 3 },
-]
-
-const MOCK_USERS = [
-  { id: "1", name: "Mihai Pop", orgIds: ["1", "2"] },
-  { id: "2", name: "Luke Tomson", orgIds: ["2", "3"] },
-  { id: "3", name: "Ana Serban", orgIds: ["1", "3"] },
-  { id: "4", name: "Joe Nik", orgIds: ["3"] },
-  { id: "5", name: "Maria Ionescu", orgIds: ["1"] },
-  { id: "6", name: "Alex Tudor", orgIds: ["2"] },
-]
-
-const LOGGED_IN_USER = MOCK_USERS[0]
+import { Building2, ChevronRight, Search, X, AlertCircle, ChevronDown, User } from "lucide-react"
+import { useEffect, useRef, useState} from "react"
+import {
+  getCurrentUser,
+  getManagers,
+  getUserOrganizations,
+  getOrganizations,
+  createOrganization
+} from "../src/api"
+import type { UserSummaryDto } from "../types/user"
+import type { OrganizationSummaryDto } from "../types/organization"
 
 const INDUSTRY_OPTIONS = ["Software", "Cloud", "Mobile", "Finance", "Healthcare", "Education", "Retail", "Other"]
 
@@ -25,19 +17,27 @@ function getAvatar(name: string) {
   return name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
 }
 
-function ManagerPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+function ManagerPicker({
+  users,
+  value,
+  onChange
+}: {
+  users: UserSummaryDto[]
+  value: number | null
+  onChange: (id: number) => void
+}) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
-  const ref = React.useRef<HTMLDivElement>(null)
+  const ref = useRef<HTMLDivElement>(null)
 
-  React.useEffect(() => {
+  useEffect(() => {
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
     document.addEventListener("mousedown", h)
     return () => document.removeEventListener("mousedown", h)
   }, [])
 
-  const selected = MOCK_USERS.find((u) => u.id === value)
-  const filtered = MOCK_USERS.filter((u) => u.name.toLowerCase().includes(search.toLowerCase()))
+  const selected = users.find((u) => u.id === value)
+  const filtered = users.filter((u) => u.username.toLowerCase().includes(search.toLowerCase()))
 
   return (
     <div ref={ref} className="relative">
@@ -46,9 +46,9 @@ function ManagerPicker({ value, onChange }: { value: string; onChange: (id: stri
         {selected ? (
           <>
             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-[10px] font-semibold flex-none">
-              {selected.name.split(" ").map((n) => n[0]).join("")}
+              {selected.username.slice(0, 2).toUpperCase()}
             </div>
-            <span className="text-slate-700 flex-1 text-left">{selected.name}</span>
+            <span className="text-slate-700 flex-1 text-left">{selected.username}</span>
           </>
         ) : (
           <>
@@ -71,9 +71,9 @@ function ManagerPicker({ value, onChange }: { value: string; onChange: (id: stri
                 className={`flex items-center gap-2.5 px-3 py-2.5 text-sm cursor-pointer transition ${u.id === value ? "bg-slate-200" : "hover:bg-slate-100"}`}
                 onMouseDown={(e) => { e.preventDefault(); onChange(u.id); setOpen(false) }}>
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-[10px] font-semibold flex-none">
-                  {u.name.split(" ").map((n) => n[0]).join("")}
+                  {u.username.slice(0, 2).toUpperCase()}
                 </div>
-                <span>{u.name}</span>
+                <span>{u.username}</span>
               </li>
             ))}
           </ul>
@@ -85,17 +85,32 @@ function ManagerPicker({ value, onChange }: { value: string; onChange: (id: stri
 
 function CreateOrgModal({ onClose, onCreate }: {
   onClose: () => void
-  onCreate: (org: { id: string; name: string; members: number; projects: number}) => void
+  onCreate: (org: OrganizationSummaryDto) => void
 }) {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [industry, setIndustry] = useState("")
   const [industrySearch, setIndustrySearch] = useState("")
-  const [managerId, setManagerId] = useState(LOGGED_IN_USER.id)
   const [industryOpen, setIndustryOpen] = useState(false)
-  const industryRef = React.useRef<HTMLDivElement>(null)
+  const industryRef = useRef<HTMLDivElement>(null)
+  const [users, setUsers] = useState<UserSummaryDto[]>([])
+  const [managerId, setManagerId] = useState<number | null>(null)
+  const [saving, setSaving] = useState(false)
 
-  React.useEffect(() => {
+  useEffect(() => {
+    async function loadManagers() {
+      try {
+        const data = await getManagers()
+        setUsers(data)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    loadManagers()
+  }, [])
+
+  useEffect(() => {
     const h = (e: MouseEvent) => { if (industryRef.current && !industryRef.current.contains(e.target as Node)) setIndustryOpen(false) }
     document.addEventListener("mousedown", h)
     return () => document.removeEventListener("mousedown", h)
@@ -104,7 +119,7 @@ function CreateOrgModal({ onClose, onCreate }: {
   const nameOk = name.trim() !== ""
   const descOk = description.trim() !== ""
   const industryOk = industry !== ""
-  const managerOk = managerId !== ""
+  const managerOk = managerId !== null
   const canSave = nameOk && descOk && industryOk && managerOk
 
   const inputCls = (valid: boolean) =>
@@ -113,16 +128,26 @@ function CreateOrgModal({ onClose, onCreate }: {
             : "border-rose-300 focus:border-rose-400 focus:ring-rose-100"
     }`
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!canSave) return
-    const newOrg = {
-      id: String(Date.now()),
-      name: name.trim(),
-      members: 1,
-      projects: 0
+
+    try {
+      setSaving(true)
+
+      const newOrg = await createOrganization({
+        name,
+        description,
+        industry,
+        managerId,
+      })
+
+      onCreate(newOrg)
+      onClose()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setSaving(false)
     }
-    onCreate(newOrg)
-    onClose()
   }
 
   return (
@@ -195,13 +220,12 @@ function CreateOrgModal({ onClose, onCreate }: {
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
               Manager <span className={managerOk ? "text-slate-300" : "text-rose-500"}>*</span>
             </label>
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2.5 cursor-not-allowed">
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-[10px] font-semibold flex-none">
-                {LOGGED_IN_USER.name.split(" ").map((n) => n[0]).join("")}
-            </div>
-            <span className="text-sm text-slate-600">{LOGGED_IN_USER.name}</span>
-            <Lock className="ml-auto h-3 w-3 flex-none text-slate-300" />
-            </div>
+
+            <ManagerPicker
+              users={users}
+              value={managerId}
+              onChange={setManagerId}
+            />
           </div>
 
           {(!nameOk || !descOk || !industryOk || !managerOk) && (
@@ -213,9 +237,9 @@ function CreateOrgModal({ onClose, onCreate }: {
         </div>
 
         <div className="flex gap-2 px-6 pb-6 pt-4 border-t border-slate-100">
-          <button onClick={handleSave} disabled={!canSave}
+          <button onClick={handleSave} disabled={!canSave || saving}
             className="flex-1 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed">
-            Create Organization
+            {saving ? "Creating..." : "Create Organization"}
           </button>
           <button onClick={onClose}
             className="flex-1 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
@@ -230,14 +254,45 @@ function CreateOrgModal({ onClose, onCreate }: {
 export default function SelectOrg() {
   const navigate = useNavigate()
   const [search, setSearch] = useState("")
-  const [orgs, setOrgs] = useState(
-    MOCK_ORGS.filter((o) => LOGGED_IN_USER.orgIds.includes(o.id))
-  )
+  const [orgs, setOrgs] = useState<OrganizationSummaryDto[]>([])
+  const [user, setUser] = useState<UserSummaryDto | null>(null)
+  const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const currentUser = await getCurrentUser()
+        setUser(currentUser)
+
+        if(currentUser.role === "ADMIN") {
+          const organizations = await getOrganizations()
+          setOrgs(organizations)
+        }
+        else {
+          const organizations = await getUserOrganizations(currentUser.id)
+          setOrgs(organizations)
+        }
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
 
   const filtered = orgs.filter((o) =>
     o.name.toLowerCase().includes(search.toLowerCase())
   )
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-slate-500">Loading organizations...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-slate-50">
@@ -266,10 +321,12 @@ export default function SelectOrg() {
           {filtered.map((org) => (
             <button key={org.id}
               onClick={() => {
-                localStorage.setItem("selectedOrg", org.id)
+                localStorage.setItem("selectedOrg", String(org.id))
                 localStorage.setItem("selectedOrgName", org.name)
                 localStorage.setItem("selectedOrgAvatar", getAvatar(org.name))
-                navigate("/org/projects")
+                if (localStorage.getItem("selectedOrg")) {
+                  navigate("/org/projects")
+                }
               }}
               className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:border-slate-300 hover:shadow-md"
             >
@@ -278,7 +335,7 @@ export default function SelectOrg() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-slate-900">{org.name}</p>
-                <p className="text-xs text-slate-400">{org.members} members · {org.projects} projects</p>
+                <p className="text-xs text-slate-400 truncate">{org.description}</p>
               </div>
               <ChevronRight className="h-4 w-4 flex-none text-slate-400" />
             </button>
@@ -288,19 +345,21 @@ export default function SelectOrg() {
           )}
         </div>
 
-        <button
-          onClick={() => setShowCreate(true)}
-          className="mt-4 w-full flex items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4 text-sm font-medium text-slate-500 transition hover:border-slate-400 hover:text-slate-700">
-          <Building2 className="h-4 w-4" />
-          Create new organization
-        </button>
+        {user?.role === "ADMIN" && (
+          <button
+            onClick={() => setShowCreate(true)}
+            className="mt-4 w-full flex items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4 text-sm font-medium text-slate-500 transition hover:border-slate-400 hover:text-slate-700"
+          >
+            <Building2 className="h-4 w-4" />
+            Create new organization
+          </button>
+        )}
       </div>
 
       {showCreate && (
         <CreateOrgModal
           onClose={() => setShowCreate(false)}
           onCreate={(org) => {
-            LOGGED_IN_USER.orgIds.push(org.id)
             setOrgs((prev) => [...prev, org])
           }}
         />

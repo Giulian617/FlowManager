@@ -89,6 +89,7 @@ public class TeamMapper {
         return UserSummaryDto.builder()
                 .id(user.getId())
                 .username(user.getUsername())
+                .role(user.getRole())
                 .build();
     }
 

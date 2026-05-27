@@ -12,9 +12,11 @@ import flowmanager.nomenclator.utils.BuildDtos;
 import flowmanager.nomenclator.utils.BuildInstances;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 
@@ -76,34 +78,53 @@ public class UserServiceTests {
     }
 
     @Test
-    void testFindAllUsers_Valid() {
+    void testFindAllUsers_NoRoleFilter() {
         List<User> users = BuildInstances.buildUsers();
         List<UserSummaryDto> usersDto = users.stream()
                 .map(BuildDtos::buildUserSummaryDto)
                 .toList();
 
-        when(userRepository.findAll()).thenReturn(users);
+        when(userRepository.findAll(ArgumentMatchers.<Specification<User>>any())).thenReturn(users);
         when(userMapper.toSummaryDto(users.get(0))).thenReturn(usersDto.get(0));
         when(userMapper.toSummaryDto(users.get(1))).thenReturn(usersDto.get(1));
 
-        List<UserSummaryDto> result = userService.findAllUsers();
+        List<UserSummaryDto> result = userService.findAllUsers(null);
 
         assertEquals(2, result.size());
         assertEquals(usersDto.get(0), result.get(0));
         assertEquals(usersDto.get(1), result.get(1));
-        verify(userRepository, times(1)).findAll();
+        verify(userRepository, times(1)).findAll(ArgumentMatchers.<Specification<User>>any());
         verify(userMapper, times(1)).toSummaryDto(users.get(0));
         verify(userMapper, times(1)).toSummaryDto(users.get(1));
     }
 
     @Test
-    void testFindAllUsers_EmptyList() {
-        when(userRepository.findAll()).thenReturn(List.of());
+    void testFindAllUsers_WithRoleFilter() {
+        List<User> users = BuildInstances.buildUsers();
+        List<UserSummaryDto> usersDto = users.stream()
+                .map(BuildDtos::buildUserSummaryDto)
+                .toList();
 
-        List<UserSummaryDto> result = userService.findAllUsers();
+        when(userRepository.findAll(ArgumentMatchers.<Specification<User>>any())).thenReturn(List.of(users.getFirst()));
+        when(userMapper.toSummaryDto(users.getFirst())).thenReturn(usersDto.getFirst());
+
+        List<UserSummaryDto> result = userService.findAllUsers(Role.MANAGER);
+
+        assertEquals(1, result.size());
+        assertEquals(usersDto.getFirst(), result.getFirst());
+        verify(userRepository, times(1)).findAll(ArgumentMatchers.<Specification<User>>any());
+        verify(userMapper, times(1)).toSummaryDto(users.get(0));
+        verify(userMapper, never()).toSummaryDto(users.get(1));
+    }
+
+    @Test
+    void testFindAllUsers_EmptyList() {
+        when(userRepository.findAll(ArgumentMatchers.<Specification<User>>any())).thenReturn(List.of());
+
+        List<UserSummaryDto> result = userService.findAllUsers(null);
 
         assertEquals(0, result.size());
-        verify(userRepository, times(1)).findAll();
+        verify(userRepository, times(1)).findAll(ArgumentMatchers.<Specification<User>>any());
         verify(userMapper, never()).toSummaryDto(any());
     }
 
@@ -213,7 +234,7 @@ public class UserServiceTests {
     }
 
     @Test
-    void findAllOrganizationsByUserId_Valid() {
+    void findAllManagedOrganizationsByUserId_Valid() {
         User user = BuildInstances.buildUser();
         List<Organization> organizations = BuildInstances.buildOrganizations();
         List<OrganizationSummaryDto> organizationsDto = organizations.stream()
@@ -225,7 +246,7 @@ public class UserServiceTests {
         when(organizationMapper.toSummaryDto(organizations.get(0))).thenReturn(organizationsDto.get(0));
         when(organizationMapper.toSummaryDto(organizations.get(1))).thenReturn(organizationsDto.get(1));
 
-        List<OrganizationSummaryDto> result = userService.findAllOrganizationsByUserId(1);
+        List<OrganizationSummaryDto> result = userService.findAllManagedOrganizationsByUserId(1);
 
         assertEquals(2, result.size());
         assertEquals(organizationsDto.get(0), result.get(0));
@@ -236,14 +257,93 @@ public class UserServiceTests {
     }
 
     @Test
-    void testFindAllOrganizationsByUserId_UserNotFound() {
+    void testFindAllManagedOrganizationsByUserId_UserNotFound() {
         when(userRepository.findById(1)).thenReturn(Optional.empty());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> userService.findAllOrganizationsByUserId(1));
+                () -> userService.findAllManagedOrganizationsByUserId(1));
 
         assertEquals("User with id 1 not found", exception.getMessage());
     }
+
+    @Test
+    void testFindAllAssignedOrganizationsByUserId_Valid() {
+        User user = BuildInstances.buildUser();
+
+        List<Organization> orgs = BuildInstances.buildOrganizations();
+        Organization org1 = orgs.get(0);
+        Organization org2 = orgs.get(1);
+        Organization org3 = Organization.builder()
+                .id(3)
+                .name("Organizatia 3")
+                .description("Descriere 3")
+                .industry("IT")
+                .createdAt(LocalDateTime.of(2025, 12, 31, 10, 0, 5))
+                .manager(user)
+                .build();
+
+        user.setOrganizations(List.of(org1));
+
+        Team assignedTeam = BuildInstances.buildTeam();
+        assignedTeam.setOrganization(org2);
+
+        Team assignedTeamDuplicate = BuildInstances.buildTeam();
+        assignedTeamDuplicate.setOrganization(org1);
+
+        user.setAssignedTeams(List.of(assignedTeam, assignedTeamDuplicate));
+
+        List<Team> managedTeams = BuildInstances.buildTeams();
+        managedTeams.get(0).setOrganization(org3);
+        managedTeams.get(1).setOrganization(org2);
+
+        user.setManagedTeams(managedTeams);
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+
+        when(organizationMapper.toSummaryDto(any()))
+                .thenAnswer(invocation -> {
+                    Organization o = invocation.getArgument(0);
+                    return BuildDtos.buildOrganizationSummaryDto(o);
+                });
+
+        List<OrganizationSummaryDto> result =
+                userService.findAllAssignedOrganizationsByUserId(user.getId());
+
+        assertEquals(3, result.size());
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(organizationMapper, times(3)).toSummaryDto(any());
+    }
+
+    @Test
+    void testFindAllAssignedOrganizationsByUserId_UserNotFound() {
+        when(userRepository.findById(1)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> userService.findAllAssignedOrganizationsByUserId(1));
+
+        assertEquals("User with id 1 not found", exception.getMessage());
+
+        verify(organizationMapper, never()).toSummaryDto(any());
+    }
+
+    @Test
+    void testFindAllAssignedOrganizationsByUserId_EmptyLists() {
+        User user = BuildInstances.buildUser();
+
+        user.setOrganizations(List.of());
+        user.setAssignedTeams(List.of());
+        user.setManagedTeams(List.of());
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+
+        List<OrganizationSummaryDto> result =
+                userService.findAllAssignedOrganizationsByUserId(user.getId());
+
+        assertTrue(result.isEmpty());
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(organizationMapper, never()).toSummaryDto(any());
+    }
+
 
     @Test
     void testFindAllManagedTeamsByUserId_Valid() {

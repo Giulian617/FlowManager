@@ -81,25 +81,25 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/users/").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/users").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/users/**").hasRole("USER")
                         .requestMatchers(HttpMethod.PUT, "/users/**").hasRole("USER")
                         .requestMatchers("/users/**").hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.GET, "/organizations/").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/organizations").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/organizations/**").hasRole("MANAGER")
                         .requestMatchers(HttpMethod.PUT, "/organizations/**").hasRole("MANAGER")
                         .requestMatchers("/organizations/**").hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.GET, "/projects/").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/projects").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/projects/**").hasRole("USER")
                         .requestMatchers("/projects/**").hasRole("MANAGER")
 
-                        .requestMatchers(HttpMethod.GET, "/teams/").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/teams").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/teams/**").hasRole("USER")
                         .requestMatchers("/teams/**").hasRole("MANAGER")
 
-                        .requestMatchers(HttpMethod.GET, "/work-items/").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/work-items").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/work-items/**").hasRole("MANAGER")
                         .requestMatchers("/work-items/**").hasRole("USER")
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react"
 import { useNavigate } from "react-router"
-import { statusMeta } from "../lib/status"
+import { statusMeta } from "../src/status"
 import { Bug, CheckSquare, Zap, BookOpen, X, ArrowUp, ArrowDown } from "lucide-react"
 
 const CURRENT_USER_ID = "user-1"

@@ -3,7 +3,7 @@ import {
   Zap, ArrowLeft, ChevronDown, Search, UserCircle,
   AlertCircle, Send, Paperclip, Calendar, Link2, Lock, X, Plus } from "lucide-react"
 import { useNavigate } from "react-router"
-import { priorityMeta } from "../lib/status"
+import { priorityMeta } from "../src/status"
 
 const severityOptions = ["Blocker", "Critical", "High", "Medium", "Low"]
 const assigneeOptions = ["Unassigned", "Mihai Pop", "Luke Tomson", "Maria Ionescu", "Ana Serban", "Alex Tudor", "Joe Nik"]

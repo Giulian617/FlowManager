@@ -117,12 +117,12 @@ export default function OrgLayout() {
         <div className="border-t border-slate-100 px-3 py-3 space-y-0.5">
         <button
             onClick={() => {
-            localStorage.removeItem("selectedOrg")
-            localStorage.removeItem("selectedOrgName")
-            localStorage.removeItem("selectedOrgAvatar")
-            localStorage.removeItem("selectedProject")
-            localStorage.removeItem("selectedProjectName")
-            navigate("/select-org")
+              localStorage.removeItem("selectedOrg")
+              localStorage.removeItem("selectedOrgName")
+              localStorage.removeItem("selectedOrgAvatar")
+              localStorage.removeItem("selectedProject")
+              localStorage.removeItem("selectedProjectName")
+              navigate("/select-org")
             }}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
         >

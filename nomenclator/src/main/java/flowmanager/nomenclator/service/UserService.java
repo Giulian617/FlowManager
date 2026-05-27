@@ -4,7 +4,9 @@ import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.DuplicateAttributeException;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.*;
+import flowmanager.nomenclator.model.Organization;
 import flowmanager.nomenclator.model.Role;
+import flowmanager.nomenclator.model.Team;
 import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.CommentRepository;
 import flowmanager.nomenclator.repository.UserRepository;
@@ -12,10 +14,15 @@ import flowmanager.nomenclator.security.KeycloakAdminService;
 import flowmanager.nomenclator.security.Utils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -40,9 +47,15 @@ public class UserService {
         );
     }
 
-    public List<UserSummaryDto> findAllUsers() {
+    public List<UserSummaryDto> findAllUsers(Role role) {
+        Specification<User> specs = Specification.allOf();
+
+        if (role != null) {
+            specs = specs.and((root, query, cb) -> cb.equal(root.get("role"), role));
+        }
+
         return userRepository
-                .findAll()
+                .findAll(specs)
                 .stream()
                 .map(userMapper::toSummaryDto)
                 .toList();
@@ -72,10 +85,30 @@ public class UserService {
                 .toList();
     }
 
-    public List<OrganizationSummaryDto> findAllOrganizationsByUserId(Integer userId) {
+    public List<OrganizationSummaryDto> findAllManagedOrganizationsByUserId(Integer userId) {
         return getUser(userId)
                 .getOrganizations()
                 .stream()
+                .map(organizationMapper::toSummaryDto)
+                .toList();
+    }
+    
+    public List<OrganizationSummaryDto> findAllAssignedOrganizationsByUserId(Integer userId) {
+        User user = getUser(userId);
+
+        Set<Organization> organizations = new HashSet<>(user.getOrganizations());
+        organizations.addAll(
+                user.getAssignedTeams().stream()
+                        .map(Team::getOrganization)
+                        .toList()
+        );
+        organizations.addAll(
+                user.getManagedTeams().stream()
+                        .map(Team::getOrganization)
+                        .toList()
+        );
+
+        return organizations.stream()
                 .map(organizationMapper::toSummaryDto)
                 .toList();
     }

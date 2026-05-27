@@ -32,7 +32,7 @@ export default function Login() {
       localStorage.setItem("accessToken", data.accessToken)
       localStorage.setItem("refreshToken", data.refreshToken)
       localStorage.setItem("tokenExpiry", String(Date.now() + data.expiresIn * 1000))
-      navigate("/select-org")
+      navigate("/select-org", { replace: true })
     } catch {
       setError("Invalid username or password.")
     } finally {
@@ -148,7 +148,7 @@ export default function Login() {
         <p className="mt-6 text-center text-xs text-slate-400">
           Don't have an account?{" "}
           <button className="font-medium text-slate-700 transition hover:text-slate-900">
-            Contact your administrator
+            Contact your manager
           </button>
         </p>
       </div>
