@@ -2,7 +2,7 @@ import { Navigate } from "react-router"
 
 function getRedirectPath() {
   if (typeof window === "undefined") return "/login"
-  const isLoggedIn = localStorage.getItem("isLoggedIn")
+  const isLoggedIn = localStorage.getItem("accessToken") !== null
   const orgId = localStorage.getItem("selectedOrg")
   const projectId = localStorage.getItem("selectedProject")
 

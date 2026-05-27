@@ -59,7 +59,7 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain loginFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/auth/login")
+                .securityMatcher("/auth/login", "/auth/refresh")
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth

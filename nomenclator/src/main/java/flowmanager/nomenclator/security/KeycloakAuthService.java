@@ -36,17 +36,7 @@ public class KeycloakAuthService {
     private final JwtDecoder jwtDecoder;
     private final TokenBlacklistService tokenBlacklistService;
 
-    public LoginResponseDto login(LoginRequestDto dto) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-        body.add("grant_type", "password");
-        body.add("client_id", clientId);
-        body.add("client_secret", clientSecret);
-        body.add("username", dto.getUsername());
-        body.add("password", dto.getPassword());
-
+    private LoginResponseDto getLoginResponseDto(HttpHeaders headers, MultiValueMap<String, String> body) {
         ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                 keycloakUrl + "/realms/" + realm + "/protocol/openid-connect/token",
                 HttpMethod.POST,
@@ -61,6 +51,33 @@ public class KeycloakAuthService {
                 .refreshToken((String) responseBody.get("refresh_token"))
                 .expiresIn((Integer) responseBody.get("expires_in"))
                 .build();
+    }
+
+    public LoginResponseDto login(LoginRequestDto dto) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("grant_type", "password");
+        body.add("client_id", clientId);
+        body.add("client_secret", clientSecret);
+        body.add("username", dto.getUsername());
+        body.add("password", dto.getPassword());
+
+        return getLoginResponseDto(headers, body);
+    }
+
+    public LoginResponseDto refresh(String refreshToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("grant_type", "refresh_token");
+        body.add("client_id", clientId);
+        body.add("client_secret", clientSecret);
+        body.add("refresh_token", refreshToken);
+
+        return getLoginResponseDto(headers, body);
     }
 
     public void logout(String accessToken, String refreshToken) {

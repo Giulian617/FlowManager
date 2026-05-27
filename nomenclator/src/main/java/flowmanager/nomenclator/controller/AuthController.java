@@ -22,6 +22,13 @@ public class AuthController {
         return ResponseEntity.ok(keycloakAuthService.login(dto));
     }
 
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponseDto> refresh(
+            @RequestBody @Valid LogoutRequestDto dto
+    ) {
+        return ResponseEntity.ok(keycloakAuthService.refresh(dto.getRefreshToken()));
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
             @RequestHeader("Authorization") String bearerToken,
