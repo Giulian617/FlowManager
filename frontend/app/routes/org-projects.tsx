@@ -1,70 +1,22 @@
-import React, { useState, useRef, useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router"
 import { ChevronRight, Calendar, User, Users, Search, Plus, X, ChevronDown, AlertCircle, Pencil, Trash2 } from "lucide-react"
-
-const MOCK_USERS = [
-  { id: "1", firstName: "Mihai", lastName: "Pop", username: "mihai.pop", role: "DEVELOPER" },
-  { id: "2", firstName: "Luke", lastName: "Tomson", username: "luke.tomson", role: "DEVELOPER" },
-  { id: "3", firstName: "Ana", lastName: "Serban", username: "ana.serban", role: "DESIGNER" },
-  { id: "4", firstName: "Joe", lastName: "Nik", username: "joe.nik", role: "MANAGER" },
-  { id: "5", firstName: "Maria", lastName: "Ionescu", username: "maria.ionescu", role: "QA" },
-  { id: "6", firstName: "Alex", lastName: "Tudor", username: "alex.tudor", role: "DEVOPS" },
-]
-
-// TODO: inlocuire cu userul din Keycloak
-const LOGGED_IN_USER = MOCK_USERS[0]
-
-const MOCK_TEAMS = [
-  { id: "1", name: "Engineering", projectId: "1" },
-  { id: "2", name: "QA", projectId: "1" },
-  { id: "3", name: "Design", projectId: "1" },
-  { id: "4", name: "Engineering", projectId: "2" },
-  { id: "5", name: "DevOps", projectId: "2" },
-  { id: "6", name: "Mobile Engineering", projectId: "3" },
-  { id: "7", name: "QA", projectId: "3" },
-  { id: "8", name: "Design", projectId: "3" },
-  { id: "9", name: "Design", projectId: "4" },
-  { id: "10", name: "Engineering", projectId: "4" },
-]
-
-const PROJECT_TEAMS: Record<string, { name: string; description: string; createdAt: string; organization: string; manager: string; members: string[] }[]> = {
-  "1": [
-    { name: "Engineering", description: "Frontend delivery and code reviews.", createdAt: "2025-03-01T09:00:00", organization: "Acme Corporation", manager: "Mihai Pop", members: ["Mihai Pop", "Luke Tomson", "Ana Serban", "Joe Nik"] },
-    { name: "QA", description: "Manual and automated testing.", createdAt: "2025-03-15T10:30:00", organization: "Acme Corporation", manager: "Maria Ionescu", members: ["Maria Ionescu", "Alex Tudor"] },
-    { name: "Design", description: "UI/UX and design system.", createdAt: "2025-04-01T08:00:00", organization: "Acme Corporation", manager: "Ana Serban", members: ["Ana Serban", "Joe Nik"] },
-  ],
-  "2": [
-    { name: "Engineering", description: "Backend services and REST API.", createdAt: "2025-02-10T09:00:00", organization: "TechFlow SRL", manager: "Luke Tomson", members: ["Luke Tomson", "Mihai Pop", "Alex Tudor"] },
-    { name: "DevOps", description: "Infrastructure and CI/CD.", createdAt: "2025-02-10T09:00:00", organization: "TechFlow SRL", manager: "Alex Tudor", members: ["Alex Tudor"] },
-  ],
-  "3": [
-    { name: "Mobile Engineering", description: "iOS and Android development.", createdAt: "2025-05-01T11:00:00", organization: "DevSquad", manager: "Joe Nik", members: ["Joe Nik", "Luke Tomson", "Mihai Pop"] },
-    { name: "QA", description: "Device-specific testing.", createdAt: "2025-05-10T09:00:00", organization: "DevSquad", manager: "Maria Ionescu", members: ["Maria Ionescu", "Ana Serban"] },
-    { name: "Design", description: "Mobile UI and accessibility.", createdAt: "2025-05-15T08:00:00", organization: "DevSquad", manager: "Ana Serban", members: ["Ana Serban"] },
-  ],
-  "4": [
-    { name: "Design", description: "Component library and tokens.", createdAt: "2025-01-20T09:00:00", organization: "Acme Corporation", manager: "Ana Serban", members: ["Ana Serban", "Joe Nik", "Maria Ionescu"] },
-    { name: "Engineering", description: "React implementation of design system.", createdAt: "2025-01-20T09:00:00", organization: "Acme Corporation", manager: "Mihai Pop", members: ["Mihai Pop", "Luke Tomson"] },
-  ],
-}
-
-const INITIAL_PROJECTS = [
-  { id: "1", name: "FlowManager Frontend", description: "React frontend application.", startDate: "2026-01-15", endDate: "2026-07-30", manager: "Mihai Pop", managerId: "1", teamIds: ["1", "2", "3"], color: "bg-sky-500" },
-  { id: "2", name: "API Gateway", description: "Backend services and REST API.", startDate: "2026-02-01", endDate: "2026-06-15", manager: "Mihai Pop", managerId: "1", teamIds: ["4", "5"], color: "bg-violet-500" },
-  { id: "3", name: "Mobile App", description: "iOS and Android client.", startDate: "2026-03-10", endDate: "2026-09-01", manager: "Ana Serban", managerId: "3", teamIds: ["6", "7", "8"], color: "bg-emerald-500" },
-  { id: "4", name: "Design System", description: "Shared component library.", startDate: "2026-01-01", endDate: "2026-05-31", manager: "Luke Tomson", managerId: "2", teamIds: ["9", "10"], color: "bg-amber-500" },
-]
-
-type Project = typeof INITIAL_PROJECTS[0]
-
-const PROJECT_COLORS = [
-  { value: "bg-sky-500", label: "Sky" },
-  { value: "bg-violet-500", label: "Violet" },
-  { value: "bg-emerald-500", label: "Emerald" },
-  { value: "bg-amber-500", label: "Amber" },
-  { value: "bg-rose-500", label: "Rose" },
-  { value: "bg-slate-500", label: "Slate" },
-]
+import {
+  getCurrentUser,
+  getManagers,
+  getProjectsByOrganizationId,
+  getTeamsByOrganizationId,
+  createProject,
+  updateProject,
+  deleteProject,
+} from "../src/api"
+import type {
+  ProjectCreateDto,
+  ProjectUpdateDto,
+  ProjectResponseDto,
+} from "../types/project"
+import type { UserSummaryDto } from "../types/user"
+import type { TeamSummaryOrganizationDto } from "../types/team"
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" })
@@ -79,182 +31,74 @@ function isNearDeadline(endDate: string) {
   return diff > 0 && diff < 1000 * 60 * 60 * 24 * 14
 }
 
-function fullName(u: typeof MOCK_USERS[0]) {
-  return `${u.firstName} ${u.lastName}`
-}
-
-
-function ManagerPicker({ value, onChange }: {
+function ManagerPicker({ value, onChange, managers }: {
   value: string
   onChange: (id: string) => void
+  managers: UserSummaryDto[]
 }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
   const [search, setSearch] = useState("")
-
-  useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
-    document.addEventListener("mousedown", h)
-    return () => document.removeEventListener("mousedown", h)
-  }, [])
-
-  const selected = MOCK_USERS.find((u) => u.id === value)
+  const selected = managers.find((u) => u.id === Number(value)) ?? null
 
   return (
-  <div ref={ref} className="relative">
-    <button
-      type="button"
-      onClick={() => { setOpen((o) => !o); setSearch("") }}
-      className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition hover:border-slate-400"
-    >
-      {selected ? (
-        <>
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-[10px] font-semibold flex-none">
-            {selected.firstName[0]}{selected.lastName[0]}
-          </div>
-          <span className="text-slate-700 flex-1 text-left">{fullName(selected)}</span>
-          <span className="text-xs text-slate-400">{selected.role}</span>
-        </>
-      ) : (
-        <>
-          <User className="h-4 w-4 text-slate-400" />
-          <span className="text-slate-400 flex-1 text-left">Select manager…</span>
-        </>
-      )}
-      <ChevronDown className="h-4 w-4 text-slate-400 flex-none" />
-    </button>
-
-    {open && (
-      <div className="absolute left-0 z-30 mt-1.5 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100">
-          <Search className="h-3.5 w-3.5 text-slate-400 flex-none" />
-          <input
-            autoFocus
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search…"
-            className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
-          />
-          {search && (
-            <button onMouseDown={(e) => { e.preventDefault(); setSearch("") }} className="text-slate-300 hover:text-slate-500">
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-        <ul className="max-h-44 overflow-y-auto">
-          {MOCK_USERS.filter((u) =>
-            fullName(u).toLowerCase().includes(search.toLowerCase()) ||
-            u.role.toLowerCase().includes(search.toLowerCase())
-          ).map((u) => {
-            const isSelected = u.id === value
-            return (
-              <li
-                key={u.id}
-                className={`flex items-center gap-2.5 px-3 py-2.5 text-sm cursor-pointer transition ${isSelected ? "bg-slate-200 text-white hover:bg-slate-200" : "hover:bg-slate-100"}`}
-                onMouseDown={(e) => { e.preventDefault(); onChange(u.id); setOpen(false); setSearch("") }}
-              >
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-[10px] font-semibold flex-none">
-                  {u.firstName[0]}{u.lastName[0]}
-                </div>
-                <span className="text-slate-700 flex-1">{fullName(u)}</span>
-                <span className="text-xs text-slate-400">{u.role}</span>
-              </li>
-            )
-          })}
-          {MOCK_USERS.filter((u) => fullName(u).toLowerCase().includes(search.toLowerCase()) || u.role.toLowerCase().includes(search.toLowerCase())).length === 0 && (
-            <li className="px-3 py-3 text-xs text-slate-400">No users found.</li>
-          )}
-        </ul>
-      </div>
-    )}
-  </div>
-)
-}
-
-function TeamsPicker({ projectId, value, onChange }: {
-  projectId: string
-  value: string[]
-  onChange: (v: string[]) => void
-}) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
-    document.addEventListener("mousedown", h)
-    return () => document.removeEventListener("mousedown", h)
-  }, [])
-
-  const availableTeams = projectId
-    ? MOCK_TEAMS.filter((t) => t.projectId === projectId)
-    : MOCK_TEAMS
-
-  const toggle = (id: string) =>
-    value.includes(id) ? onChange(value.filter((v) => v !== id)) : onChange([...value, id])
-
-  const selectedTeams = MOCK_TEAMS.filter((t) => value.includes(t.id))
-
-  return (
-    <div ref={ref} className="relative">
-      {selectedTeams.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          {selectedTeams.map((t) => (
-            <span key={t.id} className="inline-flex items-center gap-1 rounded-lg bg-slate-100 border border-slate-200 pl-2 pr-1 py-0.5 text-xs text-slate-700">
-              {t.name}
-              <button
-                type="button"
-                onMouseDown={(e) => { e.preventDefault(); toggle(t.id) }}
-                className="ml-0.5 text-slate-400 hover:text-slate-600 transition"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
+  <div className="relative">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition hover:border-slate-400"
+        onClick={() => { setOpen((o) => !o); setSearch("") }}
+        className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition hover:border-slate-400"
       >
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-slate-400" />
-          <span className="text-slate-400">{value.length === 0 ? "Select teams…" : "Add more…"}</span>
-        </div>
-        <ChevronDown className="h-4 w-4 text-slate-400" />
+        {selected ? (
+          <>
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-[10px] font-semibold flex-none">
+              {selected.username[0].toUpperCase()}
+            </div>
+            <span className="text-slate-700 flex-1 text-left">{selected.username}</span>
+          </>
+        ) : (
+          <>
+            <User className="h-4 w-4 text-slate-400" />
+            <span className="text-slate-400 flex-1 text-left">Select manager…</span>
+          </>
+        )}
+        <ChevronDown className="h-4 w-4 text-slate-400 flex-none" />
       </button>
+
       {open && (
-        <ul className="absolute left-0 z-30 mt-1.5 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden max-h-48 overflow-y-auto">
-          {availableTeams.length === 0 && (
-            <li className="px-3 py-3 text-xs text-slate-400">No teams available</li>
-          )}
-          {availableTeams.map((t) => {
-            const selected = value.includes(t.id)
-            return (
-              <li
-                key={t.id}
-                className={`flex items-center gap-2.5 px-3 py-2.5 text-sm cursor-pointer transition hover:bg-slate-50 ${selected ? "bg-slate-50" : ""}`}
-                onMouseDown={(e) => { e.preventDefault(); toggle(t.id) }}
-              >
-                <div className={`h-4 w-4 flex-none rounded border flex items-center justify-center transition-colors ${selected ? "bg-slate-900 border-slate-900" : "border-slate-300 bg-white"}`}>
-                  {selected && (
-                    <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M2 6l3 3 5-5" />
-                    </svg>
-                  )}
-                </div>
-                <span className="text-slate-700">{t.name}</span>
-              </li>
-            )
-          })}
-        </ul>
+        <div className="absolute left-0 z-30 mt-1.5 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100">
+            <Search className="h-3.5 w-3.5 text-slate-400 flex-none" />
+            <input
+              autoFocus
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search…"
+              className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+            />
+          </div>
+          <ul className="max-h-44 overflow-y-auto">
+            {managers
+              .filter((u) => u.username.toLowerCase().includes(search.toLowerCase()))
+              .map((u) => (
+                <li
+                  key={u.id}
+                  className={`flex items-center gap-2.5 px-3 py-2.5 text-sm cursor-pointer hover:bg-slate-100 ${u.id === Number(value) ? "bg-slate-100" : ""}`}
+                  onMouseDown={(e) => { e.preventDefault(); onChange(String(u.id)); setOpen(false) }}
+                >
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-[10px] font-semibold flex-none">
+                    {u.username[0].toUpperCase()}
+                  </div>
+                  <span className="text-slate-700">{u.username}</span>
+                </li>
+              ))}
+          </ul>
+        </div>
       )}
     </div>
   )
 }
 
 function ConfirmDeleteModal({ project, onConfirm, onClose }: {
-  project: Project
+  project: ProjectResponseDto
   onConfirm: () => void
   onClose: () => void
 }) {
@@ -275,11 +119,11 @@ function ConfirmDeleteModal({ project, onConfirm, onClose }: {
           Are you sure you want to delete <span className="font-semibold text-slate-900">"{project.name}"</span>?
         </p>
         <div className="flex gap-2">
-          <button onClick={onConfirm} className="flex-1 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700">
-            Delete
-          </button>
           <button onClick={onClose} className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
             Cancel
+          </button>
+          <button onClick={onConfirm} className="flex-1 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700">
+            Delete
           </button>
         </div>
       </div>
@@ -287,43 +131,142 @@ function ConfirmDeleteModal({ project, onConfirm, onClose }: {
   )
 }
 
+function TeamsPicker({ value, onChange, teams }: {
+  value: string[]
+  onChange: (v: string[]) => void
+  teams: TeamSummaryOrganizationDto[]
+}) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const ref = useRef<HTMLDivElement>(null)
 
-function ProjectFormModal({ initial, onClose, onSave }: {
-  initial?: Project
+  useEffect(() => {
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener("mousedown", h)
+    return () => document.removeEventListener("mousedown", h)
+  }, [])
+
+  const toggle = (id: string) =>
+    value.includes(id) ? onChange(value.filter((v) => v !== id)) : onChange([...value, id])
+
+  const selectedTeams = teams.filter((t) => value.includes(String(t.id)))
+  const filtered = teams.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()))
+
+  return (
+    <div ref={ref} className="relative">
+      {selectedTeams.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {selectedTeams.map((t) => (
+            <span key={t.id} className="inline-flex items-center gap-1 rounded-lg bg-slate-100 border border-slate-200 pl-2 pr-1 py-0.5 text-xs text-slate-700">
+              {t.name}
+              <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); toggle(String(t.id)) }}
+                className="ml-0.5 text-slate-400 hover:text-slate-600 transition"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => { setOpen((o) => !o); setSearch("") }}
+        className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition hover:border-slate-400"
+      >
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-slate-400" />
+          <span className="text-slate-400">{value.length === 0 ? "Select teams…" : "Add more…"}</span>
+        </div>
+        <ChevronDown className="h-4 w-4 text-slate-400" />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 z-30 mt-1.5 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100">
+            <Search className="h-3.5 w-3.5 text-slate-400 flex-none" />
+            <input
+              autoFocus
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search teams…"
+              className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+            />
+          </div>
+          <ul className="max-h-48 overflow-y-auto">
+            {filtered.length === 0 && (
+              <li className="px-3 py-3 text-xs text-slate-400">No teams found</li>
+            )}
+            {filtered.map((t) => {
+              const selected = value.includes(String(t.id))
+              return (
+                <li
+                  key={t.id}
+                  className={`flex items-center gap-2.5 px-3 py-2.5 text-sm cursor-pointer transition hover:bg-slate-50 ${selected ? "bg-slate-50" : ""}`}
+                  onMouseDown={(e) => { e.preventDefault(); toggle(String(t.id)) }}
+                >
+                  <div className={`h-4 w-4 flex-none rounded border flex items-center justify-center transition-colors ${selected ? "bg-slate-900 border-slate-900" : "border-slate-300 bg-white"}`}>
+                    {selected && (
+                      <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 6l3 3 5-5" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="text-slate-700">{t.name}</span>
+                  {t.manager && (
+                    <span className="ml-auto text-xs text-slate-400">{t.manager.username}</span>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ProjectFormModal({ initial, managers, currentUser, teams, onClose, onSave }: {
+  initial?: ProjectResponseDto
+  managers: UserSummaryDto[]
+  currentUser: UserSummaryDto | null
+  teams: TeamSummaryOrganizationDto[]
   onClose: () => void
-  onSave: (p: Project) => void
+  onSave: (data: ProjectCreateDto | ProjectUpdateDto, id?: number) => Promise<void>
 }) {
   const isEdit = !!initial
   const [name, setName] = useState(initial?.name ?? "")
   const [description, setDesc] = useState(initial?.description ?? "")
   const [startDate, setStartDate] = useState(initial?.startDate ?? "")
   const [endDate, setEndDate] = useState(initial?.endDate ?? "")
-  const [color, setColor] = useState(initial?.color ?? "bg-sky-500")
-  const [teamIds, setTeamIds] = useState<string[]>(initial?.teamIds ?? [])
-  const [managerId, setManagerId] = useState(initial?.managerId ?? LOGGED_IN_USER.id)
+  const [teamsIds, setTeamsIds] = useState<string[]>(initial?.teams.map(team => String(team.id)) ?? [])
+  const [managerId, setManagerId] = useState(initial?.manager.id ?? currentUser?.id ?? null)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const nameOk = name.trim() !== ""
   const descOk = description.trim() !== ""
   const startOk = startDate !== ""
   const endOk = endDate !== ""
   const dateRangeOk = !startOk || !endOk || new Date(endDate) >= new Date(startDate)
-  const canSave = nameOk && descOk && startOk && endOk && dateRangeOk
+  const canSave = nameOk && descOk && startOk && endOk && dateRangeOk && managerId !== null && teamsIds.length > 0
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!canSave) return
-    const manager = MOCK_USERS.find((u) => u.id === managerId) ?? MOCK_USERS[0]
-    onSave({
-      id: initial?.id ?? String(Date.now()),
-      name: name.trim(),
-      description: description.trim(),
-      startDate,
-      endDate,
-      manager: fullName(manager),
-      managerId: manager.id,
-      teamIds,
-      color,
-    })
-    onClose()
+    setSaving(true)
+    setError(null)
+    
+    try {
+      const payload = { name: name.trim(), description: description.trim(), startDate, endDate, managerId: managerId!, teamsIds: teamsIds.map(Number) }
+      await onSave(payload, initial?.id)
+      onClose()
+    } catch(e) {
+      setError("Failed to save project. Please try again.")
+    } finally {
+      setSaving(false)
+    }
   }
 
   const inputCls = (valid: boolean) =>
@@ -332,8 +275,6 @@ function ProjectFormModal({ initial, onClose, onSave }: {
         ? "border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-slate-200"
         : "border-rose-300 focus:border-rose-400 focus:ring-rose-100"
     }`
-
-  const loggedInUser = MOCK_USERS.find((u) => u.id === LOGGED_IN_USER.id)!
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -351,8 +292,6 @@ function ProjectFormModal({ initial, onClose, onSave }: {
         </div>
 
         <div className="overflow-y-auto px-6 py-5 space-y-4">
-
-          {/* Name */}
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
               Name <span className={nameOk ? "text-slate-300" : "text-rose-500"}>*</span>
@@ -360,7 +299,6 @@ function ProjectFormModal({ initial, onClose, onSave }: {
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. FlowManager Frontend…" className={inputCls(nameOk)} />
           </div>
 
-          {/* Description */}
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
               Description <span className={descOk ? "text-slate-300" : "text-rose-500"}>*</span>
@@ -370,7 +308,6 @@ function ProjectFormModal({ initial, onClose, onSave }: {
               className={inputCls(descOk) + " resize-none"} />
           </div>
 
-          {/* Dates */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -379,10 +316,7 @@ function ProjectFormModal({ initial, onClose, onSave }: {
               <div className="relative">
                 <Calendar className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
-                  className={`w-full rounded-xl border bg-white pl-9 pr-3 py-2.5 text-sm text-slate-700 outline-none transition focus:ring-2 ${
-                    startOk ? "border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-slate-200"
-                            : "border-rose-300 focus:border-rose-400 focus:ring-rose-100"
-                  }`} />
+                  className={`w-full rounded-xl border bg-white pl-9 pr-3 py-2.5 text-sm text-slate-700 outline-none transition focus:ring-2 ${startOk ? "border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-slate-200" : "border-rose-300 focus:border-rose-400 focus:ring-rose-100"}`} />
               </div>
             </div>
             <div>
@@ -392,10 +326,7 @@ function ProjectFormModal({ initial, onClose, onSave }: {
               <div className="relative">
                 <Calendar className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
-                  className={`w-full rounded-xl border bg-white pl-9 pr-3 py-2.5 text-sm text-slate-700 outline-none transition focus:ring-2 ${
-                    endOk ? "border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-slate-200"
-                          : "border-rose-300 focus:border-rose-400 focus:ring-rose-100"
-                  }`} />
+                  className={`w-full rounded-xl border bg-white pl-9 pr-3 py-2.5 text-sm text-slate-700 outline-none transition focus:ring-2 ${endOk ? "border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-slate-200" : "border-rose-300 focus:border-rose-400 focus:ring-rose-100"}`} />
               </div>
             </div>
           </div>
@@ -407,61 +338,54 @@ function ProjectFormModal({ initial, onClose, onSave }: {
             </div>
           )}
 
-          {/* Manager */}
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Manager</label>
-
             {isEdit ? (
-              <ManagerPicker value={managerId} onChange={setManagerId} />
+              <ManagerPicker
+                value={String(managerId)}
+                onChange={(id) => setManagerId(Number(id))}
+                managers={managers}
+              />
             ) : (
               <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2.5 cursor-not-allowed">
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-[10px] font-semibold flex-none">
-                  {loggedInUser.firstName[0]}{loggedInUser.lastName[0]}
+                  {currentUser?.username[0].toUpperCase() ?? "?"}
                 </div>
-                <span className="text-sm text-slate-600">{fullName(loggedInUser)}</span>
-                <span className="ml-auto text-xs text-slate-400">{loggedInUser.role}</span>
+                <span className="text-sm text-slate-600">{currentUser?.username ?? "Loading…"}</span>
               </div>
             )}
           </div>
 
-          {/* Teams */}
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Teams</label>
-            <TeamsPicker
-              projectId={initial?.id ?? ""}
-              value={teamIds}
-              onChange={setTeamIds}
-            />
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Teams <span className={teamsIds.length > 0 ? "text-slate-300" : "text-rose-500"}>*</span>
+            </label>
+            <TeamsPicker value={teamsIds} onChange={setTeamsIds} teams={teams} />
           </div>
 
-          {/* Color */}
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Color</label>
-            <div className="flex gap-2">
-              {PROJECT_COLORS.map((c) => (
-                <button key={c.value} type="button" onClick={() => setColor(c.value)}
-                  className={`h-7 w-7 rounded-full ${c.value} transition ring-offset-2 ${color === c.value ? "ring-2 ring-slate-700" : "hover:ring-2 hover:ring-slate-300"}`}
-                  title={c.label} />
-              ))}
+          {error && (
+            <div className="flex items-center gap-2 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-xs text-rose-700">
+              <AlertCircle className="h-4 w-4 flex-none" />
+              {error}
             </div>
-          </div>
+          )}
 
           {!canSave && dateRangeOk && (
             <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-700">
               <AlertCircle className="h-4 w-4 flex-none" />
-              Name, description and both dates are required.
+              Name, description, manager, at least one team and both dates are required.
             </div>
           )}
         </div>
 
         <div className="flex gap-2 px-6 pb-6 pt-4 border-t border-slate-100">
-          <button onClick={handleSave} disabled={!canSave}
-            className="flex-1 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed">
-            {isEdit ? "Save Changes" : "Create Project"}
-          </button>
           <button onClick={onClose}
             className="flex-1 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
             Cancel
+          </button>
+          <button onClick={handleSave} disabled={!canSave || saving}
+            className="flex-1 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed">
+            {saving ? "Saving…" : isEdit ? "Save Changes" : "Create Project"}
           </button>
         </div>
       </div>
@@ -469,60 +393,91 @@ function ProjectFormModal({ initial, onClose, onSave }: {
   )
 }
 
-
 export default function Projects() {
   const navigate = useNavigate()
-  const [projects, setProjects] = useState(INITIAL_PROJECTS)
+  const [orgId, setOrgId] = useState<number>(0)
+  const [projects, setProjects] = useState<ProjectResponseDto[]>([])
+  const [currentUser, setCurrentUser] = useState<UserSummaryDto | null>(null)
+  const [managers, setManagers] = useState<UserSummaryDto[]>([])
+  const [teams, setTeams] = useState<TeamSummaryOrganizationDto[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null> (null)
   const [query, setQuery] = useState("")
   const [showCreate, setShowCreate] = useState(false)
-  const [editProject, setEditProject] = useState<Project | null>(null)
-  const [deleteProject, setDeleteProject] = useState<Project | null>(null)
-  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null)
-
+  const [editProject, setEditProject] = useState<ProjectResponseDto | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ProjectResponseDto | null>(null)
+  
   useEffect(() => {
-    setSelectedOrgId(localStorage.getItem("selectedOrg"))
-  }, [])
+    const orgId = typeof window !== "undefined" ? Number(localStorage.getItem("selectedOrg")) : 0
+    if (!orgId) { navigate("/select-org"); return }
 
-  const MOCK_ORGS_MAP = [
-    { id: "1", name: "Acme Corporation" },
-    { id: "2", name: "TechFlow SRL" },
-    { id: "3", name: "DevSquad" },
-  ]
+    async function load() {
+      try {
+        const [projectsData, currentUser, managersData, teamsData ] = await Promise.all([
+          getProjectsByOrganizationId(orgId),
+          getCurrentUser(),
+          getManagers(),
+          getTeamsByOrganizationId(orgId),
+        ])
+        setProjects(projectsData)
+        setCurrentUser(currentUser)
+        setManagers(managersData)
+        setTeams(teamsData)
+      } catch (e) {
+        setError("Failed to load projects.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [location.pathname])
+  
+  const handleCreate = async (data: ProjectCreateDto) => {
+    const created = await createProject(orgId, data)
+    setProjects((prev) => [...prev, created])
+  }
 
-  const loggedInOrg = MOCK_ORGS_MAP.find((o) => o.id === selectedOrgId)?.name
+  const handleEdit = async (data: ProjectUpdateDto, id?: number) => {
+    const updated = await updateProject(id!, data)
+    setProjects((prev) => prev.map((p) => p.id === updated.id ? updated : p))
+  }
 
-  const filtered = projects.filter((p) => {
-    const q = query.toLowerCase()
-    const teams = PROJECT_TEAMS[p.id] ?? []
-    const matchesOrg = selectedOrgId
-      ? (PROJECT_TEAMS[p.id] ?? []).some((t) => t.organization === loggedInOrg)
-      : true
-    return (
-      matchesOrg && (
-        p.name.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        p.manager.toLowerCase().includes(q) ||
-        teams.some((t) => t.name.toLowerCase().includes(q))
-      )
-    )
-  })
-
-  const handleSelect = (project: Project) => {
-  localStorage.setItem("selectedProject", project.id)
-  localStorage.setItem("selectedProjectName", project.name)
-  navigate("/dashboard")
-}
-
-  const handleCreate = (p: Project) => setProjects((prev) => [...prev, p])
-  const handleEdit = (p: Project) => setProjects((prev) => prev.map((x) => x.id === p.id ? p : x))
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: number) => {
+    await deleteProject(id)
     setProjects((prev) => prev.filter((p) => p.id !== id))
-    if (localStorage.getItem("selectedProject") === id) {
+    if (Number(localStorage.getItem("selectedProject")) === id) {
       localStorage.removeItem("selectedProject")
       localStorage.removeItem("selectedProjectName")
     }
-    setDeleteProject(null)
+    setDeleteTarget(null)
   }
+
+  const handleSelect = (project: ProjectResponseDto) => {
+    localStorage.setItem("selectedProject", String(project.id))
+    localStorage.setItem("selectedProjectName", project.name)
+    navigate("/dashboard")
+  }
+
+  const filtered = projects.filter((p) => {
+    const q = query.toLowerCase()
+    return (
+      p.name.toLowerCase().includes(q) ||
+      p.description?.toLowerCase().includes(q) ||
+      p.manager?.username?.toLowerCase().includes(q)
+    )
+  })
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-24">
+      <p className="text-slate-500">Loading projects…</p>
+    </div>
+  )
+
+  if (error) return (
+    <div className="flex items-center justify-center py-24">
+      <p className="text-rose-500">{error}</p>
+    </div>
+  )
 
   return (
     <div className="space-y-6">
@@ -569,16 +524,11 @@ export default function Projects() {
         ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((project) => {
-            const overdue = isOverdue(project.endDate)
+            const overdue     = isOverdue(project.endDate)
             const nearDeadline = isNearDeadline(project.endDate)
-            const teams = PROJECT_TEAMS[project.id] ?? []
-            const totalMembers = [...new Set(teams.flatMap((t) => t.members))].length
-            const selectedTeamNames = MOCK_TEAMS.filter((t) => project.teamIds.includes(t.id)).map((t) => t.name)
 
             return (
               <div key={project.id} className="relative group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 duration-150">
-
-                {/* Edit + Delete */}
                 <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={(e) => { e.stopPropagation(); setEditProject(project) }}
@@ -588,7 +538,7 @@ export default function Projects() {
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); setDeleteProject(project) }}
+                    onClick={(e) => { e.stopPropagation(); setDeleteTarget(project) }}
                     className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-rose-100 bg-white text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
                     title="Delete"
                   >
@@ -598,7 +548,7 @@ export default function Projects() {
 
                 <button className="w-full text-left" onClick={() => handleSelect(project)}>
                   <div className="flex items-start gap-3 mb-4">
-                    <div className={`flex h-10 w-10 flex-none items-center justify-center rounded-2xl ${project.color} text-white text-xs font-bold`}>
+                    <div className={`flex h-10 w-10 flex-none items-center justify-center rounded-2xl "bg-slate-500" text-white text-xs font-bold`}>
                       {project.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0 pr-14">
@@ -613,7 +563,7 @@ export default function Projects() {
                     <div className="flex items-center gap-2.5">
                       <User className="h-3.5 w-3.5 flex-none text-slate-400" />
                       <span className="text-xs text-slate-500">Manager</span>
-                      <span className="ml-auto text-xs font-medium text-slate-700">{project.manager}</span>
+                      <span className="ml-auto text-xs font-medium text-slate-700">{project.manager?.username ?? "—"}</span>
                     </div>
                     <div className="flex items-center gap-2.5">
                       <Calendar className="h-3.5 w-3.5 flex-none text-slate-400" />
@@ -625,7 +575,7 @@ export default function Projects() {
                       <span className="text-xs text-slate-500">End date</span>
                       <span className={`ml-auto text-xs font-medium ${overdue ? "text-rose-600" : nearDeadline ? "text-amber-600" : "text-slate-700"}`}>
                         {formatDate(project.endDate)}
-                        {overdue && <span className="ml-1.5 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600">Overdue</span>}
+                        {overdue      && <span className="ml-1.5 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600">Overdue</span>}
                         {!overdue && nearDeadline && <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">Soon</span>}
                       </span>
                     </div>
@@ -633,33 +583,24 @@ export default function Projects() {
 
                   <div className="border-t border-slate-100 mb-4" />
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <Users className="h-3.5 w-3.5 text-slate-400" />
-                        <span className="text-xs text-slate-500">{teams.length} team{teams.length !== 1 ? "s" : ""}</span>
-                        <span className="text-slate-300">·</span>
-                        <span className="text-xs text-slate-500">{totalMembers} member{totalMembers !== 1 ? "s" : ""}</span>
-                      </div>
-                      <span className="inline-flex items-center gap-1 text-xs text-slate-400">
-                        Open <ChevronRight className="h-3.5 w-3.5" />
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedTeamNames.length > 0 ? selectedTeamNames.map((name) => (
-                        <span key={name} className="inline-flex items-center rounded-lg bg-slate-50 border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600">
-                          {name}
-                        </span>
-                      )) : teams.map((team) => (
-                        <span key={team.name} className="inline-flex items-center rounded-lg bg-slate-50 border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600">
-                          {team.name}
+                  <div className="flex items-center gap-1.5">
+                    <Users className="h-3.5 w-3.5 text-slate-400" />
+                    <span className="text-xs text-slate-500">
+                      {project.teams?.length ?? 0} team{(project.teams?.length ?? 0) !== 1 ? "s" : ""}
+                    </span>
+                    <span className="ml-auto inline-flex items-center gap-1 text-xs text-slate-400">
+                      Open <ChevronRight className="h-3.5 w-3.5" />
+                    </span>
+                  </div>
+                  {(project.teams?.length ?? 0) > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {project.teams!.map((t) => (
+                        <span key={t.id} className="inline-flex items-center rounded-lg bg-slate-50 border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600">
+                          {t.name}
                         </span>
                       ))}
-                      {teams.length === 0 && selectedTeamNames.length === 0 && (
-                        <span className="text-xs text-slate-400 italic">No teams yet</span>
-                      )}
                     </div>
-                  </div>
+                  )}
                 </button>
               </div>
             )
@@ -667,13 +608,30 @@ export default function Projects() {
         </div>
       )}
 
-      {showCreate && <ProjectFormModal onClose={() => setShowCreate(false)} onSave={handleCreate} />}
-      {editProject && <ProjectFormModal initial={editProject} onClose={() => setEditProject(null)} onSave={handleEdit} />}
-      {deleteProject && (
+      {showCreate && (
+        <ProjectFormModal
+          managers={managers}
+          currentUser={currentUser}
+          teams={teams}
+          onClose={() => setShowCreate(false)}
+          onSave={(data) => handleCreate(data as ProjectCreateDto)}
+        />
+      )}
+      {editProject && (
+        <ProjectFormModal
+          initial={editProject}
+          managers={managers}
+          teams={teams}
+          currentUser={currentUser}
+          onClose={() => setEditProject(null)}
+          onSave={(data, id) => handleEdit(data as ProjectUpdateDto, id)}
+        />
+      )}
+      {deleteTarget && (
         <ConfirmDeleteModal
-          project={deleteProject}
-          onConfirm={() => handleDelete(deleteProject.id)}
-          onClose={() => setDeleteProject(null)}
+          project={deleteTarget}
+          onConfirm={() => handleDelete(deleteTarget.id)}
+          onClose={() => setDeleteTarget(null)}
         />
       )}
     </div>

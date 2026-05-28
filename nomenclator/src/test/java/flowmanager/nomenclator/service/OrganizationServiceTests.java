@@ -213,25 +213,25 @@ public class OrganizationServiceTests {
         Organization organization = BuildInstances.buildOrganization();
         List<Team> teams = BuildInstances.buildTeams();
         List<Project> projects = BuildInstances.buildProjects();
-        List<ProjectSummaryDto> projectsDto = projects.stream()
-                .map(BuildDtos::buildProjectSummaryDto)
+        List<ProjectResponseDto> projectsDto = projects.stream()
+                .map(BuildDtos::buildProjectResponseDto)
                 .toList();
         teams.get(0).setProjects(List.of(projects.get(0)));
         teams.get(1).setProjects(List.of(projects.get(1)));
         organization.setTeams(teams);
 
         when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
-        when(projectMapper.toSummaryDto(projects.get(0))).thenReturn(projectsDto.get(0));
-        when(projectMapper.toSummaryDto(projects.get(1))).thenReturn(projectsDto.get(1));
+        when(projectMapper.toResponseDto(projects.get(0))).thenReturn(projectsDto.get(0));
+        when(projectMapper.toResponseDto(projects.get(1))).thenReturn(projectsDto.get(1));
 
-        List<ProjectSummaryDto> result = organizationService.findAllProjectsByOrganizationId(organization.getId());
+        List<ProjectResponseDto> result = organizationService.findAllProjectsByOrganizationId(organization.getId());
 
         assertEquals(2, result.size());
         assertEquals(projectsDto.get(0), result.get(0));
         assertEquals(projectsDto.get(1), result.get(1));
         verify(organizationRepository, times(1)).findById(organization.getId());
-        verify(projectMapper, times(1)).toSummaryDto(projects.get(0));
-        verify(projectMapper, times(1)).toSummaryDto(projects.get(1));
+        verify(projectMapper, times(1)).toResponseDto(projects.get(0));
+        verify(projectMapper, times(1)).toResponseDto(projects.get(1));
     }
 
     @Test
@@ -239,20 +239,20 @@ public class OrganizationServiceTests {
         Organization organization = BuildInstances.buildOrganization();
         List<Team> teams = BuildInstances.buildTeams();
         Project project = BuildInstances.buildProject();
-        ProjectSummaryDto projectDto = BuildDtos.buildProjectSummaryDto(project);
+        ProjectResponseDto projectDto = BuildDtos.buildProjectResponseDto(project);
         teams.get(0).setProjects(List.of(project));
         teams.get(1).setProjects(List.of(project));
         organization.setTeams(teams);
 
         when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
-        when(projectMapper.toSummaryDto(project)).thenReturn(projectDto);
+        when(projectMapper.toResponseDto(project)).thenReturn(projectDto);
 
-        List<ProjectSummaryDto> result = organizationService.findAllProjectsByOrganizationId(organization.getId());
+        List<ProjectResponseDto> result = organizationService.findAllProjectsByOrganizationId(organization.getId());
 
         assertEquals(1, result.size());
         assertEquals(projectDto, result.getFirst());
         verify(organizationRepository, times(1)).findById(organization.getId());
-        verify(projectMapper, times(1)).toSummaryDto(project);
+        verify(projectMapper, times(1)).toResponseDto(project);
     }
 
     @Test
@@ -265,11 +265,11 @@ public class OrganizationServiceTests {
 
         when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
 
-        List<ProjectSummaryDto> result = organizationService.findAllProjectsByOrganizationId(organization.getId());
+        List<ProjectResponseDto> result = organizationService.findAllProjectsByOrganizationId(organization.getId());
 
         assertEquals(0, result.size());
         verify(organizationRepository, times(1)).findById(organization.getId());
-        verify(projectMapper, never()).toSummaryDto(any());
+        verify(projectMapper, never()).toResponseDto(any());
     }
 
     @Test

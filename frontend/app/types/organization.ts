@@ -9,10 +9,10 @@ export interface OrganizationCreateDto {
 }
 
 export interface OrganizationUpdateDto {
-  name?: string
-  description?: string
-  industry?: string
-  managerId?: number | null
+  name: string
+  description: string
+  industry: string
+  managerId: number | null
 }
 
 export interface OrganizationSummaryDto {

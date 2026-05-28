@@ -1,7 +1,11 @@
 import type {
   OrganizationCreateDto,
   OrganizationUpdateDto
- } from "../types/organization"
+} from "../types/organization"
+import type {
+  ProjectCreateDto,
+  ProjectUpdateDto
+} from "../types/project"
 
 const BASE_URL = "http://localhost:8081"
 
@@ -42,7 +46,9 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
     token = await refreshAccessToken()
     if (!token) {
       localStorage.clear()
-      window.location.href = "/"
+      if (typeof window !== "undefined") {
+        window.location.href = "/"
+      }
       throw new Error("Session expired")
     }
   }
@@ -60,7 +66,9 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
     token = await refreshAccessToken()
     if (!token) {
       localStorage.clear()
-      window.location.href = "/"
+      if (typeof window !== "undefined") {
+        window.location.href = "/"
+      }
       throw new Error("Session expired")
     }
 
@@ -137,6 +145,16 @@ export async function getProjectsByOrganizationId(orgId: number) {
   return response.json()
 }
 
+export async function getTeamsByOrganizationId(orgId: number) {
+  const response = await apiFetch(`/organizations/${orgId}/teams`)
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch teams")
+  }
+
+  return response.json()
+}
+
 export async function getUsersByOrganizationId(orgId: number) {
   const response = await apiFetch(`/organizations/${orgId}/users`)
 
@@ -191,4 +209,29 @@ export async function deleteOrganization(orgId: number) {
   if (!response.ok) {
     throw new Error("Failed to delete organization")
   }
+}
+
+export async function createProject(orgId: number, data: ProjectCreateDto) {
+  const response = await apiFetch(`/projects`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+  if (!response.ok) throw new Error("Failed to create project")
+  return response.json()
+}
+
+export async function updateProject(projectId: number, data: ProjectUpdateDto) {
+  const response = await apiFetch(`/projects/${projectId}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  })
+  if (!response.ok) throw new Error("Failed to update project")
+  return response.json()
+}
+
+export async function deleteProject(projectId: number) {
+  const response = await apiFetch(`/projects/${projectId}`, {
+    method: "DELETE",
+  })
+  if (!response.ok) throw new Error("Failed to delete project")
 }

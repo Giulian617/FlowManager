@@ -41,7 +41,7 @@ public class OrganizationController {
 
     @PreAuthorize("@organizationSecurity.canView(authentication, #organizationId)")
     @GetMapping("/{organizationId}/projects")
-    public ResponseEntity<List<ProjectSummaryDto>> getAllProjectsByOrganizationId(
+    public ResponseEntity<List<ProjectResponseDto>> getAllProjectsByOrganizationId(
             @PathVariable Integer organizationId
     ) {
         return ResponseEntity.ok(organizationService.findAllProjectsByOrganizationId(organizationId));

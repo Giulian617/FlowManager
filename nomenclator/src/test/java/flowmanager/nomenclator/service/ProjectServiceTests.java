@@ -57,29 +57,29 @@ public class ProjectServiceTests {
     @Test
     void testFindAllProjects_Valid() {
         List<Project> projects = BuildInstances.buildProjects();
-        List<ProjectSummaryDto> projectsDto = projects.stream()
-                .map(BuildDtos::buildProjectSummaryDto)
+        List<ProjectResponseDto> projectsDto = projects.stream()
+                .map(BuildDtos::buildProjectResponseDto)
                 .toList();
 
         when(projectRepository.findAll()).thenReturn(projects);
-        when(projectMapper.toSummaryDto(projects.get(0))).thenReturn(projectsDto.get(0));
-        when(projectMapper.toSummaryDto(projects.get(1))).thenReturn(projectsDto.get(1));
+        when(projectMapper.toResponseDto(projects.get(0))).thenReturn(projectsDto.get(0));
+        when(projectMapper.toResponseDto(projects.get(1))).thenReturn(projectsDto.get(1));
 
-        List<ProjectSummaryDto> result = projectService.findAllProjects();
+        List<ProjectResponseDto> result = projectService.findAllProjects();
 
         assertEquals(2, result.size());
         assertEquals(projectsDto.get(0), result.get(0));
         assertEquals(projectsDto.get(1), result.get(1));
         verify(projectRepository, times(1)).findAll();
-        verify(projectMapper, times(1)).toSummaryDto(projects.get(0));
-        verify(projectMapper, times(1)).toSummaryDto(projects.get(1));
+        verify(projectMapper, times(1)).toResponseDto(projects.get(0));
+        verify(projectMapper, times(1)).toResponseDto(projects.get(1));
     }
 
     @Test
     void testFindAllProjects_EmptyList() {
         when(projectRepository.findAll()).thenReturn(List.of());
 
-        List<ProjectSummaryDto> result = projectService.findAllProjects();
+        List<ProjectResponseDto> result = projectService.findAllProjects();
 
         assertEquals(0, result.size());
         verify(projectRepository, times(1)).findAll();
@@ -187,6 +187,7 @@ public class ProjectServiceTests {
         when(projectMapper.toEntity(createDto, manager)).thenReturn(project);
         when(teamRepository.findAllById(teamsIds)).thenReturn(teams);
         when(projectRepository.save(project)).thenReturn(savedProject);
+        when(teamRepository.save(any(Team.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(projectMapper.toResponseDto(savedProject)).thenReturn(responseDto);
 
         ProjectResponseDto result = projectService.createProject(createDto, manager.getKeycloakId());
@@ -196,6 +197,7 @@ public class ProjectServiceTests {
         verify(projectMapper, times(1)).toEntity(createDto, manager);
         verify(teamRepository, times(1)).findAllById(teamsIds);
         verify(projectRepository, times(1)).save(project);
+        verify(teamRepository, times(teams.size())).save(any(Team.class));
         verify(projectMapper, times(1)).toResponseDto(savedProject);
     }
 
@@ -234,6 +236,7 @@ public class ProjectServiceTests {
         verify(projectMapper, times(1)).toEntity(createDto, manager);
         verify(teamRepository, never()).findAllById(any());
         verify(projectRepository, times(1)).save(project);
+        verify(teamRepository, never()).save(any());
         verify(projectMapper, times(1)).toResponseDto(savedProject);
     }
 
@@ -272,6 +275,7 @@ public class ProjectServiceTests {
         verify(projectMapper, times(1)).toEntity(createDto, manager);
         verify(teamRepository, never()).findAllById(any());
         verify(projectRepository, times(1)).save(project);
+        verify(teamRepository, never()).save(any());
         verify(projectMapper, times(1)).toResponseDto(savedProject);
     }
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react"
 import { useKeycloak } from "@react-keycloak/web"
-import { useNavigate } from "react-router"
+import { useLocation, useNavigate } from "react-router"
 import { Search, Bell, Settings, X, Check, Info, AlertTriangle, ChevronRight, User, Moon, Sun, Monitor, Shield, LogOut, Bug, BookOpen, Zap, CheckSquare } from "lucide-react"
 
 const MOCK_WORK_ITEMS = [
@@ -159,6 +159,7 @@ function NotificationsPopup({ onClose, notifications, setNotifications }: {
 
 function SettingsPopup({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const [theme, setTheme] = useState<"light" | "dark" | "system">("light")
 
   return (
@@ -188,7 +189,7 @@ function SettingsPopup({ onClose }: { onClose: () => void }) {
       </div>
       <button
         onClick={() => {
-          const inOrg = window.location.pathname.startsWith("/org")
+          const inOrg = location.pathname.startsWith("/org")
           navigate(inOrg ? "/org/settings" : "/settings")
           onClose()
         }}
@@ -220,10 +221,11 @@ export default function TopBar() {
   const settingsRef = useRef<HTMLDivElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
 
-  const inOrg = window.location.pathname.startsWith("/org")
+  const location = useLocation()
+  const inOrg = location.pathname.startsWith("/org")
 
   useEffect(() => {
-    setHasProject(!!localStorage.getItem("selectedProject") && !window.location.pathname.startsWith("/org"))
+    setHasProject(!!localStorage.getItem("selectedProject") && !location.pathname.startsWith("/org"))
   }, [])
 
   useEffect(() => {
@@ -323,7 +325,7 @@ export default function TopBar() {
               <button
                 onClick={() => {
                   setProfileMenuOpen(false)
-                  const inOrg = window.location.pathname.startsWith("/org")
+                  const inOrg = location.pathname.startsWith("/org")
                   navigate(inOrg ? "/org/profile" : "/profile")
                 }}
                 className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"
@@ -334,7 +336,7 @@ export default function TopBar() {
               <button
                 onClick={() => {
                   setProfileMenuOpen(false)
-                  const inOrg = window.location.pathname.startsWith("/org")
+                  const inOrg = location.pathname.startsWith("/org")
                   navigate(inOrg ? "/org/profile" : "/profile")
                 }}
                 className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"

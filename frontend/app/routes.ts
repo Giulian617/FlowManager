@@ -19,7 +19,6 @@ export default [
     route("select-project", "routes/org-select-project.tsx"),
     route("teams", "routes/org-teams.tsx"),
     route("users", "routes/org-users.tsx"),
-    route("edit", "routes/org-edit.tsx"),
     route("settings", "routes/org-settings.tsx"),
     route("profile", "routes/org-profile.tsx"),
   ]),

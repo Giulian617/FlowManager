@@ -32,11 +32,11 @@ public class ProjectService {
         );
     }
 
-    public List<ProjectSummaryDto> findAllProjects() {
+    public List<ProjectResponseDto> findAllProjects() {
         return projectRepository
                 .findAll()
                 .stream()
-                .map(projectMapper::toSummaryDto)
+                .map(projectMapper::toResponseDto)
                 .toList();
     }
 
@@ -71,6 +71,14 @@ public class ProjectService {
         if (projectCreateDto.getTeamsIds() != null && !projectCreateDto.getTeamsIds().isEmpty()) {
             List<Team> teams = getTeams(projectCreateDto.getTeamsIds());
             project.setTeams(teams);
+
+            Project savedProject = projectRepository.save(project);
+            for (Team team : teams) {
+                team.getProjects().add(savedProject);
+                teamRepository.save(team);
+            }
+
+            return projectMapper.toResponseDto(savedProject);
         }
 
         return projectMapper.toResponseDto(projectRepository.save(project));

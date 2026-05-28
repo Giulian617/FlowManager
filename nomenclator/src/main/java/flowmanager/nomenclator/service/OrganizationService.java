@@ -56,13 +56,13 @@ public class OrganizationService {
                 .toList();
     }
 
-    public List<ProjectSummaryDto> findAllProjectsByOrganizationId(Integer organizationId) {
+    public List<ProjectResponseDto> findAllProjectsByOrganizationId(Integer organizationId) {
         return getOrganization(organizationId)
                 .getTeams()
                 .stream()
                 .flatMap(team -> team.getProjects().stream())
                 .distinct()
-                .map(projectMapper::toSummaryDto)
+                .map(projectMapper::toResponseDto)
                 .toList();
     }
 
