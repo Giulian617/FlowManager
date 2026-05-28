@@ -13,10 +13,14 @@ import lombok.experimental.SuperBuilder;
 @JsonPropertyOrder({
         "id",
         "name",
-        "description"
+        "description",
+        "itemCount",
+        "memberCount"
 })
 public class ProjectSummaryDto {
     private Integer id;
     private String name;
     private String description;
+    private Integer itemCount;
+    private Integer memberCount;
 }

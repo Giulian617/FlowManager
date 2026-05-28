@@ -4,6 +4,7 @@ import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.model.*;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public final class BuildDtos {
     private BuildDtos() {}
@@ -40,9 +41,12 @@ public final class BuildDtos {
         return WorkItemSummaryDto.builder()
                 .id(workItem.getId())
                 .title(workItem.getTitle())
+                .description(workItem.getDescription())
                 .itemType(workItem.getItemType())
                 .status(workItem.getStatus())
                 .severity(workItem.getSeverity())
+                .createdAt(workItem.getCreatedAt())
+                .projectId(workItem.getProject() != null ? workItem.getProject().getId() : null)
                 .build();
     }
 
@@ -113,6 +117,17 @@ public final class BuildDtos {
                 .id(project.getId())
                 .name(project.getName())
                 .description(project.getDescription())
+                .itemCount(project.getWorkItems().size())
+                .memberCount((int) Stream.concat(
+                                Stream.concat(
+                                        project.getTeams().stream().flatMap(team -> team.getMembers().stream()),
+                                        project.getTeams().stream().map(Team::getManager)
+                                ),
+                                Stream.of(project.getManager())
+                        )
+                        .map(User::getId)
+                        .distinct()
+                        .count())
                 .build();
     }
 

@@ -71,7 +71,6 @@ public class OrganizationController {
                 .body(organizationService.createOrganization(organizationCreateDto));
     }
 
-    @PreAuthorize("@organizationSecurity.canModify(authentication, #organizationId)")
     @PutMapping("/{organizationId}")
     public ResponseEntity<OrganizationResponseDto> updateOrganization(
             @PathVariable Integer organizationId,

@@ -1,109 +1,177 @@
-import React, { useEffect, useState } from "react"
-import { NavLink, Outlet, useNavigate, useLocation } from "react-router"
-import { LayoutDashboard, FolderKanban, Users, ArrowLeft, Building2 } from "lucide-react"
+import { useEffect, useState } from "react"
+import { NavLink, Outlet, useNavigate } from "react-router"
+import { LayoutDashboard, FolderKanban, Users, ChevronDown, LogOut, Building2, UserCircle, ArrowLeft, Pencil } from "lucide-react"
+import TopBar from "../components/TopBar"
+import {
+  getCurrentUser,
+  getOrganizations,
+  getUserOrganizations,
+} from "../src/api"
+import type { OrganizationSummaryDto } from "../types/organization"
 
-const MOCK_ORGS: Record<string, {
-  name: string; description: string; industry: string; members: number; projects: number
-}> = {
-  "1": { name: "Acme Corporation", description: "Enterprise software solutions", industry: "Software", members: 24, projects: 8 },
-  "2": { name: "TechFlow SRL",     description: "Cloud and DevOps services",     industry: "Cloud",    members: 12, projects: 4 },
-  "3": { name: "DevSquad",         description: "Mobile and web development",    industry: "Mobile",   members: 6,  projects: 3 },
+function getAvatar(name: string) {
+  return name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
 }
-
-const orgNav = [
-  { to: "/org/projects",  label: "Projects",  icon: <FolderKanban className="h-4 w-4" /> },
-  { to: "/org/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
-  { to: "/org/teams",     label: "Teams",     icon: <Users className="h-4 w-4" /> },
-]
 
 export default function OrgLayout() {
   const navigate = useNavigate()
-  const location = useLocation()
-  const [orgData, setOrgData] = useState<typeof MOCK_ORGS[string] | null>(null)
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null)
+  const [selectedOrgName, setSelectedOrgName] = useState("")
+  const [selectedOrgAvatar, setSelectedOrgAvatar] = useState("")
+  const [orgMenuOpen, setOrgMenuOpen] = useState(false)
+  const [orgs, setOrgs] = useState<OrganizationSummaryDto[]>([])
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    const id = localStorage.getItem("selectedOrg")
-    if (!id) { navigate("/select-org"); return }
-    setOrgData(MOCK_ORGS[id] ?? null)
+    if (typeof window === "undefined") return
+    
+    const orgId = localStorage.getItem("selectedOrg")
+    if (!orgId) {
+      navigate("/select-org")
+      return
+    }
+    setSelectedOrgId(orgId)
+    setSelectedOrgName(localStorage.getItem("selectedOrgName") ?? "")
+    setSelectedOrgAvatar(localStorage.getItem("selectedOrgAvatar") ?? "")
+
+    async function loadOrgs() {
+      try {
+        const currentUser = await getCurrentUser()
+        const data = currentUser.role === "ADMIN"
+          ? await getOrganizations()
+          : await getUserOrganizations(currentUser.id)
+        setOrgs(data)
+        setIsAdmin(currentUser.role === "ADMIN")
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    loadOrgs()
   }, [])
 
-  useEffect(() => {
-    if (location.pathname === "/org" || location.pathname === "/org/") {
-      navigate("/org/projects", { replace: true })
-    }
-  }, [location.pathname])
+  const navItems = [
+    { to: "/org/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { to: "/org/projects",  icon: FolderKanban,    label: "Projects"  },
+    { to: "/org/teams",     icon: Users,           label: "Teams"     },
+    { to: "/org/users",     icon: UserCircle,      label: "Users"     },
+ ]
 
   return (
-    <div className="min-h-screen flex bg-slate-50 text-slate-900">
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
 
-      <aside className="w-[220px] border-r border-slate-200 bg-white shadow-sm flex-none">
-        <div className="flex h-full min-h-screen flex-col px-3 py-4">
+      {/* Sidebar */}
+      <aside className="flex w-60 flex-col border-r border-slate-200 bg-white">
 
-          {/* Logo */}
-          <div className="mb-3 flex items-center gap-2.5">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-slate-900 text-sm font-bold text-white flex-none">F</div>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-900">FlowManager</p>
-              <p className="text-[11px] text-slate-400 truncate max-w-[130px]">{orgData?.name ?? "Organization"}</p>
+        {/* Org selector */}
+        <div className="relative border-b border-slate-100">
+          <button
+            onClick={() => setOrgMenuOpen((o) => !o)}
+            className="flex w-full items-center gap-3 px-4 py-4 transition hover:bg-slate-50"
+          >
+            <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-slate-900 text-xs font-bold text-white">
+              {selectedOrgAvatar}
             </div>
-          </div>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-sm font-semibold text-slate-900 truncate">{selectedOrgName}</p>
+              <p className="text-xs text-slate-400">Organization</p>
+            </div>
+            <ChevronDown className={`h-4 w-4 flex-none text-slate-400 transition-transform ${orgMenuOpen ? "rotate-180" : ""}`} />
+          </button>
 
-          {/* Org info */}
-          {orgData && (
-            <div className="mb-3 rounded-xl border border-slate-100 bg-slate-50 px-2.5 py-2 space-y-1">
-              <div className="flex items-center gap-1.5">
-                <Building2 className="h-3 w-3 flex-none text-slate-400" />
-                <span className="text-[11px] text-slate-500 truncate">{orgData.industry}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-slate-400">{orgData.members} members</span>
-                <span className="text-[11px] text-slate-400">{orgData.projects} projects</span>
+          {/* Edit button*/}
+          {isAdmin && (
+            <button
+              onClick={() => navigate("/org/edit")}
+              className="absolute right-10 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          )}
+
+          {orgMenuOpen && (
+            <div className="absolute left-0 top-full z-20 w-full border border-slate-200 bg-white shadow-lg rounded-b-2xl overflow-hidden">
+              {orgs.filter((o) => o.id !== Number(selectedOrgId)).map((org) => (
+                <button
+                  key={org.id}
+                  onClick={() => {
+                    const avatar = getAvatar(org.name)
+                    localStorage.setItem("selectedOrg", String(org.id))
+                    localStorage.setItem("selectedOrgName", org.name)
+                    localStorage.setItem("selectedOrgAvatar", avatar)
+                    localStorage.removeItem("selectedProject")
+                    localStorage.removeItem("selectedProjectName")
+                    setSelectedOrgId(String(org.id))
+                    setSelectedOrgName(org.name)
+                    setSelectedOrgAvatar(avatar)
+                    setOrgMenuOpen(false)
+                    navigate("/org/dashboard")
+                  }}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
+                >
+                  <div className="flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-700">
+                    {getAvatar(org.name)}
+                  </div>
+                  <span className="text-sm text-slate-700">{org.name}</span>
+                </button>
+              ))}
+              <div className="border-t border-slate-100">
+                <button
+                  onClick={() => { navigate("/select-org"); setOrgMenuOpen(false) }}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
+                >
+                  <Building2 className="h-4 w-4 text-slate-400" />
+                  <span className="text-sm text-slate-500">All organizations</span>
+                </button>
               </div>
             </div>
           )}
+        </div>
 
-          {/* Nav */}
-          <nav className="flex flex-1 flex-col gap-0.5">
-            {orgNav.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end
-                className={({ isActive }) =>
-                  `group flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium transition ${
-                    isActive ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                  }`
-                }
-              >
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-900 transition">
-                  {item.icon}
-                </span>
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-
-          {/* Footer */}
-          <div className="mt-4 space-y-2">
-            <button
-              onClick={() => {
-                localStorage.removeItem("selectedOrg")
-                localStorage.removeItem("selectedProject")
-                localStorage.removeItem("selectedProjectName")
-                navigate("/select-org")
-              }}
-              className="w-full flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
+        {/* Nav */}
+        <nav className="flex-1 px-3 py-4 space-y-0.5">
+          {navItems.map(({ to, icon: Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                  isActive
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`
+              }
             >
-              <ArrowLeft className="h-3.5 w-3.5 flex-none" />
-              Change organization
-            </button>
-          </div>
+              <Icon className="h-4 w-4 flex-none" />
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* Footer */}
+        <div className="border-t border-slate-100 px-3 py-3 space-y-0.5">
+        <button
+            onClick={() => {
+              localStorage.removeItem("selectedOrg")
+              localStorage.removeItem("selectedOrgName")
+              localStorage.removeItem("selectedOrgAvatar")
+              localStorage.removeItem("selectedProject")
+              localStorage.removeItem("selectedProjectName")
+              navigate("/select-org", { replace: true })
+            }}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+        >
+            <LogOut className="h-4 w-4" />
+            Switch organization
+        </button>
         </div>
       </aside>
 
-      <main className="flex-1 p-5 lg:p-6">
-        <div className="mx-auto max-w-[1500px]">
-          <Outlet />
+      {/* Main content */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-6xl px-8 py-8">
+            <TopBar />
+            <Outlet />
         </div>
       </main>
     </div>

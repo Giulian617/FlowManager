@@ -1,88 +1,98 @@
-import React, { useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router"
 import { FolderKanban, Users, Building2, Calendar, User, ChevronRight, Bug, CheckSquare, Zap, BookOpen } from "lucide-react"
+import {
+  getOrganizationById,
+  getProjectsByOrganizationId,
+  getUsersByOrganizationId,
+  getWorkItemsByOrganizationId,
+} from "../src/api"
+import type { OrganizationResponseDto } from "../types/organization"
+import type { ProjectSummaryDto } from "../types/project"
+import type { UserSummaryDto } from "../types/user"
+import type { WorkItemSummaryDto } from "../types/workItem"
+import type { ItemType } from "../types/enums"
 
-const MOCK_ORGS: Record<string, {
-  name: string
-  description: string
-  industry: string
-  createdAt: string
-  manager: string
-  members: number
-  projects: number
-  teams: number
-  recentActivity: { title: string; detail: string; time: string; type: "bug" | "task" | "epic" | "story"; projectId: string; workItemId: string }[]
-}> = {
-  "1": {
-    name: "Acme Corporation",
-    description: "Enterprise software solutions for global clients.",
-    industry: "Software",
-    createdAt: "2023-01-15T09:00:00",
-    manager: "Joe Nik",
-    members: 24, projects: 8, teams: 6,
-    recentActivity: [
-      { title: "New bug reported", detail: "Login button unresponsive on Safari.", time: "2h ago", type: "bug", projectId: "1", workItemId: "1" },
-      { title: "Sprint planning", detail: "6 tasks added to current sprint.", time: "4h ago", type: "task", projectId: "1", workItemId: "2" },
-      { title: "Q3 Epic created", detail: "New epic for Q3 delivery kick-off.", time: "Yesterday", type: "epic", projectId: "1", workItemId: "3" },
-      { title: "User story refined", detail: "Onboarding flow story estimated.", time: "2 days ago", type: "story", projectId: "1", workItemId: "4" },
-    ],
-  },
-  "2": {
-    name: "TechFlow SRL",
-    description: "Cloud infrastructure and backend services.",
-    industry: "Cloud",
-    createdAt: "2023-06-01T09:00:00",
-    manager: "Mihai Pop",
-    members: 12, projects: 4, teams: 3,
-    recentActivity: [
-      { title: "Pipeline bug fixed", detail: "CI/CD deploy issue resolved.", time: "1h ago", type: "bug", projectId: "1", workItemId: "1" },
-      { title: "API endpoint shipped", detail: "/api/tickets/status deployed.", time: "3h ago", type: "task", projectId: "1", workItemId: "2" },
-      { title: "Infrastructure epic", detail: "Kubernetes migration epic started.", time: "Yesterday", type: "epic", projectId: "1", workItemId: "3" },
-      { title: "Auth story closed", detail: "OAuth2 integration story done.", time: "3 days ago", type: "story", projectId: "1", workItemId: "4" },
-    ],
-  },
-  "3": {
-    name: "DevSquad",
-    description: "Mobile and cross-platform development agency.",
-    industry: "Mobile",
-    createdAt: "2024-02-10T09:00:00",
-    manager: "Ana Serban",
-    members: 6, projects: 3, teams: 3,
-    recentActivity: [
-      { title: "Crash reported", detail: "Null pointer on Android login.", time: "30m ago", type: "bug", projectId: "1", workItemId: "1" },
-      { title: "iOS build shipped", detail: "Version 1.2.0 sent to App Store.", time: "2h ago", type: "task", projectId: "1", workItemId: "2" },
-      { title: "Mobile epic created", detail: "Offline mode epic kick-off.", time: "Yesterday", type: "epic", projectId: "1", workItemId: "3" },
-      { title: "Onboarding story", detail: "User onboarding story approved.", time: "2 days ago", type: "story", projectId: "1", workItemId: "4" },
-    ],
-  },
+type ActivityType = "bug" | "task" | "epic" | "user_story"
+
+const ITEM_TYPE_MAP: Record<ItemType, ActivityType> = {
+  Task: "task",
+  Bug: "bug",
+  User_Story: "user_story",
+  Epic: "epic",
 }
 
 const activityColors = {
-  bug: "bg-rose-50 text-rose-700 border-rose-200",
   task: "bg-sky-50 text-sky-700 border-sky-200",
+  bug: "bg-rose-50 text-rose-700 border-rose-200",
+  user_story: "bg-emerald-50 text-emerald-700 border-emerald-200",
   epic: "bg-violet-50 text-violet-700 border-violet-200",
-  story: "bg-emerald-50 text-emerald-700 border-emerald-200",
 }
 
 const activityIcons = {
-  bug: <Bug className="h-4 w-4 flex-none" />,
   task: <CheckSquare className="h-4 w-4 flex-none" />,
+  bug: <Bug className="h-4 w-4 flex-none" />,
+  user_story: <BookOpen className="h-4 w-4 flex-none" />,
   epic: <Zap className="h-4 w-4 flex-none" />,
-  story: <BookOpen className="h-4 w-4 flex-none" />,
 }
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("ro-RO", { day: "2-digit", month: "long", year: "numeric" })
 }
 
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
+}
+
 export default function OrgDashboard() {
   const navigate = useNavigate()
-  const [org, setOrg] = useState<typeof MOCK_ORGS[string] | null>(null)
+  const [org, setOrg] = useState<OrganizationResponseDto | null>(null)
+  const [projects, setProjects] = useState<ProjectSummaryDto[]>([])
+  const [members, setMembers] = useState<UserSummaryDto[]>([])
+  const [workItems, setWorkItems] = useState<WorkItemSummaryDto[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const id = localStorage.getItem("selectedOrg") ?? ""
-    setOrg(MOCK_ORGS[id] ?? null)
+    const orgId = Number(localStorage.getItem("selectedOrg"))
+    if(!orgId)  {
+      navigate("/select-org")
+      return
+    }
+    
+    async function loadAll() {
+      try {
+        const [orgData, projectsData, membersData, workItemsData] = await Promise.all([
+          getOrganizationById(orgId),
+          getProjectsByOrganizationId(orgId),
+          getUsersByOrganizationId(orgId),
+          getWorkItemsByOrganizationId(orgId),
+        ])
+        setOrg(orgData)
+        setProjects(projectsData)
+        setMembers(membersData)
+        setWorkItems(workItemsData)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadAll()
   }, [])
+
+  if(loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-slate-500">Loading dashboard…</p>
+      </div>
+    )
+  }
 
   if (!org) return (
     <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white py-24 shadow-sm text-center gap-3">
@@ -96,6 +106,8 @@ export default function OrgDashboard() {
       </button>
     </div>
   )
+
+  const recentItems = workItems.slice(0,4)
 
   return (
     <div className="space-y-6">
@@ -124,7 +136,7 @@ export default function OrgDashboard() {
             </div>
             <div>
               <p className="text-xs text-slate-400">Manager</p>
-              <p className="text-sm font-medium text-slate-800">{org.manager}</p>
+              <p className="text-sm font-medium text-slate-800">{org.manager.username}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -149,7 +161,7 @@ export default function OrgDashboard() {
               <FolderKanban className="h-4 w-4" />
             </span>
           </div>
-          <div className="mt-4 text-4xl font-semibold text-slate-900">{org.projects}</div>
+          <div className="mt-4 text-4xl font-semibold text-slate-900">{projects.length}</div>
           <div className="mt-3 flex items-center gap-1 text-xs text-slate-400">
             <span>View all</span>
             <ChevronRight className="h-3.5 w-3.5" />
@@ -164,7 +176,7 @@ export default function OrgDashboard() {
               <Users className="h-4 w-4" />
             </span>
           </div>
-          <div className="mt-4 text-4xl font-semibold text-slate-900">{org.teams}</div>
+          <div className="mt-4 text-4xl font-semibold text-slate-900">{org.teams?.length ?? 0}</div>
           <div className="mt-3 flex items-center gap-1 text-xs text-slate-400">
             <span>View all</span>
             <ChevronRight className="h-3.5 w-3.5" />
@@ -178,7 +190,7 @@ export default function OrgDashboard() {
               <Building2 className="h-4 w-4" />
             </span>
           </div>
-          <div className="mt-4 text-4xl font-semibold text-slate-900">{org.members}</div>
+          <div className="mt-4 text-4xl font-semibold text-slate-900">{members.length}</div>
         </div>
       </div>
 
@@ -197,30 +209,35 @@ export default function OrgDashboard() {
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          {org.recentActivity.map((event) => (
-            <div
-                key={event.title}
-                onClick={() => {
-                localStorage.setItem("selectedProject", event.projectId)
-                localStorage.setItem("selectedProjectName",
-                    event.projectId === "1" ? "FlowManager Frontend" :
-                    event.projectId === "2" ? "API Gateway" :
-                    event.projectId === "3" ? "Mobile App" : "Design System"
-                )
-                navigate(`/work-items/${event.workItemId}/edit`)
-                }}
-                className={`flex items-start gap-3 rounded-2xl border p-4 cursor-pointer transition hover:opacity-80 ${activityColors[event.type]}`}
-            >
-                <span className="mt-0.5">{activityIcons[event.type]}</span>
+        
+        {recentItems.length === 0 ? (
+          <p className="py-8 text-center text-sm text-slate-400">No work items yet.</p>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+          {recentItems.map((item) => {
+            const type: ActivityType = ITEM_TYPE_MAP[item.itemType] ?? "task"
+            return (
+              <div
+                key={item.id}
+                  onClick={() => navigate(`/work-items/${item.id}/edit`)}
+                  className={`flex items-start gap-3 rounded-2xl border p-4 cursor-pointer transition hover:opacity-80 ${activityColors[type]}`}
+              >
+              <span className="mt-0.5">{activityIcons[type]}</span>
                 <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">{event.title}</p>
-                <p className="text-xs mt-0.5 opacity-80">{event.detail}</p>
+                  <p className="text-sm font-semibold">{item.title}</p>
+                  <p className="text-xs mt-0.5 opacity-80 capitalize">
+                    {item.status?.toLowerCase().replace(/_/g, " ")}
+                    {item.severity ? ` · ${item.severity.toLowerCase()}` : ""}
+                  </p>
                 </div>
-                <span className="text-[10px] opacity-60 whitespace-nowrap flex-none">{event.time}</span>
-            </div>
-            ))}
-        </div>
+                <span className="text-[10px] opacity-60 whitespace-nowrap flex-none capitalize">
+                  {item.createdAt ? timeAgo(item.createdAt) : ""}
+                </span>
+              </div>
+            )
+           })}
+          </div>
+        )}
       </section>
     </div>
   )

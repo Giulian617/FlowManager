@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
@@ -40,6 +41,17 @@ public class ProjectMapper {
                 .id(project.getId())
                 .name(project.getName())
                 .description(project.getDescription())
+                .itemCount(project.getWorkItems().size())
+                .memberCount((int) Stream.concat(
+                                Stream.concat(
+                                        project.getTeams().stream().flatMap(team -> team.getMembers().stream()),
+                                        project.getTeams().stream().map(Team::getManager)
+                                ),
+                                Stream.of(project.getManager())
+                        )
+                        .map(User::getId)
+                        .distinct()
+                        .count())
                 .build();
     }
 

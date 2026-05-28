@@ -31,10 +31,13 @@ public class CommentMapper {
         WorkItem workItem = comment.getWorkItem();
         return new WorkItemSummaryDto(
                 workItem.getId(),
-                workItem.getItemType(),
                 workItem.getTitle(),
+                workItem.getDescription(),
+                workItem.getItemType(),
                 workItem.getStatus(),
-                workItem.getSeverity()
+                workItem.getSeverity(),
+                workItem.getCreatedAt(),
+                workItem.getProject().getId()
         );
     }
 

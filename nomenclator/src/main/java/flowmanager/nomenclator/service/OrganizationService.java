@@ -39,22 +39,16 @@ public class OrganizationService {
     }
 
     public List<TeamSummaryOrganizationDto> findAllTeamsByOrganizationId(Integer organizationId) {
-        Organization organization = organizationRepository.findById(organizationId).orElseThrow(
-                () -> new NotFoundException(String.format("Organization with id %d not found", organizationId))
-        );
-
-        return organization.getTeams()
+        return getOrganization(organizationId)
+                .getTeams()
                 .stream()
                 .map(teamMapper::toSummaryOrganizationDto)
                 .toList();
     }
 
     public List<UserSummaryDto> findAllUsersByOrganizationId(Integer organizationId) {
-        Organization organization = organizationRepository.findById(organizationId).orElseThrow(
-                () -> new NotFoundException(String.format("Organization with id %d not found", organizationId))
-        );
-
-        return organization.getTeams()
+        return getOrganization(organizationId)
+                .getTeams()
                 .stream()
                 .flatMap(team -> team.getMembers().stream())
                 .distinct()
@@ -63,11 +57,9 @@ public class OrganizationService {
     }
 
     public List<ProjectSummaryDto> findAllProjectsByOrganizationId(Integer organizationId) {
-        Organization organization = organizationRepository.findById(organizationId).orElseThrow(
-                () -> new NotFoundException(String.format("Organization with id %d not found", organizationId))
-        );
-
-        return organization.getTeams().stream()
+        return getOrganization(organizationId)
+                .getTeams()
+                .stream()
                 .flatMap(team -> team.getProjects().stream())
                 .distinct()
                 .map(projectMapper::toSummaryDto)
@@ -75,11 +67,9 @@ public class OrganizationService {
     }
 
     public List<WorkItemSummaryDto> findAllWorkItemsByOrganizationId(Integer organizationId) {
-        Organization organization = organizationRepository.findById(organizationId).orElseThrow(
-                () -> new NotFoundException(String.format("Organization with id %d not found", organizationId))
-        );
-
-        return organization.getTeams().stream()
+        return getOrganization(organizationId)
+                .getTeams()
+                .stream()
                 .flatMap(team -> team.getProjects().stream())
                 .flatMap(project -> project.getWorkItems().stream())
                 .distinct()

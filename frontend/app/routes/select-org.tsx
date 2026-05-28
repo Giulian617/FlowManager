@@ -1,12 +1,12 @@
 import { useNavigate } from "react-router"
-import { Building2, ChevronRight, Search, X, AlertCircle, ChevronDown, User } from "lucide-react"
+import { Building2, ChevronRight, Search, X, AlertCircle, ChevronDown, User, RollerCoaster } from "lucide-react"
 import { useEffect, useRef, useState} from "react"
 import {
   getCurrentUser,
   getManagers,
   getUserOrganizations,
   getOrganizations,
-  createOrganization
+  createOrganization,
 } from "../src/api"
 import type { UserSummaryDto } from "../types/user"
 import type { OrganizationSummaryDto } from "../types/organization"
@@ -260,26 +260,21 @@ export default function SelectOrg() {
   const [showCreate, setShowCreate] = useState(false)
 
   useEffect(() => {
-    async function loadData() {
+    
+    async function loadOrgs() {
       try {
         const currentUser = await getCurrentUser()
-        setUser(currentUser)
-
-        if(currentUser.role === "ADMIN") {
-          const organizations = await getOrganizations()
-          setOrgs(organizations)
-        }
-        else {
-          const organizations = await getUserOrganizations(currentUser.id)
-          setOrgs(organizations)
-        }
+        const data = currentUser.role === "ADMIN"
+          ? await getOrganizations()
+          : await getUserOrganizations(currentUser.id)
+        setOrgs(data)
       } catch (err) {
         console.error(err)
       } finally {
         setLoading(false)
       }
     }
-    loadData()
+    loadOrgs()
   }, [])
 
   const filtered = orgs.filter((o) =>

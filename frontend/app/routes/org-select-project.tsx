@@ -1,23 +1,53 @@
-import React, { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router"
 import { FolderKanban, ChevronRight, Search, ArrowLeft, Plus } from "lucide-react"
-import TopBar from "../components/TopBar"
+import { getProjectsByOrganizationId } from "../src/api"
+import type { ProjectSummaryDto } from "../types/project"
 
-const MOCK_PROJECTS = [
-  { id: "1", name: "FlowManager Frontend", description: "React frontend application", items: 34, members: 5, color: "bg-sky-500" },
-  { id: "2", name: "API Gateway", description: "Backend services and REST API", items: 21, members: 3, color: "bg-violet-500" },
-  { id: "3", name: "Mobile App", description: "iOS and Android client", items: 18, members: 4, color: "bg-emerald-500" },
-  { id: "4", name: "Design System", description: "Shared components and tokens", items: 12, members: 2, color: "bg-amber-500" },
+const PROJECT_COLORS = [
+  "bg-sky-500", "bg-violet-500", "bg-emerald-500", "bg-amber-500",
+  "bg-rose-500", "bg-indigo-500", "bg-teal-500", "bg-orange-500",
 ]
 
 export default function SelectProject() {
   const navigate = useNavigate()
   const [search, setSearch] = useState("")
+  const [projects, setProjects] = useState<ProjectSummaryDto[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const filtered = MOCK_PROJECTS.filter((p) =>
+  useEffect(() => {
+    const orgId = Number(localStorage.getItem("selectedOrg"))
+    if (!orgId) {
+      navigate("/select-org")
+      return
+    }
+
+    async function loadProjects() {
+      try {
+        const data = await getProjectsByOrganizationId(orgId)
+        setProjects(data)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadProjects()
+  })
+
+  const filtered = projects.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
     p.description.toLowerCase().includes(search.toLowerCase())
   )
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-slate-500">Loading projects...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-slate-50">
@@ -54,22 +84,22 @@ export default function SelectProject() {
         </div>
 
         <div className="flex flex-col gap-2">
-          {filtered.map((project) => (
+          {filtered.map((project, index) => (
             <button
               key={project.id}
               onClick={() => {
-                localStorage.setItem("selectedProject", project.id)
+                localStorage.setItem("selectedProject", String(project.id))
                 localStorage.setItem("selectedProjectName", project.name)
                 navigate("/dashboard", { replace: true })
                 }}
               className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:border-slate-300 hover:shadow-md"
             >
-              <div className={`flex h-10 w-10 flex-none items-center justify-center rounded-2xl ${project.color}`}>
+              <div className={`flex h-10 w-10 flex-none items-center justify-center rounded-2xl ${PROJECT_COLORS[index % PROJECT_COLORS.length]}`}>
                 <FolderKanban className="h-5 w-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-slate-900">{project.name}</p>
-                <p className="text-xs text-slate-400 truncate">{project.description} · {project.items} items · {project.members} members</p>
+                <p className="text-xs text-slate-400 truncate">{project.description} · {project.itemCount} items · {project.memberCount} members</p>
               </div>
               <ChevronRight className="h-4 w-4 flex-none text-slate-400" />
             </button>

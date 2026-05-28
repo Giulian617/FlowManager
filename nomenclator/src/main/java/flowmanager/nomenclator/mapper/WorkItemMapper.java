@@ -44,9 +44,12 @@ public class WorkItemMapper {
         return WorkItemSummaryDto.builder()
                 .id(workItem.getId())
                 .itemType(workItem.getItemType())
+                .description(workItem.getDescription())
                 .title(workItem.getTitle())
                 .status(workItem.getStatus())
                 .severity(workItem.getSeverity())
+                .createdAt(workItem.getCreatedAt())
+                .projectId(workItem.getProject().getId())
                 .build();
     }
 

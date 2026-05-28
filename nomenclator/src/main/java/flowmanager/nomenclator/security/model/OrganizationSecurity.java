@@ -18,8 +18,4 @@ public class OrganizationSecurity {
         String currentUserId = Utils.getCurrentUserId(auth);
         return organizationRepository.existsByIdAndManagerKeycloakId(organizationId, currentUserId);
     }
-
-    public boolean canModify(Authentication auth, Integer organizationId) {
-        return canView(auth, organizationId);
-    }
 }
