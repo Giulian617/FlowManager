@@ -28,6 +28,7 @@ import java.util.List;
         "comments",
         "projects",
         "organizations",
+        "memberOrganizations",
         "managedTeams",
         "assignedTeams",
         "reportedWorkItems",
@@ -47,6 +48,7 @@ public class UserResponseDto {
     private List<CommentResponseUserDto> comments;
     private List<ProjectSummaryDto> projects;
     private List<OrganizationSummaryDto> organizations;
+    private List<OrganizationSummaryDto> memberOrganizations;
     private List<TeamSummaryUserDto> managedTeams;
     private List<TeamSummaryUserDto> assignedTeams;
     private List<WorkItemSummaryDto> reportedWorkItems;

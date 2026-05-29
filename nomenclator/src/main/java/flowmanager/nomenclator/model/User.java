@@ -14,6 +14,7 @@ import java.util.List;
         "comments",
         "projects",
         "organizations",
+        "memberOrganizations",
         "managedTeams",
         "assignedTeams",
         "reportedWorkItems",
@@ -68,6 +69,10 @@ public class User {
     @Builder.Default
     @OneToMany(mappedBy = "manager")
     private List<Organization> organizations = new ArrayList<>();
+
+    @Builder.Default
+    @ManyToMany(mappedBy = "members")
+    private List<Organization> memberOrganizations = new ArrayList<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "manager")

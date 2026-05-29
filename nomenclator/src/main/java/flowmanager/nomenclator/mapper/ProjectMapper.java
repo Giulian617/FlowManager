@@ -18,12 +18,13 @@ import java.util.stream.Stream;
 public class ProjectMapper {
     private final WorkItemMapper workItemMapper;
 
-    public Project toEntity(ProjectCreateDto dto, User manager) {
+    public Project toEntity(ProjectCreateDto dto, Organization organization, User manager) {
         return Project.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())
                 .startDate(dto.getStartDate())
                 .endDate(dto.getEndDate())
+                .organization(organization)
                 .manager(manager)
                 .build();
     }
@@ -80,6 +81,13 @@ public class ProjectMapper {
     }
 
     public ProjectResponseDto toResponseDto(Project project) {
+        Organization organization = project.getOrganization();
+        OrganizationSummaryDto organizationDto = new OrganizationSummaryDto(
+                organization.getId(),
+                organization.getName(),
+                organization.getDescription()
+        );
+
         User manager = project.getManager();
         UserSummaryDto managerDto = new UserSummaryDto(
                 manager.getId(),
@@ -109,6 +117,7 @@ public class ProjectMapper {
                 .description(project.getDescription())
                 .startDate(project.getStartDate())
                 .endDate(project.getEndDate())
+                .organization(organizationDto)
                 .manager(managerDto)
                 .workItems(workItemsDto)
                 .teams(teamsDto)

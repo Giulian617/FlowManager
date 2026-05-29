@@ -30,5 +30,6 @@ public class UserCreateDto {
     @NotBlank(message = "phoneNumber is required and cannot be blank")
     private String phoneNumber;
 
+    private Integer organizationId;
     private Role role;
 }

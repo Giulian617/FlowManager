@@ -16,6 +16,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -93,23 +94,29 @@ public class TeamService {
                 () -> new NotFoundException("User not found")
         );
         Team team = teamMapper.toEntity(teamCreateDto, organization, user);
+
+        List<User> members = new ArrayList<>();
+        members.add(user);
         if (teamCreateDto.getMembersIds() != null && !teamCreateDto.getMembersIds().isEmpty()) {
-            List<User> members = getMembers(teamCreateDto.getMembersIds());
-            team.setMembers(members);
+            getMembers(teamCreateDto.getMembersIds()).forEach(member -> {
+                if (!members.contains(member)) {
+                    members.add(member);
+                }
+            });
         }
+        members.forEach(member -> {
+            if (!member.getAssignedTeams().contains(team)) {
+                member.getAssignedTeams().add(team);
+            }
+        });
+        team.setMembers(members);
+
         return teamMapper.toResponseDto(teamRepository.save(team));
     }
 
     @Transactional
     public TeamResponseDto updateTeam(Integer teamId, TeamUpdateDto teamUpdateDto) {
         Team team = getTeam(teamId);
-
-        Organization organization = team.getOrganization();
-        if(teamUpdateDto.getOrganizationId() != null) {
-            organization = organizationRepository.findById(teamUpdateDto.getOrganizationId()).orElseThrow(
-                    () -> new NotFoundException(String.format("Organization with id %d not found", teamUpdateDto.getOrganizationId()))
-            );
-        }
 
         User manager = team.getManager();
         if(teamUpdateDto.getManagerId() != null) {
@@ -121,6 +128,10 @@ public class TeamService {
         if(teamUpdateDto.getMembersIds() != null) {
             List<User> previousMembers = team.getMembers();
             List<User> newMembers = getMembers(teamUpdateDto.getMembersIds());
+
+            if (!newMembers.contains(manager)) {
+                newMembers.add(manager);
+            }
 
             previousMembers.forEach(user -> {
                 if (!newMembers.contains(user)) {
@@ -137,7 +148,7 @@ public class TeamService {
             team.setMembers(newMembers);
         }
 
-        teamMapper.updateEntityFromDto(teamUpdateDto, team, organization, manager);
+        teamMapper.updateEntityFromDto(teamUpdateDto, team, manager);
 
         return teamMapper.toResponseDto(teamRepository.save(team));
     }

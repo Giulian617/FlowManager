@@ -1,6 +1,7 @@
 package flowmanager.nomenclator.controller;
 
 import flowmanager.nomenclator.dto.*;
+import flowmanager.nomenclator.model.Role;
 import flowmanager.nomenclator.service.OrganizationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,9 +35,10 @@ public class OrganizationController {
     @PreAuthorize("@organizationSecurity.canView(authentication, #organizationId)")
     @GetMapping("/{organizationId}/users")
     public ResponseEntity<List<UserSummaryDto>> getAllUsersByOrganizationId(
-            @PathVariable Integer organizationId
+            @PathVariable Integer organizationId,
+            @RequestParam(required = false) Role role
     ) {
-        return ResponseEntity.ok(organizationService.findAllUsersByOrganizationId(organizationId));
+        return ResponseEntity.ok(organizationService.findAllUsersByOrganizationId(organizationId, role));
     }
 
     @PreAuthorize("@organizationSecurity.canView(authentication, #organizationId)")

@@ -3,11 +3,11 @@ import { useNavigate } from "react-router"
 import { ChevronRight, Calendar, User, Users, Search, Plus, X, ChevronDown, AlertCircle, Pencil, Trash2 } from "lucide-react"
 import {
   getCurrentUser,
-  getManagers,
 } from "../api/user"
 import {
   getProjectsByOrganizationId,
   getTeamsByOrganizationId,
+  getUsersByOrganizationId,
 } from "../api/organization"
 import {
   createProject,
@@ -20,7 +20,7 @@ import type {
   ProjectResponseDto,
 } from "../types/project"
 import type { UserSummaryDto } from "../types/user"
-import type { TeamSummaryOrganizationDto } from "../types/team"
+import type { TeamSummaryDto } from "../types/team"
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" })
@@ -138,7 +138,7 @@ function ConfirmDeleteModal({ project, onConfirm, onClose }: {
 function TeamsPicker({ value, onChange, teams }: {
   value: string[]
   onChange: (v: string[]) => void
-  teams: TeamSummaryOrganizationDto[]
+  teams: TeamSummaryDto[]
 }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
@@ -232,11 +232,12 @@ function TeamsPicker({ value, onChange, teams }: {
   )
 }
 
-function ProjectFormModal({ initial, managers, currentUser, teams, onClose, onSave }: {
+function ProjectFormModal({ initial, managers, currentUser, orgId, teams, onClose, onSave }: {
   initial?: ProjectResponseDto
   managers: UserSummaryDto[]
   currentUser: UserSummaryDto | null
-  teams: TeamSummaryOrganizationDto[]
+  teams: TeamSummaryDto[]
+  orgId: number
   onClose: () => void
   onSave: (data: ProjectCreateDto | ProjectUpdateDto, id?: number) => Promise<void>
 }) {
@@ -255,7 +256,7 @@ function ProjectFormModal({ initial, managers, currentUser, teams, onClose, onSa
   const startOk = startDate !== ""
   const endOk = endDate !== ""
   const dateRangeOk = !startOk || !endOk || new Date(endDate) >= new Date(startDate)
-  const canSave = nameOk && descOk && startOk && endOk && dateRangeOk && managerId !== null && teamsIds.length > 0
+  const canSave = nameOk && descOk && startOk && endOk && dateRangeOk && managerId !== null
 
   const handleSave = async () => {
     if (!canSave) return
@@ -263,7 +264,7 @@ function ProjectFormModal({ initial, managers, currentUser, teams, onClose, onSa
     setError(null)
     
     try {
-      const payload = { name: name.trim(), description: description.trim(), startDate, endDate, managerId: managerId!, teamsIds: teamsIds.map(Number) }
+      const payload = { name: name.trim(), description: description.trim(), startDate, endDate, organizationId: orgId, teamsIds: teamsIds.map(Number) }
       await onSave(payload, initial?.id)
       onClose()
     } catch(e) {
@@ -362,7 +363,7 @@ function ProjectFormModal({ initial, managers, currentUser, teams, onClose, onSa
 
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Teams <span className={teamsIds.length > 0 ? "text-slate-300" : "text-rose-500"}>*</span>
+              Teams
             </label>
             <TeamsPicker value={teamsIds} onChange={setTeamsIds} teams={teams} />
           </div>
@@ -377,7 +378,7 @@ function ProjectFormModal({ initial, managers, currentUser, teams, onClose, onSa
           {!canSave && dateRangeOk && (
             <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-700">
               <AlertCircle className="h-4 w-4 flex-none" />
-              Name, description, manager, at least one team and both dates are required.
+              Name, description, manager and both dates are required.
             </div>
           )}
         </div>
@@ -403,7 +404,7 @@ export default function Projects() {
   const [projects, setProjects] = useState<ProjectResponseDto[]>([])
   const [currentUser, setCurrentUser] = useState<UserSummaryDto | null>(null)
   const [managers, setManagers] = useState<UserSummaryDto[]>([])
-  const [teams, setTeams] = useState<TeamSummaryOrganizationDto[]>([])
+  const [teams, setTeams] = useState<TeamSummaryDto[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null> (null)
   const [query, setQuery] = useState("")
@@ -420,9 +421,10 @@ export default function Projects() {
         const [projectsData, currentUser, managersData, teamsData ] = await Promise.all([
           getProjectsByOrganizationId(orgId),
           getCurrentUser(),
-          getManagers(),
+          getUsersByOrganizationId(orgId, "MANAGER"),
           getTeamsByOrganizationId(orgId),
         ])
+        setOrgId(orgId)
         setProjects(projectsData)
         setCurrentUser(currentUser)
         setManagers(managersData)
@@ -592,8 +594,9 @@ export default function Projects() {
                     <span className="text-xs text-slate-500">
                       {project.teams?.length ?? 0} team{(project.teams?.length ?? 0) !== 1 ? "s" : ""}
                     </span>
-                    <span className="ml-auto inline-flex items-center gap-1 text-xs text-slate-400">
-                      Open <ChevronRight className="h-3.5 w-3.5" />
+                    <span className="mx-1 text-slate-200">·</span>
+                    <span className="text-xs text-slate-500">
+                      {project.workItems?.length ?? 0} work item{(project.workItems?.length ?? 0) !== 1 ? "s" : ""}
                     </span>
                   </div>
                   {(project.teams?.length ?? 0) > 0 && (
@@ -617,6 +620,7 @@ export default function Projects() {
           managers={managers}
           currentUser={currentUser}
           teams={teams}
+          orgId={orgId}
           onClose={() => setShowCreate(false)}
           onSave={(data) => handleCreate(data as ProjectCreateDto)}
         />
@@ -625,8 +629,9 @@ export default function Projects() {
         <ProjectFormModal
           initial={editProject}
           managers={managers}
-          teams={teams}
           currentUser={currentUser}
+          teams={teams}
+          orgId={orgId}
           onClose={() => setEditProject(null)}
           onSave={(data, id) => handleEdit(data as ProjectUpdateDto, id)}
         />

@@ -95,6 +95,11 @@ public class WorkItemService {
 
         if (workItemCreateDto.getAssigneesIds() != null && !workItemCreateDto.getAssigneesIds().isEmpty()) {
             List<User> assignedUsers = getAssignedUsers(workItemCreateDto.getAssigneesIds());
+            assignedUsers.forEach(assignee -> {
+                if (!assignee.getAssignedWorkItems().contains(workItem)) {
+                    assignee.getAssignedWorkItems().add(workItem);
+                }
+            });
             workItem.setAssignees(assignedUsers);
         }
         workItemRepository.save(workItem);

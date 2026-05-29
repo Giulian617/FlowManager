@@ -8,7 +8,7 @@ import flowmanager.nomenclator.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -20,16 +20,15 @@ public class TeamMapper {
         return Team.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDate.now())
                 .organization(organization)
                 .manager(manager)
                 .build();
     }
 
-    public void updateEntityFromDto(TeamUpdateDto dto, Team team, Organization organization, User manager) {
+    public void updateEntityFromDto(TeamUpdateDto dto, Team team, User manager) {
         Optional.ofNullable(dto.getName()).ifPresent(team::setName);
         Optional.ofNullable(dto.getDescription()).ifPresent(team::setDescription);
-        team.setOrganization(organization);
         team.setManager(manager);
     }
 
@@ -60,10 +59,21 @@ public class TeamMapper {
     }
 
     public TeamSummaryOrganizationDto toSummaryOrganizationDto(Team team) {
+        List<UserSummaryDto> membersDto = new ArrayList<>();
+        if(team.getMembers() != null) {
+            membersDto = team.getMembers()
+                    .stream()
+                    .map(this::mapUserSummary)
+                    .toList();
+        }
+
         return TeamSummaryOrganizationDto.builder()
                 .id(team.getId())
                 .name(team.getName())
+                .description(team.getDescription())
                 .manager(getManagerSummaryDto(team))
+                .createdAt(team.getCreatedAt())
+                .members(membersDto)
                 .build();
     }
 

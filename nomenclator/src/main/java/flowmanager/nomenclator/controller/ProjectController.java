@@ -1,6 +1,9 @@
 package flowmanager.nomenclator.controller;
 
-import flowmanager.nomenclator.dto.*;
+import flowmanager.nomenclator.dto.ProjectCreateDto;
+import flowmanager.nomenclator.dto.ProjectResponseDto;
+import flowmanager.nomenclator.dto.ProjectUpdateDto;
+import flowmanager.nomenclator.dto.WorkItemSummaryDto;
 import flowmanager.nomenclator.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

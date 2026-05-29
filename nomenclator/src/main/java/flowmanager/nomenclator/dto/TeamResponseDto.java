@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -27,7 +27,7 @@ public class TeamResponseDto {
     private Integer id;
     private String name;
     private String description;
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
     private OrganizationSummaryDto organization;
     private UserSummaryDto manager;
     private List<ProjectSummaryDto> projects;

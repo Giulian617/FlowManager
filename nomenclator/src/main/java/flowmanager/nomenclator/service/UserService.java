@@ -6,9 +6,9 @@ import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.*;
 import flowmanager.nomenclator.model.Organization;
 import flowmanager.nomenclator.model.Role;
-import flowmanager.nomenclator.model.Team;
 import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.CommentRepository;
+import flowmanager.nomenclator.repository.OrganizationRepository;
 import flowmanager.nomenclator.repository.UserRepository;
 import flowmanager.nomenclator.security.KeycloakAdminService;
 import flowmanager.nomenclator.security.Utils;
@@ -21,14 +21,13 @@ import org.springframework.stereotype.Service;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
+    private final OrganizationRepository organizationRepository;
     private final UserMapper userMapper;
     private final CommentMapper commentMapper;
     private final ProjectMapper projectMapper;
@@ -92,21 +91,12 @@ public class UserService {
                 .map(organizationMapper::toSummaryDto)
                 .toList();
     }
-    
-    public List<OrganizationSummaryDto> findAllAssignedOrganizationsByUserId(Integer userId) {
+
+    public List<OrganizationSummaryDto> findAllMemberOrganizationsByUserId(Integer userId) {
         User user = getUser(userId);
 
         Set<Organization> organizations = new HashSet<>(user.getOrganizations());
-        organizations.addAll(
-                user.getAssignedTeams().stream()
-                        .map(Team::getOrganization)
-                        .toList()
-        );
-        organizations.addAll(
-                user.getManagedTeams().stream()
-                        .map(Team::getOrganization)
-                        .toList()
-        );
+        organizations.addAll(user.getMemberOrganizations());
 
         return organizations.stream()
                 .map(organizationMapper::toSummaryDto)
@@ -165,6 +155,15 @@ public class UserService {
             keycloakAdminService.assignRole(keycloakId, role);
 
             User user = userMapper.toEntity(userCreateDto, keycloakId);
+
+            if (userCreateDto.getOrganizationId() != null) {
+                Organization organization = organizationRepository.findById(userCreateDto.getOrganizationId())
+                        .orElseThrow(() -> new NotFoundException(String.format("Organization with id %d not found", userCreateDto.getOrganizationId())));
+                if (!user.getMemberOrganizations().contains(organization)) {
+                    user.getMemberOrganizations().add(organization);
+                }
+                organization.getMembers().add(user);
+            }
             return userMapper.toResponseDto(userRepository.save(user));
         } catch (Exception e) {
             keycloakAdminService.deleteUser(keycloakId);
@@ -186,6 +185,17 @@ public class UserService {
 
         if (userUpdateDto.getRole() != null) {
             keycloakAdminService.updateUserRole(user.getKeycloakId(), userUpdateDto.getRole());
+        }
+
+        if (userUpdateDto.getOrganizationId() != null) {
+            Organization organization = organizationRepository.findById(userUpdateDto.getOrganizationId())
+                    .orElseThrow(() -> new NotFoundException(String.format("Organization with id %d not found", userUpdateDto.getOrganizationId())));
+            if (!user.getMemberOrganizations().contains(organization)) {
+                user.getMemberOrganizations().add(organization);
+            }
+            if(!organization.getMembers().contains(user)) {
+                organization.getMembers().add(user);
+            }
         }
 
         userMapper.updateEntityFromDto(userUpdateDto, user);
@@ -211,6 +221,8 @@ public class UserService {
                 .forEach(team -> teamService.deleteTeam(team.getId()));
         user.getOrganizations()
                 .forEach(organization -> organizationService.deleteOrganization(organization.getId()));
+        user.getMemberOrganizations()
+                .forEach(organization -> organization.getMembers().remove(user));
 
         commentRepository.deleteAll(user.getComments());
         userRepository.deleteById(userId);

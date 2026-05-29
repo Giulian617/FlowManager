@@ -326,8 +326,7 @@ export default function TopBar() {
               <button
                 onClick={() => {
                   setProfileMenuOpen(false)
-                  const inOrg = location.pathname.startsWith("/org")
-                  navigate(inOrg ? "/org/profile" : "/profile")
+                  navigate("/profile")
                 }}
                 className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"
               >
@@ -337,8 +336,7 @@ export default function TopBar() {
               <button
                 onClick={() => {
                   setProfileMenuOpen(false)
-                  const inOrg = location.pathname.startsWith("/org")
-                  navigate(inOrg ? "/org/profile" : "/profile")
+                  navigate("/profile")
                 }}
                 className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"
               >

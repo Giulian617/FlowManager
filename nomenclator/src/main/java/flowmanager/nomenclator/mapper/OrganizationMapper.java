@@ -51,16 +51,29 @@ public class OrganizationMapper {
         if(organization.getTeams() != null) {
             teamsDto = organization.getTeams()
                     .stream()
-                    .map(team -> new TeamSummaryOrganizationDto(
-                                    team.getId(),
-                                    team.getName(),
-                                    new UserSummaryDto(
-                                            team.getManager().getId(),
-                                            team.getManager().getUsername(),
-                                            team.getManager().getRole()
-                                    )
-                            )
-                    )
+                    .map(team -> {
+                        List<UserSummaryDto> membersDto = team.getMembers() == null ? List.of() :
+                                team.getMembers()
+                                    .stream()
+                                    .map(member -> new UserSummaryDto(
+                                            member.getId(),
+                                            member.getUsername(),
+                                            member.getRole()
+                                    ))
+                                    .toList();
+                        return new TeamSummaryOrganizationDto(
+                                team.getId(),
+                                team.getName(),
+                                team.getDescription(),
+                                new UserSummaryDto(
+                                        team.getManager().getId(),
+                                        team.getManager().getUsername(),
+                                        team.getManager().getRole()
+                                ),
+                                team.getCreatedAt(),
+                                membersDto
+                        );
+                    })
                     .toList();
         }
 

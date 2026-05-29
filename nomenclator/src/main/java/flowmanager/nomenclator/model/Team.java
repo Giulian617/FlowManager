@@ -3,7 +3,7 @@ package flowmanager.nomenclator.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +31,7 @@ public class Team {
     private String description;
 
     @Column(nullable = false)
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 
     @ManyToOne
     @JoinColumn(name = "organization_id", nullable = false)

@@ -7,6 +7,7 @@ export interface ProjectCreateDto {
   description: string
   startDate: string
   endDate: string
+  organizationId: number
   teamsIds?: number[]
 }
 

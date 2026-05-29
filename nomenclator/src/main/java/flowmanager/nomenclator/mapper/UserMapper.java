@@ -15,7 +15,6 @@ import java.util.Optional;
 public class UserMapper {
     private final CommentMapper commentMapper;
     private final ProjectMapper projectMapper;
-    private final OrganizationMapper organizationMapper;
 
     public User toEntity(UserCreateDto dto, String keycloakId) {
         return User.builder()
@@ -72,6 +71,13 @@ public class UserMapper {
                 .severity(workItem.getSeverity())
                 .build();
     }
+    private OrganizationSummaryDto mapOrganizationSummary(Organization organization) {
+        return OrganizationSummaryDto.builder()
+                .id(organization.getId())
+                .name(organization.getName())
+                .description(organization.getDescription())
+                .build();
+    }
 
     public UserResponseDto toResponseDto(User user) {
         List<CommentResponseUserDto> commentsDto = new ArrayList<>();
@@ -94,7 +100,15 @@ public class UserMapper {
         if(user.getOrganizations() != null) {
             organizationsDto = user.getOrganizations()
                     .stream()
-                    .map(organizationMapper::toSummaryDto)
+                    .map(this::mapOrganizationSummary)
+                    .toList();
+        }
+
+        List<OrganizationSummaryDto> memberOrganizationsDto = new ArrayList<>();
+        if(user.getMemberOrganizations() != null) {
+            memberOrganizationsDto = user.getMemberOrganizations()
+                    .stream()
+                    .map(this::mapOrganizationSummary)
                     .toList();
         }
 
@@ -144,6 +158,7 @@ public class UserMapper {
                 .comments(commentsDto)
                 .projects(projectsDto)
                 .organizations(organizationsDto)
+                .memberOrganizations(memberOrganizationsDto)
                 .managedTeams(managedTeamsDto)
                 .assignedTeams(assignedTeamsDto)
                 .reportedWorkItems(reportedWorkItemsDto)

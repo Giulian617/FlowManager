@@ -13,7 +13,7 @@ export async function getManagers() {
 }
 
 export async function getUserOrganizations(userId: number) {
-  const response = await apiFetch(`/users/${userId}/organizations/assignee`)
+  const response = await apiFetch(`/users/${userId}/organizations/member`)
   if (!response.ok) throw new Error("Failed to fetch organizations")
   return response.json()
 }

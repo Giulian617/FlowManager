@@ -14,5 +14,6 @@ public class UserUpdateDto {
     private String firstName;
     private String lastName;
     private String phoneNumber;
+    private Integer organizationId;
     private Role role;
 }

@@ -6,6 +6,7 @@ import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.*;
 import flowmanager.nomenclator.model.*;
 import flowmanager.nomenclator.repository.CommentRepository;
+import flowmanager.nomenclator.repository.OrganizationRepository;
 import flowmanager.nomenclator.repository.UserRepository;
 import flowmanager.nomenclator.security.KeycloakAdminService;
 import flowmanager.nomenclator.utils.BuildDtos;
@@ -35,6 +36,9 @@ public class UserServiceTests {
 
     @Mock
     private CommentRepository commentRepository;
+
+    @Mock
+    private OrganizationRepository organizationRepository;
 
     @Mock
     private UserMapper userMapper;
@@ -271,47 +275,48 @@ public class UserServiceTests {
         User user = BuildInstances.buildUser();
 
         List<Organization> orgs = BuildInstances.buildOrganizations();
-        Organization org1 = orgs.get(0);
-        Organization org2 = orgs.get(1);
-        Organization org3 = Organization.builder()
-                .id(3)
-                .name("Organizatia 3")
-                .description("Descriere 3")
-                .industry("IT")
-                .createdAt(LocalDateTime.of(2025, 12, 31, 10, 0, 5))
-                .manager(user)
-                .build();
+        Organization managedOrg = orgs.get(0);
+        Organization memberOrg = orgs.get(1);
 
-        user.setOrganizations(List.of(org1));
+        List<OrganizationSummaryDto> orgsDto = orgs.stream()
+                .map(BuildDtos::buildOrganizationSummaryDto)
+                .toList();
 
-        Team assignedTeam = BuildInstances.buildTeam();
-        assignedTeam.setOrganization(org2);
-
-        Team assignedTeamDuplicate = BuildInstances.buildTeam();
-        assignedTeamDuplicate.setOrganization(org1);
-
-        user.setAssignedTeams(List.of(assignedTeam, assignedTeamDuplicate));
-
-        List<Team> managedTeams = BuildInstances.buildTeams();
-        managedTeams.get(0).setOrganization(org3);
-        managedTeams.get(1).setOrganization(org2);
-
-        user.setManagedTeams(managedTeams);
+        user.setOrganizations(List.of(managedOrg));
+        user.setMemberOrganizations(List.of(memberOrg));
 
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(organizationMapper.toSummaryDto(managedOrg)).thenReturn(orgsDto.get(0));
+        when(organizationMapper.toSummaryDto(memberOrg)).thenReturn(orgsDto.get(1));
 
-        when(organizationMapper.toSummaryDto(any()))
-                .thenAnswer(invocation -> {
-                    Organization o = invocation.getArgument(0);
-                    return BuildDtos.buildOrganizationSummaryDto(o);
-                });
+        List<OrganizationSummaryDto> result = userService.findAllMemberOrganizationsByUserId(user.getId());
 
-        List<OrganizationSummaryDto> result =
-                userService.findAllAssignedOrganizationsByUserId(user.getId());
-
-        assertEquals(3, result.size());
+        assertEquals(2, result.size());
         verify(userRepository, times(1)).findById(user.getId());
-        verify(organizationMapper, times(3)).toSummaryDto(any());
+        verify(organizationMapper, times(1)).toSummaryDto(managedOrg);
+        verify(organizationMapper, times(1)).toSummaryDto(memberOrg);
+    }
+
+    @Test
+    void testFindAllAssignedOrganizationsByUserId_Distinct() {
+        User user = BuildInstances.buildUser();
+
+        List<Organization> orgs = BuildInstances.buildOrganizations();
+        Organization managedOrg = orgs.getFirst();
+
+        OrganizationSummaryDto managedOrgDto = BuildDtos.buildOrganizationSummaryDto(managedOrg);
+
+        user.setOrganizations(List.of(managedOrg));
+        user.setMemberOrganizations(List.of(managedOrg));
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(organizationMapper.toSummaryDto(managedOrg)).thenReturn(managedOrgDto);
+
+        List<OrganizationSummaryDto> result = userService.findAllMemberOrganizationsByUserId(user.getId());
+
+        assertEquals(1, result.size());
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(organizationMapper, times(1)).toSummaryDto(managedOrg);
     }
 
     @Test
@@ -319,7 +324,7 @@ public class UserServiceTests {
         when(userRepository.findById(1)).thenReturn(Optional.empty());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> userService.findAllAssignedOrganizationsByUserId(1));
+                () -> userService.findAllMemberOrganizationsByUserId(1));
 
         assertEquals("User with id 1 not found", exception.getMessage());
 
@@ -337,7 +342,7 @@ public class UserServiceTests {
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
         List<OrganizationSummaryDto> result =
-                userService.findAllAssignedOrganizationsByUserId(user.getId());
+                userService.findAllMemberOrganizationsByUserId(user.getId());
 
         assertTrue(result.isEmpty());
         verify(userRepository, times(1)).findById(user.getId());
@@ -524,6 +529,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
+                null,
                 null
         );
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(savedUser);
@@ -573,6 +579,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
+                null,
                 Role.MANAGER
         );
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(savedUser);
@@ -600,6 +607,118 @@ public class UserServiceTests {
     }
 
     @Test
+    void testCreateUser_WithOrganization() {
+        String keycloakId = "keycloak-uuid-1";
+        Organization organization = BuildInstances.buildOrganization();
+        User user = User.builder()
+                .keycloakId(keycloakId)
+                .email("user1@example.com")
+                .username("User1")
+                .firstName("Example")
+                .lastName("User")
+                .phoneNumber("+407777777777")
+                .active(false)
+                .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
+                .memberOrganizations(new ArrayList<>())
+                .build();
+        User savedUser = BuildInstances.buildUser();
+        UserCreateDto createDto = new UserCreateDto(
+                "user1@example.com",
+                "password",
+                "User1",
+                "Example",
+                "User",
+                "+407777777777",
+                organization.getId(),
+                null
+        );
+        UserResponseDto responseDto = BuildDtos.buildUserResponseDto(savedUser);
+
+        when(userRepository.existsByEmail(createDto.getEmail())).thenReturn(false);
+        when(userRepository.existsByUsername(createDto.getUsername())).thenReturn(false);
+        when(keycloakAdminService.createUser(createDto)).thenReturn(keycloakId);
+        when(userRepository.existsByKeycloakId(keycloakId)).thenReturn(false);
+        doNothing().when(keycloakAdminService).assignRole(keycloakId, Role.USER);
+        when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        when(userRepository.save(user)).thenReturn(savedUser);
+        when(userMapper.toResponseDto(savedUser)).thenReturn(responseDto);
+
+        UserResponseDto result = userService.createUser(createDto);
+
+        assertEquals(responseDto, result);
+        assertTrue(user.getMemberOrganizations().contains(organization));
+        verify(userRepository, times(1)).existsByEmail(user.getEmail());
+        verify(userRepository, times(1)).existsByUsername(user.getUsername());
+        verify(keycloakAdminService, times(1)).createUser(createDto);
+        verify(userRepository, times(1)).existsByKeycloakId(user.getKeycloakId());
+        verify(keycloakAdminService, times(1)).assignRole(keycloakId, Role.USER);
+        verify(userMapper, times(1)).toEntity(createDto, keycloakId);
+        verify(organizationRepository, times(1)).findById(organization.getId());
+        verify(userRepository, times(1)).save(user);
+        verify(userMapper, times(1)).toResponseDto(savedUser);
+    }
+
+    @Test
+    void testCreateUser_WithExistingOrganization() {
+        String keycloakId = "keycloak-uuid-1";
+
+        Organization organization = BuildInstances.buildOrganization();
+        organization.setMembers(new ArrayList<>());
+
+        User user = User.builder()
+                .keycloakId(keycloakId)
+                .email("user1@example.com")
+                .username("User1")
+                .firstName("Example")
+                .lastName("User")
+                .phoneNumber("+407777777777")
+                .active(false)
+                .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
+                .memberOrganizations(new ArrayList<>(List.of(organization)))
+                .build();
+
+        User savedUser = BuildInstances.buildUser();
+
+        UserCreateDto createDto = new UserCreateDto(
+                "user1@example.com",
+                "password",
+                "User1",
+                "Example",
+                "User",
+                "+407777777777",
+                organization.getId(),
+                null
+        );
+
+        UserResponseDto responseDto = BuildDtos.buildUserResponseDto(savedUser);
+
+        when(userRepository.existsByEmail(createDto.getEmail())).thenReturn(false);
+        when(userRepository.existsByUsername(createDto.getUsername())).thenReturn(false);
+        when(keycloakAdminService.createUser(createDto)).thenReturn(keycloakId);
+        when(userRepository.existsByKeycloakId(keycloakId)).thenReturn(false);
+        doNothing().when(keycloakAdminService).assignRole(keycloakId, Role.USER);
+        when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        when(userRepository.save(user)).thenReturn(savedUser);
+        when(userMapper.toResponseDto(savedUser)).thenReturn(responseDto);
+
+        UserResponseDto result = userService.createUser(createDto);
+
+        assertEquals(responseDto, result);
+        assertEquals(1, user.getMemberOrganizations().size());
+        verify(userRepository, times(1)).existsByEmail(user.getEmail());
+        verify(userRepository, times(1)).existsByUsername(user.getUsername());
+        verify(keycloakAdminService, times(1)).createUser(createDto);
+        verify(userRepository, times(1)).existsByKeycloakId(user.getKeycloakId());
+        verify(keycloakAdminService, times(1)).assignRole(keycloakId, Role.USER);
+        verify(userMapper, times(1)).toEntity(createDto, keycloakId);
+        verify(organizationRepository, times(1)).findById(organization.getId());
+        verify(userRepository, times(1)).save(user);
+        verify(userMapper, times(1)).toResponseDto(savedUser);
+    }
+
+    @Test
     void testCreateUser_EmailAlreadyExists() {
         UserCreateDto createDto = new UserCreateDto(
                 "user1@example.com",
@@ -608,6 +727,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
+                null,
                 null
         );
 
@@ -629,6 +749,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
+                null,
                 null
         );
 
@@ -652,6 +773,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
+                null,
                 null
         );
 
@@ -665,6 +787,47 @@ public class UserServiceTests {
 
         assertEquals("User already registered", exception.getMessage());
         verify(keycloakAdminService, never()).assignRole(any(), any());
+    }
+
+    @Test
+    void testCreateUser_OrganizationNotFound() {
+        String keycloakId = "keycloak-uuid-1";
+        User user = User.builder()
+                .keycloakId(keycloakId)
+                .email("user1@example.com")
+                .username("User1")
+                .firstName("Example")
+                .lastName("User")
+                .phoneNumber("+407777777777")
+                .active(false)
+                .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
+                .memberOrganizations(new ArrayList<>())
+                .build();
+        UserCreateDto createDto = new UserCreateDto(
+                "user1@example.com",
+                "password",
+                "User1",
+                "Example",
+                "User",
+                "+407777777777",
+                1,
+                null
+        );
+
+        when(userRepository.existsByEmail(createDto.getEmail())).thenReturn(false);
+        when(userRepository.existsByUsername(createDto.getUsername())).thenReturn(false);
+        when(keycloakAdminService.createUser(createDto)).thenReturn(keycloakId);
+        when(userRepository.existsByKeycloakId(keycloakId)).thenReturn(false);
+        doNothing().when(keycloakAdminService).assignRole(keycloakId, Role.USER);
+        when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
+        when(organizationRepository.findById(1)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> userService.createUser(createDto));
+
+        assertEquals("Organization with id 1 not found", exception.getMessage());
+        verify(keycloakAdminService, times(1)).deleteUser(keycloakId);
+        verify(userRepository, never()).save(any());
     }
 
     @Test
@@ -686,6 +849,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
+                null,
                 null
         );
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(updatedUser);
@@ -729,6 +893,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
+                null,
                 Role.MANAGER
         );
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(updatedUser);
@@ -752,6 +917,79 @@ public class UserServiceTests {
     }
 
     @Test
+    void testUpdateUser_WithOrganization() {
+        User user = BuildInstances.buildUser();
+        user.setMemberOrganizations(new ArrayList<>());
+        Organization organization = BuildInstances.buildOrganization();
+        User updatedUser = BuildInstances.buildUser();
+        UserUpdateDto updateDto = new UserUpdateDto(
+                null,
+                null,
+                "Example",
+                "User",
+                "+407777777777",
+                organization.getId(),
+                null
+        );
+        UserResponseDto responseDto = BuildDtos.buildUserResponseDto(updatedUser);
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        doNothing().when(userMapper).updateEntityFromDto(updateDto, user);
+        when(userRepository.save(user)).thenReturn(updatedUser);
+        when(userMapper.toResponseDto(updatedUser)).thenReturn(responseDto);
+
+        UserResponseDto result = userService.updateUser(user.getId(), updateDto);
+
+        assertEquals(responseDto, result);
+        assertTrue(user.getMemberOrganizations().contains(organization));
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(userRepository, never()).existsByEmail(any());
+        verify(userRepository, never()).existsByUsername(any());
+        verify(keycloakAdminService, never()).updateUserRole(any(), any());
+        verify(userMapper, times(1)).updateEntityFromDto(updateDto, user);
+        verify(organizationRepository, times(1)).findById(organization.getId());
+        verify(userRepository, times(1)).save(user);
+        verify(userMapper, times(1)).toResponseDto(updatedUser);
+    }
+
+    @Test
+    void testUpdateUser_WithExistingOrganizationMembership() {
+        User user = BuildInstances.buildUser();
+        Organization organization = BuildInstances.buildOrganization();
+        user.setMemberOrganizations(new ArrayList<>(List.of(organization)));
+        organization.setMembers(new ArrayList<>(List.of(user)));
+
+        User updatedUser = BuildInstances.buildUser();
+        UserUpdateDto updateDto = new UserUpdateDto(
+                null,
+                null,
+                "Example",
+                "User",
+                "+407777777777",
+                organization.getId(),
+                null
+        );
+        UserResponseDto responseDto = BuildDtos.buildUserResponseDto(updatedUser);
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        doNothing().when(userMapper).updateEntityFromDto(updateDto, user);
+        when(userRepository.save(user)).thenReturn(updatedUser);
+        when(userMapper.toResponseDto(updatedUser)).thenReturn(responseDto);
+
+        UserResponseDto result = userService.updateUser(user.getId(), updateDto);
+
+        assertEquals(responseDto, result);
+        assertEquals(1, user.getMemberOrganizations().size());
+        assertEquals(1, organization.getMembers().size());
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(organizationRepository, times(1)).findById(organization.getId());
+        verify(userRepository, times(1)).save(user);
+        verify(userMapper, times(1)).toResponseDto(updatedUser);
+    }
+
+    @Test
     void testUpdateUser_EmailNull() {
         User user = BuildInstances.buildUser();
         User updatedUser = User.builder()
@@ -770,6 +1008,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
+                null,
                 null
         );
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(updatedUser);
@@ -810,6 +1049,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
+                null,
                 null
         );
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(updatedUser);
@@ -833,6 +1073,30 @@ public class UserServiceTests {
     }
 
     @Test
+    void testUpdateUser_OrganizationNotFound() {
+        User user = BuildInstances.buildUser();
+        user.setMemberOrganizations(new ArrayList<>());
+        UserUpdateDto updateDto = new UserUpdateDto(
+                null,
+                null,
+                "Example",
+                "User",
+                "+407777777777",
+                1,
+                null
+        );
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(organizationRepository.findById(1)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> userService.updateUser(user.getId(), updateDto));
+
+        assertEquals("Organization with id 1 not found", exception.getMessage());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
     void testUpdateUser_UserNotFound() {
         UserUpdateDto updateDto = new UserUpdateDto(
                 "user12@example.com",
@@ -840,6 +1104,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
+                null,
                 null
         );
 
@@ -860,6 +1125,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
+                null,
                 null
         );
 
@@ -881,6 +1147,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
+                null,
                 null
         );
 
@@ -901,6 +1168,7 @@ public class UserServiceTests {
         List<Project> projects = BuildInstances.buildProjects();
         List<Team> teams = BuildInstances.buildTeams();
         List<Organization> organizations = BuildInstances.buildOrganizations();
+        List<Organization> memberOrganizations = BuildInstances.buildOrganizations();
         List<Comment> comments = BuildInstances.buildComments();
 
         workItems.forEach(workItem -> workItem.setAssignees(new ArrayList<>(List.of(user))));
@@ -908,6 +1176,9 @@ public class UserServiceTests {
 
         teams.forEach(team -> team.setMembers(new ArrayList<>(List.of(user))));
         user.setAssignedTeams(teams);
+
+        memberOrganizations.forEach(o -> o.setMembers(new ArrayList<>(List.of(user))));
+        user.setMemberOrganizations(memberOrganizations);
 
         user.setReportedWorkItems(workItems);
         user.setProjects(projects);
@@ -927,6 +1198,7 @@ public class UserServiceTests {
 
         workItems.forEach(w -> assertFalse(w.getAssignees().contains(user)));
         teams.forEach(t -> assertFalse(t.getMembers().contains(user)));
+        memberOrganizations.forEach(o -> assertFalse(o.getMembers().contains(user)));
         workItems.forEach(w -> verify(workItemService).deleteWorkItem(w.getId()));
         projects.forEach(p -> verify(projectService).deleteProject(p.getId()));
         teams.forEach(t -> verify(teamService).deleteTeam(t.getId()));

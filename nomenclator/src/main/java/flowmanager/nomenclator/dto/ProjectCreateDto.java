@@ -25,5 +25,8 @@ public class ProjectCreateDto {
     @NotNull(message = "endDate is required")
     private LocalDate endDate;
 
+    @NotNull(message = "organizationId is required and cannot be null")
+    private Integer organizationId;
+
     private List<Integer> teamsIds;
 }

@@ -367,6 +367,7 @@ public class WorkItemServiceTests {
         WorkItemResponseDto result = workItemService.createWorkItem(createDto, reporter.getKeycloakId());
 
         assertEquals(responseDto, result);
+        users.forEach(u -> assertTrue(u.getAssignedWorkItems().contains(workItem)));
         assertEquals(users, workItem.getAssignees());
         verify(projectRepository, times(1)).findById(project.getId());
         verify(userRepository, times(1)).findByKeycloakId(reporter.getKeycloakId());
@@ -437,6 +438,61 @@ public class WorkItemServiceTests {
         verify(workItemRepository, times(1)).findById(workItem.getId());
         verify(workItemRepository, times(1)).findById(parent.getId());
         verify(workItemMapper, times(2)).toResponseDto(workItem);
+    }
+
+    @Test
+    void testCreateWorkItem_Valid_AssigneeAlreadyAssigned() {
+        Project project = BuildInstances.buildProject();
+        User reporter = BuildInstances.buildUser();
+        List<User> users = BuildInstances.buildUsers();
+        List<Integer> assigneesIds = List.of(users.get(0).getId(), users.get(1).getId());
+
+        WorkItem workItem = WorkItem.builder()
+                .title("Work item 1")
+                .description("Description work item 1")
+                .itemType(ItemType.Task)
+                .status(Status.To_do)
+                .severity(Severity.Low)
+                .createdAt(LocalDateTime.of(2026, 3, 20, 18, 33, 30))
+                .project(project)
+                .reporter(reporter)
+                .assignees(new ArrayList<>())
+                .comments(new ArrayList<>())
+                .children(new ArrayList<>())
+                .build();
+
+        users.get(0).getAssignedWorkItems().add(workItem);
+
+        WorkItem savedWorkItem = BuildInstances.buildWorkItem();
+        WorkItemCreateDto createDto = new WorkItemCreateDto(
+                "Work item 1",
+                "Description work item 1",
+                ItemType.Task,
+                Severity.Low,
+                1,
+                null,
+                null,
+                assigneesIds
+        );
+        WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(savedWorkItem);
+
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+        when(userRepository.findByKeycloakId(reporter.getKeycloakId())).thenReturn(Optional.of(reporter));
+        when(workItemMapper.toEntity(createDto, project, reporter)).thenReturn(workItem);
+        when(userRepository.findAllById(assigneesIds)).thenReturn(users);
+        when(workItemRepository.save(workItem)).thenReturn(savedWorkItem);
+        when(workItemMapper.toResponseDto(workItem)).thenReturn(responseDto);
+
+        WorkItemResponseDto result = workItemService.createWorkItem(createDto, reporter.getKeycloakId());
+
+        assertEquals(responseDto, result);
+        assertEquals(1, users.get(0).getAssignedWorkItems().stream()
+                .filter(wi -> wi.equals(workItem)).count());
+        assertTrue(users.get(1).getAssignedWorkItems().contains(workItem));
+        assertEquals(users, workItem.getAssignees());
+        verify(userRepository, times(1)).findAllById(assigneesIds);
+        verify(workItemRepository, times(1)).save(workItem);
+        verify(workItemMapper, times(1)).toResponseDto(workItem);
     }
 
     @Test

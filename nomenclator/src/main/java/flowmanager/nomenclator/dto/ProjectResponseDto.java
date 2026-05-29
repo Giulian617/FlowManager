@@ -19,6 +19,7 @@ import java.util.List;
         "description",
         "startDate",
         "endDate",
+        "organization",
         "manager",
         "workItems",
         "teams"
@@ -29,6 +30,7 @@ public class ProjectResponseDto {
     private String description;
     private LocalDate startDate;
     private LocalDate endDate;
+    private OrganizationSummaryDto organization;
     private UserSummaryDto manager;
     private List<WorkItemSummaryDto> workItems;
     private List<TeamSummaryDto> teams;

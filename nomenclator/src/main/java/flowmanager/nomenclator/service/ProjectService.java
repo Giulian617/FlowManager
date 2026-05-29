@@ -1,12 +1,17 @@
 package flowmanager.nomenclator.service;
 
-import flowmanager.nomenclator.dto.*;
+import flowmanager.nomenclator.dto.ProjectCreateDto;
+import flowmanager.nomenclator.dto.ProjectResponseDto;
+import flowmanager.nomenclator.dto.ProjectUpdateDto;
+import flowmanager.nomenclator.dto.WorkItemSummaryDto;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.ProjectMapper;
 import flowmanager.nomenclator.mapper.WorkItemMapper;
+import flowmanager.nomenclator.model.Organization;
 import flowmanager.nomenclator.model.Project;
 import flowmanager.nomenclator.model.Team;
 import flowmanager.nomenclator.model.User;
+import flowmanager.nomenclator.repository.OrganizationRepository;
 import flowmanager.nomenclator.repository.ProjectRepository;
 import flowmanager.nomenclator.repository.TeamRepository;
 import flowmanager.nomenclator.repository.UserRepository;
@@ -20,6 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProjectService {
     private final ProjectRepository projectRepository;
+    private final OrganizationRepository organizationRepository;
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
     private final ProjectMapper projectMapper;
@@ -63,22 +69,22 @@ public class ProjectService {
 
     @Transactional
     public ProjectResponseDto createProject(ProjectCreateDto projectCreateDto, String keycloakId) {
+        Organization organization = organizationRepository.findById(projectCreateDto.getOrganizationId()).orElseThrow(
+                () -> new NotFoundException(String.format("Organization with id %d not found", projectCreateDto.getOrganizationId()))
+        );
         User user = userRepository.findByKeycloakId(keycloakId).orElseThrow(
                 () -> new NotFoundException("User not found")
         );
-        Project project = projectMapper.toEntity(projectCreateDto, user);
+        Project project = projectMapper.toEntity(projectCreateDto, organization, user);
 
         if (projectCreateDto.getTeamsIds() != null && !projectCreateDto.getTeamsIds().isEmpty()) {
             List<Team> teams = getTeams(projectCreateDto.getTeamsIds());
+            teams.forEach(team -> {
+                if (!team.getProjects().contains(project)) {
+                    team.getProjects().add(project);
+                }
+            });
             project.setTeams(teams);
-
-            Project savedProject = projectRepository.save(project);
-            for (Team team : teams) {
-                team.getProjects().add(savedProject);
-                teamRepository.save(team);
-            }
-
-            return projectMapper.toResponseDto(savedProject);
         }
 
         return projectMapper.toResponseDto(projectRepository.save(project));

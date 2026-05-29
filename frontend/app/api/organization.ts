@@ -3,6 +3,7 @@ import type {
   OrganizationCreateDto,
   OrganizationUpdateDto
 } from "../types/organization"
+import type { Role } from "../types/enums"
 
 export async function getOrganizations() {
   const response = await apiFetch("/organizations")
@@ -28,8 +29,11 @@ export async function getTeamsByOrganizationId(orgId: number) {
   return response.json()
 }
 
-export async function getUsersByOrganizationId(orgId: number) {
-  const response = await apiFetch(`/organizations/${orgId}/users`)
+export async function getUsersByOrganizationId(orgId: number, role?: Role) {
+  const url = role
+    ? `/organizations/${orgId}/users?role=${role}`
+    : `/organizations/${orgId}/users`
+  const response = await apiFetch(url)
   if (!response.ok) throw new Error("Failed to fetch users")
   return response.json()
 }
