@@ -5,10 +5,12 @@ import TopBar from "../components/TopBar"
 import {
   getCurrentUser,
   getManagers,
+} from "../api/user"
+import {
   getOrganizationById,
   updateOrganization,
   deleteOrganization,
-} from "../src/api"
+} from "../api/organization"
 import type { UserSummaryDto } from "../types/user"
 import type { OrganizationUpdateDto } from "../types/organization"
 

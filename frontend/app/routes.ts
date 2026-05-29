@@ -16,7 +16,6 @@ export default [
     index("routes/org-dashboard.tsx"),
     route("dashboard", "routes/org-dashboard.tsx", { id: "org-dashboard" }),
     route("projects", "routes/org-projects.tsx"),
-    route("select-project", "routes/org-select-project.tsx"),
     route("teams", "routes/org-teams.tsx"),
     route("users", "routes/org-users.tsx"),
     route("settings", "routes/org-settings.tsx"),

@@ -1,6 +1,7 @@
 import React, { useState } from "react"
 import { useNavigate } from "react-router"
 import { Eye, EyeOff, LogIn } from "lucide-react"
+import { login } from "../api/auth"
 
 export default function Login() {
   const navigate = useNavigate()
@@ -22,13 +23,7 @@ export default function Login() {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch("http://localhost:8081/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      })
-      if (!response.ok) throw new Error("Invalid credentials")
-      const data = await response.json()
+      const data = await login(username, password)
       localStorage.setItem("accessToken", data.accessToken)
       localStorage.setItem("refreshToken", data.refreshToken)
       localStorage.setItem("tokenExpiry", String(Date.now() + data.expiresIn * 1000))

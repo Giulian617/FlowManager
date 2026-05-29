@@ -5,9 +5,11 @@ import {
   getCurrentUser,
   getManagers,
   getUserOrganizations,
+} from "../api/user"
+import {
   getOrganizations,
   createOrganization,
-} from "../src/api"
+} from "../api/organization"
 import type { UserSummaryDto } from "../types/user"
 import type { OrganizationSummaryDto } from "../types/organization"
 

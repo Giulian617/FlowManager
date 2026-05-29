@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react"
 import { useKeycloak } from "@react-keycloak/web"
 import { useLocation, useNavigate } from "react-router"
 import { Search, Bell, Settings, X, Check, Info, AlertTriangle, ChevronRight, User, Moon, Sun, Monitor, Shield, LogOut, Bug, BookOpen, Zap, CheckSquare } from "lucide-react"
+import { logout } from "../api/auth"
 
 const MOCK_WORK_ITEMS = [
   { id: "5", projectId: "1", type: "Bug", title: "Implement attachment feature", status: "To Do" },
@@ -349,14 +350,7 @@ export default function TopBar() {
                   onClick={async () => {
                     setProfileMenuOpen(false)
                     try {
-                      await fetch("http://localhost:8081/auth/logout", {
-                        method: "POST",
-                        headers: {
-                          "Content-Type": "application/json",
-                          "Authorization": `Bearer ${localStorage.getItem("accessToken")}`,
-                        },
-                        body: JSON.stringify({ refreshToken: localStorage.getItem("refreshToken") }),
-                      })
+                      await logout()
                     } finally {
                       localStorage.removeItem("accessToken")
                       localStorage.removeItem("refreshToken")

@@ -6,7 +6,7 @@ import {
   getProjectsByOrganizationId,
   getUsersByOrganizationId,
   getWorkItemsByOrganizationId,
-} from "../src/api"
+} from "../api/organization"
 import type { OrganizationResponseDto } from "../types/organization"
 import type { ProjectSummaryDto } from "../types/project"
 import type { UserSummaryDto } from "../types/user"

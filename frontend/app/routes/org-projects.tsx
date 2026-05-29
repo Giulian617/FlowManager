@@ -4,12 +4,16 @@ import { ChevronRight, Calendar, User, Users, Search, Plus, X, ChevronDown, Aler
 import {
   getCurrentUser,
   getManagers,
+} from "../api/user"
+import {
   getProjectsByOrganizationId,
   getTeamsByOrganizationId,
+} from "../api/organization"
+import {
   createProject,
   updateProject,
   deleteProject,
-} from "../src/api"
+} from "../api/project"
 import type {
   ProjectCreateDto,
   ProjectUpdateDto,
