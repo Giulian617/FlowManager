@@ -50,14 +50,6 @@ public class TeamMapper {
         );
     }
 
-    public TeamSummaryUserDto toSummaryUserDto(Team team) {
-        return TeamSummaryUserDto.builder()
-                .id(team.getId())
-                .name(team.getName())
-                .organization(getOrganizationSummaryDto(team))
-                .build();
-    }
-
     public TeamSummaryOrganizationDto toSummaryOrganizationDto(Team team) {
         List<UserSummaryDto> membersDto = new ArrayList<>();
         if(team.getMembers() != null) {

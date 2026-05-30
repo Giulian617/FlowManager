@@ -140,44 +140,44 @@ public class OrganizationServiceTests {
     void testFindAllUsersByOrganizationId_Valid() {
         Organization organization = BuildInstances.buildOrganization();
         List<User> members = BuildInstances.buildUsers();
-        List<UserSummaryDto> membersDto = members.stream()
-                .map(BuildDtos::buildUserSummaryDto)
+        List<UserResponseDto> membersDto = members.stream()
+                .map(BuildDtos::buildUserResponseDto)
                 .toList();
         organization.setMembers(members);
 
         when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
-        when(userMapper.toSummaryDto(members.get(0))).thenReturn(membersDto.get(0));
-        when(userMapper.toSummaryDto(members.get(1))).thenReturn(membersDto.get(1));
+        when(userMapper.toResponseDto(members.get(0))).thenReturn(membersDto.get(0));
+        when(userMapper.toResponseDto(members.get(1))).thenReturn(membersDto.get(1));
 
-        List<UserSummaryDto> result = organizationService.findAllUsersByOrganizationId(organization.getId(), null);
+        List<UserResponseDto> result = organizationService.findAllUsersByOrganizationId(organization.getId(), null);
 
         assertEquals(2, result.size());
         assertEquals(membersDto.get(0), result.get(0));
         assertEquals(membersDto.get(1), result.get(1));
         verify(organizationRepository, times(1)).findById(organization.getId());
-        verify(userMapper, times(1)).toSummaryDto(members.get(0));
-        verify(userMapper, times(1)).toSummaryDto(members.get(1));
+        verify(userMapper, times(1)).toResponseDto(members.get(0));
+        verify(userMapper, times(1)).toResponseDto(members.get(1));
     }
 
     @Test
     void testFindAllUsersByOrganizationId_WithRole() {
         Organization organization = BuildInstances.buildOrganization();
         List<User> members = BuildInstances.buildUsers();
-        List<UserSummaryDto> membersDto = members.stream()
-                .map(BuildDtos::buildUserSummaryDto)
+        List<UserResponseDto> membersDto = members.stream()
+                .map(BuildDtos::buildUserResponseDto)
                 .toList();
         organization.setMembers(members);
 
         when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
-        when(userMapper.toSummaryDto(members.getFirst())).thenReturn(membersDto.getFirst());
+        when(userMapper.toResponseDto(members.getFirst())).thenReturn(membersDto.getFirst());
 
-        List<UserSummaryDto> result = organizationService.findAllUsersByOrganizationId(organization.getId(), Role.MANAGER);
+        List<UserResponseDto> result = organizationService.findAllUsersByOrganizationId(organization.getId(), Role.MANAGER);
 
         assertEquals(1, result.size());
         assertEquals(membersDto.getFirst(), result.getFirst());
         verify(organizationRepository, times(1)).findById(organization.getId());
-        verify(userMapper, times(1)).toSummaryDto(members.get(0));
-        verify(userMapper, never()).toSummaryDto(members.get(1));
+        verify(userMapper, times(1)).toResponseDto(members.get(0));
+        verify(userMapper, never()).toResponseDto(members.get(1));
     }
 
     @Test
@@ -187,11 +187,11 @@ public class OrganizationServiceTests {
 
         when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
 
-        List<UserSummaryDto> result = organizationService.findAllUsersByOrganizationId(organization.getId(), null);
+        List<UserResponseDto> result = organizationService.findAllUsersByOrganizationId(organization.getId(), null);
 
         assertEquals(0, result.size());
         verify(organizationRepository, times(1)).findById(organization.getId());
-        verify(userMapper, never()).toSummaryDto(any());
+        verify(userMapper, never()).toResponseDto(any());
     }
 
     @Test

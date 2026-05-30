@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router"
-import { ChevronRight, Calendar, User, Users, Search, Plus, X, ChevronDown, AlertCircle, Pencil, Trash2 } from "lucide-react"
+import { Calendar, User, Users, Search, Plus, X, ChevronDown, AlertCircle, Pencil, Trash2 } from "lucide-react"
 import {
   getCurrentUser,
+  getManagedProjectsByUserId,
+  getAssignedProjectsByUserId
 } from "../api/user"
 import {
   getProjectsByOrganizationId,
@@ -414,21 +416,43 @@ export default function Projects() {
   
   useEffect(() => {
     const orgId = typeof window !== "undefined" ? Number(localStorage.getItem("selectedOrg")) : 0
-    if (!orgId) { navigate("/select-org"); return }
+    if (!orgId) {
+      navigate("/select-org");
+      return
+    }
 
     async function load() {
       try {
-        const [projectsData, currentUser, managersData, teamsData ] = await Promise.all([
-          getProjectsByOrganizationId(orgId),
-          getCurrentUser(),
-          getUsersByOrganizationId(orgId, "MANAGER"),
-          getTeamsByOrganizationId(orgId),
-        ])
+        const user = await getCurrentUser()
+        setCurrentUser(user)
         setOrgId(orgId)
+
+        let projectsData: ProjectResponseDto[] = []
+
+        if (user.role === "ADMIN") {
+          projectsData = await getProjectsByOrganizationId(orgId)
+        } else if (user.role === "MANAGER") {
+          const [managed, assigned] = await Promise.all([
+            getManagedProjectsByUserId(user.id),
+            getAssignedProjectsByUserId(user.id),
+          ])
+          projectsData = [...(managed ?? []), ...(assigned ?? [])].filter(
+            (p, i, arr) => arr.findIndex((x) => x.id === p.id) === i
+          )
+        } else {
+          projectsData = await getAssignedProjectsByUserId(user.id)
+        }
+
         setProjects(projectsData)
-        setCurrentUser(currentUser)
-        setManagers(managersData)
-        setTeams(teamsData)
+
+        if (user.role === "ADMIN" || user.role === "MANAGER") {
+          const [managersData, teamsData] = await Promise.all([
+            getUsersByOrganizationId(orgId, "MANAGER"),
+            getTeamsByOrganizationId(orgId),
+          ])
+          setManagers(managersData)
+          setTeams(teamsData)
+        }
       } catch (e) {
         setError("Failed to load projects.")
       } finally {
@@ -490,14 +514,16 @@ export default function Projects() {
       <header className="flex flex-col gap-2">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Projects</p>
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-semibold text-slate-900">Project portfolio</h1>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-          >
-            <Plus className="h-4 w-4" />
-            New Project
-          </button>
+          <h1 className="text-3xl font-semibold text-slate-900">Projects</h1>
+          {(currentUser?.role === "ADMIN" || currentUser?.role === "MANAGER") && (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              <Plus className="h-4 w-4" />
+              New Project
+            </button>
+          )}
         </div>
       </header>
 
@@ -533,24 +559,28 @@ export default function Projects() {
             const overdue     = isOverdue(project.endDate)
             const nearDeadline = isNearDeadline(project.endDate)
 
+            const canModify = currentUser?.role === "ADMIN" || project.manager?.id === currentUser?.id
+
             return (
               <div key={project.id} className="relative group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 duration-150">
-                <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setEditProject(project) }}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
-                    title="Edit"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setDeleteTarget(project) }}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-rose-100 bg-white text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
-                    title="Delete"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+                {canModify && (
+                  <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEditProject(project) }}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
+                      title="Edit"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDeleteTarget(project) }}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-rose-100 bg-white text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
 
                 <button className="w-full text-left" onClick={() => handleSelect(project)}>
                   <div className="flex items-start gap-3 mb-4">

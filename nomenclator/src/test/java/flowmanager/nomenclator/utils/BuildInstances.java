@@ -20,7 +20,7 @@ public final class BuildInstances {
                     .firstName("Example")
                     .lastName("User")
                     .phoneNumber("+407777777777")
-                    .active(false)
+                    .active(true)
                     .role(Role.MANAGER)
                     .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
                     .build(),
@@ -32,7 +32,7 @@ public final class BuildInstances {
                     .firstName("Example2")
                     .lastName("User")
                     .phoneNumber("+408888888888")
-                    .active(false)
+                    .active(true)
                     .role(Role.USER)
                     .createdAt(LocalDateTime.of(2025, 9, 22, 19, 41, 3))
                     .build()

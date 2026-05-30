@@ -49,12 +49,12 @@ public class OrganizationService {
                 .toList();
     }
 
-    public List<UserSummaryDto> findAllUsersByOrganizationId(Integer organizationId, Role role) {
+    public List<UserResponseDto> findAllUsersByOrganizationId(Integer organizationId, Role role) {
         return getOrganization(organizationId)
                 .getMembers()
                 .stream()
                 .filter(user -> role == null || user.getRole() == role)
-                .map(userMapper::toSummaryDto)
+                .map(userMapper::toResponseDto)
                 .toList();
     }
 

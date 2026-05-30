@@ -2,14 +2,16 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router"
 import { FolderKanban, Users, Building2, Calendar, User, ChevronRight, Bug, CheckSquare, Zap, BookOpen } from "lucide-react"
 import {
+  getCurrentUser,
+  getReportedWorkItemsByUserId,
+  getAssignedWorkItemsByUserId,
+} from "../api/user"
+import {
   getOrganizationById,
-  getProjectsByOrganizationId,
-  getUsersByOrganizationId,
   getWorkItemsByOrganizationId,
 } from "../api/organization"
-import type { OrganizationResponseDto } from "../types/organization"
-import type { ProjectSummaryDto } from "../types/project"
 import type { UserSummaryDto } from "../types/user"
+import type { OrganizationResponseDto } from "../types/organization"
 import type { WorkItemSummaryDto } from "../types/workItem"
 import type { ItemType } from "../types/enums"
 
@@ -52,39 +54,46 @@ function timeAgo(dateStr: string) {
 export default function OrgDashboard() {
   const navigate = useNavigate()
   const [org, setOrg] = useState<OrganizationResponseDto | null>(null)
-  const [projects, setProjects] = useState<ProjectSummaryDto[]>([])
-  const [members, setMembers] = useState<UserSummaryDto[]>([])
+  const [currentUser, setCurrentUser] = useState<UserSummaryDto | null>(null)
   const [workItems, setWorkItems] = useState<WorkItemSummaryDto[]>([])
   const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const orgId = Number(localStorage.getItem("selectedOrg"))
-    if(!orgId)  {
-      navigate("/select-org")
-      return
-    }
     
-    async function loadAll() {
-      try {
-        const [orgData, projectsData, membersData, workItemsData] = await Promise.all([
-          getOrganizationById(orgId),
-          getProjectsByOrganizationId(orgId),
-          getUsersByOrganizationId(orgId),
-          getWorkItemsByOrganizationId(orgId),
-        ])
-        setOrg(orgData)
-        setProjects(projectsData)
-        setMembers(membersData)
-        setWorkItems(workItemsData)
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setLoading(false)
+    useEffect(() => {
+      const orgId = Number(localStorage.getItem("selectedOrg"))
+      if (!orgId) {
+        navigate("/select-org");
+        return
       }
-    }
+      
+      async function loadAll() {
+        try {
+          const [orgData, user] = await Promise.all([
+            getOrganizationById(orgId),
+            getCurrentUser(),
+          ])
+          setCurrentUser(user)
+          setOrg(orgData)
 
-    loadAll()
-  }, [])
+          if (user.role === "ADMIN") {
+            const items = await getWorkItemsByOrganizationId(orgId)
+            setWorkItems(items)
+          } else {
+            const [reported, assigned] = await Promise.all([
+              getReportedWorkItemsByUserId(user.id),
+              getAssignedWorkItemsByUserId(user.id),
+            ])
+            const merged = [...(reported ?? []), ...(assigned ?? [])]
+              .filter((item, i, arr) => arr.findIndex((x) => x.id === item.id) === i)
+            setWorkItems(merged)
+          }
+        } catch (err) {
+          console.error(err)
+        } finally {
+          setLoading(false)
+        }
+      }
+      loadAll()
+    }, [])
 
   if(loading) {
     return (
@@ -107,7 +116,7 @@ export default function OrgDashboard() {
     </div>
   )
 
-  const recentItems = workItems.slice(0,4)
+  const recentItems = workItems.slice(0, 4)
 
   return (
     <div className="space-y-6">
@@ -161,9 +170,9 @@ export default function OrgDashboard() {
               <FolderKanban className="h-4 w-4" />
             </span>
           </div>
-          <div className="mt-4 text-4xl font-semibold text-slate-900">{projects.length}</div>
+          <div className="mt-4 text-4xl font-semibold text-slate-900">{org.projectCount}</div>
           <div className="mt-3 flex items-center gap-1 text-xs text-slate-400">
-            <span>View all</span>
+            <span>View yours</span>
             <ChevronRight className="h-3.5 w-3.5" />
           </div>
         </div>
@@ -176,9 +185,9 @@ export default function OrgDashboard() {
               <Users className="h-4 w-4" />
             </span>
           </div>
-          <div className="mt-4 text-4xl font-semibold text-slate-900">{org.teams?.length ?? 0}</div>
+          <div className="mt-4 text-4xl font-semibold text-slate-900">{org.teamCount}</div>
           <div className="mt-3 flex items-center gap-1 text-xs text-slate-400">
-            <span>View all</span>
+            <span>View yours</span>
             <ChevronRight className="h-3.5 w-3.5" />
           </div>
         </div>
@@ -190,7 +199,7 @@ export default function OrgDashboard() {
               <Building2 className="h-4 w-4" />
             </span>
           </div>
-          <div className="mt-4 text-4xl font-semibold text-slate-900">{members.length}</div>
+          <div className="mt-4 text-4xl font-semibold text-slate-900">{org.memberCount}</div>
         </div>
       </div>
 
@@ -199,7 +208,11 @@ export default function OrgDashboard() {
         <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Recent activity</h2>
-            <p className="text-sm text-slate-500 mt-0.5">Latest work items across the organization</p>
+            <p className="text-sm text-slate-500 mt-0.5">
+              {currentUser?.role === "ADMIN"
+                ? "Latest work items across the organization"
+                : "Latest work items across your projects"}
+            </p>
           </div>
           <button
             onClick={() => navigate("/org/projects")}

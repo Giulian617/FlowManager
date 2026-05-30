@@ -32,9 +32,9 @@ public class OrganizationController {
         return ResponseEntity.ok(organizationService.findAllTeamsByOrganizationId(organizationId));
     }
 
-    @PreAuthorize("@organizationSecurity.canView(authentication, #organizationId)")
+    @PreAuthorize("@organizationSecurity.canViewUsers(authentication, #organizationId)")
     @GetMapping("/{organizationId}/users")
-    public ResponseEntity<List<UserSummaryDto>> getAllUsersByOrganizationId(
+    public ResponseEntity<List<UserResponseDto>> getAllUsersByOrganizationId(
             @PathVariable Integer organizationId,
             @RequestParam(required = false) Role role
     ) {
@@ -57,7 +57,7 @@ public class OrganizationController {
         return ResponseEntity.ok(organizationService.findAllWorkItemsByOrganizationId(organizationId));
     }
 
-    @PreAuthorize("@organizationSecurity.canView(authentication, #organizationId)")
+    @PreAuthorize("@organizationSecurity.canViewUsers(authentication, #organizationId)")
     @GetMapping("/{organizationId}")
     public ResponseEntity<OrganizationResponseDto> getOrganizationById(
             @PathVariable Integer organizationId

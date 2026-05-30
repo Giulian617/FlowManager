@@ -87,6 +87,8 @@ public class SecurityConfig {
                         .requestMatchers("/users/**").hasRole("ADMIN")
 
                         .requestMatchers(HttpMethod.GET, "/organizations").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/organizations/*").hasRole("USER")
+                        .requestMatchers(HttpMethod.GET, "/organizations/*/users").hasRole("USER")
                         .requestMatchers(HttpMethod.GET, "/organizations/**").hasRole("MANAGER")
                         .requestMatchers("/organizations/**").hasRole("ADMIN")
 

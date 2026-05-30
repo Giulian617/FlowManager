@@ -143,6 +143,21 @@ public class KeycloakAdminService {
         assignRole(keycloakId, newRole);
     }
 
+    public void setUserEnabled(String keycloakId, boolean enabled) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(getAdminToken());
+
+        Map<String, Object> body = Map.of("enabled", enabled);
+
+        restTemplate.exchange(
+                keycloakUrl + "/admin/realms/" + realm + "/users/" + keycloakId,
+                HttpMethod.PUT,
+                new HttpEntity<>(body, headers),
+                Void.class
+        );
+    }
+
     public void deleteUser(String keycloakId) {
         String token = getAdminToken();
 

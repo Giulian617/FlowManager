@@ -20,7 +20,9 @@ import java.util.List;
         "industry",
         "createdAt",
         "manager",
-        "teams"
+        "teamCount",
+        "projectCount",
+        "memberCount"
 })
 public class OrganizationResponseDto {
     private Integer id;
@@ -29,5 +31,7 @@ public class OrganizationResponseDto {
     private String industry;
     private LocalDateTime createdAt;
     private UserSummaryDto manager;
-    private List<TeamSummaryOrganizationDto> teams;
+    private Integer teamCount;
+    private Integer projectCount;
+    private Integer memberCount;
 }

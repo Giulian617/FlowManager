@@ -47,36 +47,6 @@ public class OrganizationMapper {
                 manager.getRole()
         );
 
-        List<TeamSummaryOrganizationDto> teamsDto = new ArrayList<>();
-        if(organization.getTeams() != null) {
-            teamsDto = organization.getTeams()
-                    .stream()
-                    .map(team -> {
-                        List<UserSummaryDto> membersDto = team.getMembers() == null ? List.of() :
-                                team.getMembers()
-                                    .stream()
-                                    .map(member -> new UserSummaryDto(
-                                            member.getId(),
-                                            member.getUsername(),
-                                            member.getRole()
-                                    ))
-                                    .toList();
-                        return new TeamSummaryOrganizationDto(
-                                team.getId(),
-                                team.getName(),
-                                team.getDescription(),
-                                new UserSummaryDto(
-                                        team.getManager().getId(),
-                                        team.getManager().getUsername(),
-                                        team.getManager().getRole()
-                                ),
-                                team.getCreatedAt(),
-                                membersDto
-                        );
-                    })
-                    .toList();
-        }
-
         return OrganizationResponseDto.builder()
                 .id(organization.getId())
                 .name(organization.getName())
@@ -84,7 +54,9 @@ public class OrganizationMapper {
                 .industry(organization.getIndustry())
                 .createdAt(organization.getCreatedAt())
                 .manager(managerDto)
-                .teams(teamsDto)
+                .teamCount(organization.getTeams() == null ? 0 : organization.getTeams().size())
+                .projectCount(organization.getProjects() == null ? 0 : organization.getProjects().size())
+                .memberCount(organization.getMembers() == null ? 0 : organization.getMembers().size())
                 .build();
     }
 }

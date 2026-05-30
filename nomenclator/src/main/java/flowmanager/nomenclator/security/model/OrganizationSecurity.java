@@ -18,4 +18,13 @@ public class OrganizationSecurity {
         String currentUserId = Utils.getCurrentUserId(auth);
         return organizationRepository.existsByIdAndManagerKeycloakId(organizationId, currentUserId);
     }
+
+    public boolean canViewUsers(Authentication auth, Integer organizationId) {
+        if (Utils.isNotAuthenticated(auth)) return false;
+        if (Utils.isAdmin(auth)) return true;
+
+        String currentUserId = Utils.getCurrentUserId(auth);
+        return organizationRepository.existsByIdAndManagerKeycloakId(organizationId, currentUserId)
+                || organizationRepository.existsByIdAndMembersKeycloakId(organizationId, currentUserId);
+    }
 }

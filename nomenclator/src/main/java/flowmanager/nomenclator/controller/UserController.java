@@ -44,12 +44,21 @@ public class UserController {
     }
 
     @PreAuthorize("@userSecurity.canView(authentication, #userId)")
-    @GetMapping("/{userId}/projects")
+    @GetMapping("/{userId}/projects/manager")
     @ResponseBody
-    public ResponseEntity<List<ProjectSummaryDto>> getAllProjectsByUserId(
+    public ResponseEntity<List<ProjectResponseDto>> getAllManagedProjectsByUserId(
             @PathVariable Integer userId
     ) {
-        return ResponseEntity.ok(userService.findAllProjectsByUserId(userId));
+        return ResponseEntity.ok(userService.findAllManagedProjectsByUserId(userId));
+    }
+
+    @PreAuthorize("@userSecurity.canView(authentication, #userId)")
+    @GetMapping("/{userId}/projects/assignee")
+    @ResponseBody
+    public ResponseEntity<List<ProjectResponseDto>> getAllAssignedProjectsByUserId(
+            @PathVariable Integer userId
+    ) {
+        return ResponseEntity.ok(userService.findAllAssignedProjectsByUserId(userId));
     }
 
     @PreAuthorize("@userSecurity.canView(authentication, #userId)")
@@ -73,7 +82,7 @@ public class UserController {
     @PreAuthorize("@userSecurity.canView(authentication, #userId)")
     @GetMapping("/{userId}/teams/manager")
     @ResponseBody
-    public ResponseEntity<List<TeamSummaryUserDto>> getAllManagedTeamsByUserId(
+    public ResponseEntity<List<TeamResponseDto>> getAllManagedTeamsByUserId(
             @PathVariable Integer userId
     ) {
         return ResponseEntity.ok(userService.findAllManagedTeamsByUserId(userId));
@@ -82,7 +91,7 @@ public class UserController {
     @PreAuthorize("@userSecurity.canView(authentication, #userId)")
     @GetMapping("/{userId}/teams/assignee")
     @ResponseBody
-    public ResponseEntity<List<TeamSummaryUserDto>> getAllAssignedTeamsByUserId(
+    public ResponseEntity<List<TeamResponseDto>> getAllAssignedTeamsByUserId(
             @PathVariable Integer userId
     ) {
         return ResponseEntity.ok(userService.findAllAssignedTeamsByUserId(userId));

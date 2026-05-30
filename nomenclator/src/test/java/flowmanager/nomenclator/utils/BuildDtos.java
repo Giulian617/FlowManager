@@ -166,10 +166,9 @@ public final class BuildDtos {
                 .industry(organization.getIndustry())
                 .createdAt(organization.getCreatedAt())
                 .manager(buildUserSummaryDto(organization.getManager()))
-                .teams(organization.getTeams().stream()
-                        .map(BuildDtos::buildTeamSummaryOrganizationDto)
-                        .toList()
-                )
+                .teamCount(organization.getTeams() == null ? 0 : organization.getTeams().size())
+                .projectCount(organization.getProjects() == null ? 0 : organization.getProjects().size())
+                .memberCount(organization.getMembers() == null ? 0 : organization.getMembers().size())
                 .build();
     }
 

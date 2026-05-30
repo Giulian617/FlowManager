@@ -25,7 +25,7 @@ public class UserMapper {
                 .lastName(dto.getLastName())
                 .phoneNumber(dto.getPhoneNumber())
                 .role(dto.getRole() != null ? dto.getRole() : Role.USER)
-                .active(Boolean.FALSE)
+                .active(Boolean.TRUE)
                 .createdAt(LocalDateTime.now())
                 .build();
     }
@@ -36,6 +36,7 @@ public class UserMapper {
         Optional.ofNullable(dto.getFirstName()).ifPresent(user::setFirstName);
         Optional.ofNullable(dto.getLastName()).ifPresent(user::setLastName);
         Optional.ofNullable(dto.getPhoneNumber()).ifPresent(user::setPhoneNumber);
+        Optional.ofNullable(dto.getActive()).ifPresent(user::setActive);
         Optional.ofNullable(dto.getRole()).ifPresent(user::setRole);
     }
 

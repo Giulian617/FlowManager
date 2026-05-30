@@ -1,5 +1,5 @@
 import type { UserSummaryDto } from "./user"
-import type { TeamSummaryOrganizationDto } from "./team"
+import type { WorkItemSummaryDto } from "./workItem"
 
 export interface OrganizationCreateDto {
   name: string
@@ -28,5 +28,7 @@ export interface OrganizationResponseDto {
   industry: string
   createdAt: string
   manager: UserSummaryDto
-  teams: TeamSummaryOrganizationDto[]
+  teamCount: number
+  projectCount: number
+  memberCount: number
 }

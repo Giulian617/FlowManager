@@ -193,6 +193,7 @@ public class ProjectServiceTests {
         when(userRepository.findByKeycloakId(manager.getKeycloakId())).thenReturn(Optional.of(manager));
         when(projectMapper.toEntity(createDto, organization, manager)).thenReturn(project);
         when(teamRepository.findAllById(teamsIds)).thenReturn(teams);
+        teams.forEach(t -> when(teamRepository.save(t)).thenReturn(t));
         when(projectRepository.save(project)).thenReturn(savedProject);
         when(projectMapper.toResponseDto(savedProject)).thenReturn(responseDto);
 
@@ -200,6 +201,7 @@ public class ProjectServiceTests {
 
         assertEquals(responseDto, result);
         teams.forEach(t -> assertTrue(t.getProjects().contains(project)));
+        teams.forEach(t -> verify(teamRepository, times(1)).save(t));
         assertEquals(teams, project.getTeams());
         verify(organizationRepository, times(1)).findById(organization.getId());
         verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
@@ -243,6 +245,7 @@ public class ProjectServiceTests {
         when(userRepository.findByKeycloakId(manager.getKeycloakId())).thenReturn(Optional.of(manager));
         when(projectMapper.toEntity(createDto, organization, manager)).thenReturn(project);
         when(teamRepository.findAllById(teamsIds)).thenReturn(teams);
+        teams.forEach(t -> when(teamRepository.save(t)).thenReturn(t));
         when(projectRepository.save(project)).thenReturn(savedProject);
         when(projectMapper.toResponseDto(savedProject)).thenReturn(responseDto);
 
@@ -253,6 +256,7 @@ public class ProjectServiceTests {
                 .filter(p -> p.equals(project)).count());
         assertTrue(teams.get(1).getProjects().contains(project));
         assertEquals(teams, project.getTeams());
+        teams.forEach(t -> verify(teamRepository, times(1)).save(t));
         verify(organizationRepository, times(1)).findById(organization.getId());
         verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
         verify(projectMapper, times(1)).toEntity(createDto, organization, manager);
@@ -473,6 +477,9 @@ public class ProjectServiceTests {
         when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
         when(userRepository.findById(manager.getId())).thenReturn(Optional.of(manager));
         when(teamRepository.findAllById(newTeamIds)).thenReturn(List.of(retainedTeam, addedTeam));
+        when(teamRepository.save(retainedTeam)).thenReturn(retainedTeam);
+        when(teamRepository.save(removedTeam)).thenReturn(removedTeam);
+        when(teamRepository.save(addedTeam)).thenReturn(addedTeam);
         doNothing().when(projectMapper).updateEntityFromDto(updateDto, project, manager);
         when(projectRepository.save(project)).thenReturn(updatedProject);
         when(projectMapper.toResponseDto(updatedProject)).thenReturn(responseDto);
@@ -489,6 +496,9 @@ public class ProjectServiceTests {
         verify(projectRepository, times(1)).findById(project.getId());
         verify(userRepository, times(1)).findById(manager.getId());
         verify(teamRepository, times(1)).findAllById(newTeamIds);
+        verify(teamRepository, times(2)).save(retainedTeam);
+        verify(teamRepository, times(1)).save(removedTeam);
+        verify(teamRepository, times(1)).save(addedTeam);
         verify(projectMapper, times(1)).updateEntityFromDto(updateDto, project, manager);
         verify(projectRepository, times(1)).save(project);
         verify(projectMapper, times(1)).toResponseDto(updatedProject);
@@ -537,6 +547,9 @@ public class ProjectServiceTests {
 
         when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
         when(teamRepository.findAllById(newTeamIds)).thenReturn(List.of(retainedTeam, addedTeam));
+        when(teamRepository.save(retainedTeam)).thenReturn(retainedTeam);
+        when(teamRepository.save(removedTeam)).thenReturn(removedTeam);
+        when(teamRepository.save(addedTeam)).thenReturn(addedTeam);
         doNothing().when(projectMapper).updateEntityFromDto(updateDto, project, existingManager);
         when(projectRepository.save(project)).thenReturn(updatedProject);
         when(projectMapper.toResponseDto(updatedProject)).thenReturn(responseDto);
@@ -553,6 +566,9 @@ public class ProjectServiceTests {
         verify(projectRepository, times(1)).findById(project.getId());
         verify(userRepository, never()).findById(any());
         verify(teamRepository, times(1)).findAllById(newTeamIds);
+        verify(teamRepository, times(2)).save(retainedTeam);
+        verify(teamRepository, times(1)).save(removedTeam);
+        verify(teamRepository, times(1)).save(addedTeam);
         verify(projectMapper).updateEntityFromDto(updateDto, project, project.getManager());
         verify(projectRepository, times(1)).save(project);
         verify(projectMapper, times(1)).toResponseDto(updatedProject);
@@ -595,6 +611,7 @@ public class ProjectServiceTests {
         verify(projectRepository, times(1)).findById(project.getId());
         verify(userRepository, times(1)).findById(manager.getId());
         verify(teamRepository, never()).findAllById(any());
+        verify(teamRepository, never()).save(any());
         verify(projectRepository, times(1)).save(project);
         verify(projectMapper, times(1)).toResponseDto(updatedProject);
     }
@@ -637,6 +654,7 @@ public class ProjectServiceTests {
         verify(projectRepository, times(1)).findById(project.getId());
         verify(userRepository, times(1)).findById(manager.getId());
         verify(teamRepository, times(1)).findAllById(List.of());
+        verify(teamRepository, never()).save(any());
         verify(projectRepository, times(1)).save(project);
         verify(projectMapper, times(1)).toResponseDto(updatedProject);
     }

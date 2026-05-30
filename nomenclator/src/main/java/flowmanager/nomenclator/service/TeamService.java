@@ -153,6 +153,7 @@ public class TeamService {
         return teamMapper.toResponseDto(teamRepository.save(team));
     }
 
+    @Transactional
     public void deleteTeam(Integer teamId) {
         Team team = teamRepository.findById(teamId).orElse(null);
         if(team == null) {

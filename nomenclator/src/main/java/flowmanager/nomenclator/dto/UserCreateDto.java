@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -30,6 +32,8 @@ public class UserCreateDto {
     @NotBlank(message = "phoneNumber is required and cannot be blank")
     private String phoneNumber;
 
-    private Integer organizationId;
+    @NotBlank(message = "role is required and cannot be blank")
     private Role role;
+
+    private List<Integer> organizationIds;
 }

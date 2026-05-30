@@ -3,6 +3,8 @@ import { useNavigate } from "react-router"
 import { User, Calendar, Users, Search, X, Plus, Pencil, Trash2, ChevronDown, AlertCircle } from "lucide-react"
 import {
   getCurrentUser,
+  getManageddTeamsByUserId,
+  getAssignedTeamsByUserId,
 } from "../api/user"
 import {
   createTeam,
@@ -235,7 +237,6 @@ function ConfirmDeleteModal({ team, onConfirm, onClose }: {
   )
 }
 
-
 function TeamFormModal({ initial, currentUser, managers, users, orgId, onClose, onSave }: {
   initial?: TeamResponseDto
   currentUser: UserSummaryDto | null
@@ -405,18 +406,37 @@ export default function OrgTeams() {
 
     async function load() {
       try {
-        const [teamsData, user, managersData, regularUsersData] = await Promise.all([
-          getTeamsByOrganizationId(orgId),
-          getCurrentUser(),
-          getUsersByOrganizationId(orgId, "MANAGER"),
-          getUsersByOrganizationId(orgId, "USER"),
-        ])
-        setTeams(teamsData)
+        const user = await getCurrentUser()
         setCurrentUser(user)
-        setManagers(managersData)
-        setUsers([...(managersData ?? []), ...(regularUsersData ?? [])].filter(
-          (u, i, arr) => arr.findIndex(x => x.id === u.id) === i
-        ))
+
+        let teamsData: TeamResponseDto[] = []
+
+        if (user.role === "ADMIN") {
+          teamsData = await getTeamsByOrganizationId(orgId)
+        } else if (user.role === "MANAGER") {
+          const [managed, assigned] = await Promise.all([
+            getManageddTeamsByUserId(user.id),
+            getAssignedTeamsByUserId(user.id),
+          ])
+          teamsData = [...(managed ?? []), ...(assigned ?? [])].filter(
+            (t, i, arr) => arr.findIndex((x) => x.id === t.id) === i
+          )
+        } else {
+          teamsData = await getAssignedTeamsByUserId(user.id)
+        }
+
+        setTeams(teamsData)
+
+        if (user.role === "ADMIN" || user.role === "MANAGER") {
+          const [managersData, regularUsersData] = await Promise.all([
+            getUsersByOrganizationId(orgId, "MANAGER"),
+            getUsersByOrganizationId(orgId, "USER"),
+          ])
+          setManagers(managersData)
+          setUsers([...(managersData ?? []), ...(regularUsersData ?? [])].filter(
+            (u, i, arr) => arr.findIndex((x) => x.id === u.id) === i
+          ))
+        }
       } catch {
         setError("Failed to load teams.")
       } finally {
@@ -470,13 +490,15 @@ return (
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Teams</p>
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-semibold text-slate-900">Teams</h1>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-          >
-            <Plus className="h-4 w-4" />
-            New Team
-          </button>
+          {(currentUser?.role === "ADMIN" || currentUser?.role === "MANAGER") && (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              <Plus className="h-4 w-4" />
+              New Team
+            </button>
+          )}
         </div>
       </header>
 
@@ -504,27 +526,30 @@ return (
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((team) => (
+        {filtered.map((team) => {
+          const canModify = currentUser?.role === "ADMIN" || team.manager?.id === currentUser?.id
+          return (
             <div key={team.id} className="relative group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 duration-150 space-y-4">
+              {canModify && (
+                <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => setEditTeam(team)}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
+                    title="Edit"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget(team)}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-rose-100 bg-white text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
 
-              <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => setEditTeam(team)}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
-                  title="Edit"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  onClick={() => setDeleteTarget(team)}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-rose-100 bg-white text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
-                  title="Delete"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-
-              <div className="pr-14">
+              <div className={canModify ? "pr-14" : ""}>
                 <h2 className="text-base font-semibold text-slate-900">{team.name}</h2>
                 <p className="text-xs text-slate-500 mt-1 leading-relaxed">{team.description}</p>
               </div>
@@ -567,8 +592,9 @@ return (
                 )}
               </div>
             </div>
-          ))}
-        </div>
+          )
+        })}
+      </div>
       )}
 
       {showCreate && (

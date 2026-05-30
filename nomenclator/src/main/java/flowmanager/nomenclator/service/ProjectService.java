@@ -83,6 +83,7 @@ public class ProjectService {
                 if (!team.getProjects().contains(project)) {
                     team.getProjects().add(project);
                 }
+                teamRepository.save(team);
             });
             project.setTeams(teams);
         }
@@ -109,14 +110,15 @@ public class ProjectService {
                 if (!newTeams.contains(team)) {
                     team.getProjects().remove(project);
                 }
+                teamRepository.save(team);
             });
 
             newTeams.forEach(team -> {
                 if (!team.getProjects().contains(project)) {
                     team.getProjects().add(project);
                 }
+                teamRepository.save(team);
             });
-
             project.setTeams(newTeams);
         }
 

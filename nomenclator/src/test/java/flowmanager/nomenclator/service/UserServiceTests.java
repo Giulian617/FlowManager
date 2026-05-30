@@ -205,36 +205,102 @@ public class UserServiceTests {
     }
 
     @Test
-    void findAllProjectsByUserId_Valid() {
+    void findAllManagedProjectsByUserId_Valid() {
         User user = BuildInstances.buildUser();
         List<Project> projects = BuildInstances.buildProjects();
-        List<ProjectSummaryDto> projectsDto = projects.stream()
-                .map(BuildDtos::buildProjectSummaryDto)
+        List<ProjectResponseDto> projectsDto = projects.stream()
+                .map(BuildDtos::buildProjectResponseDto)
                 .toList();
         user.setProjects(projects);
 
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(projectMapper.toSummaryDto(projects.get(0))).thenReturn(projectsDto.get(0));
-        when(projectMapper.toSummaryDto(projects.get(1))).thenReturn(projectsDto.get(1));
+        when(projectMapper.toResponseDto(projects.get(0))).thenReturn(projectsDto.get(0));
+        when(projectMapper.toResponseDto(projects.get(1))).thenReturn(projectsDto.get(1));
 
-        List<ProjectSummaryDto> result = userService.findAllProjectsByUserId(1);
+        List<ProjectResponseDto> result = userService.findAllManagedProjectsByUserId(1);
 
         assertEquals(2, result.size());
         assertEquals(projectsDto.get(0), result.get(0));
         assertEquals(projectsDto.get(1), result.get(1));
         verify(userRepository, times(1)).findById(user.getId());
-        verify(projectMapper, times(1)).toSummaryDto(projects.get(0));
-        verify(projectMapper, times(1)).toSummaryDto(projects.get(1));
+        verify(projectMapper, times(1)).toResponseDto(projects.get(0));
+        verify(projectMapper, times(1)).toResponseDto(projects.get(1));
     }
 
     @Test
-    void testFindAllProjectsByUserId_UserNotFound() {
+    void testFindAllManagedProjectsByUserId_UserNotFound() {
         when(userRepository.findById(1)).thenReturn(Optional.empty());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> userService.findAllProjectsByUserId(1));
+                () -> userService.findAllManagedProjectsByUserId(1));
 
         assertEquals("User with id 1 not found", exception.getMessage());
+    }
+
+    @Test
+    void findAllAssignedProjectsByUserId_Valid() {
+        User user = BuildInstances.buildUser();
+        List<Project> projects = BuildInstances.buildProjects();
+        List<ProjectResponseDto> projectsDto = projects.stream()
+                .map(BuildDtos::buildProjectResponseDto)
+                .toList();
+
+        Team team = new Team();
+        team.setProjects(projects);
+        user.setAssignedTeams(List.of(team));
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(projectMapper.toResponseDto(projects.get(0))).thenReturn(projectsDto.get(0));
+        when(projectMapper.toResponseDto(projects.get(1))).thenReturn(projectsDto.get(1));
+
+        List<ProjectResponseDto> result = userService.findAllAssignedProjectsByUserId(user.getId());
+
+        assertEquals(2, result.size());
+        assertEquals(projectsDto.get(0), result.get(0));
+        assertEquals(projectsDto.get(1), result.get(1));
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(projectMapper, times(1)).toResponseDto(projects.get(0));
+        verify(projectMapper, times(1)).toResponseDto(projects.get(1));
+    }
+
+    @Test
+    void findAllAssignedProjects_UserNotFound() {
+        when(userRepository.findById(1)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> userService.findAllAssignedProjectsByUserId(1));
+
+        assertEquals("User with id 1 not found", exception.getMessage());
+    }
+
+    @Test
+    void findAllAssignedProjects_NoTeams() {
+        User user = BuildInstances.buildUser();
+        user.setAssignedTeams(List.of());
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+
+        List<ProjectResponseDto> result = userService.findAllAssignedProjectsByUserId(user.getId());
+
+        assertEquals(0, result.size());
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(projectMapper, never()).toResponseDto(any());
+    }
+
+    @Test
+    void findAllAssignedProjects_TeamWithNoProjects() {
+        User user = BuildInstances.buildUser();
+        Team team = new Team();
+        team.setProjects(List.of());
+        user.setAssignedTeams(List.of(team));
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+
+        List<ProjectResponseDto> result = userService.findAllAssignedProjectsByUserId(user.getId());
+
+        assertEquals(0, result.size());
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(projectMapper, never()).toResponseDto(any());
     }
 
     @Test
@@ -354,23 +420,23 @@ public class UserServiceTests {
     void testFindAllManagedTeamsByUserId_Valid() {
         User user = BuildInstances.buildUser();
         List<Team> teams = BuildInstances.buildTeams();
-        List<TeamSummaryUserDto> teamsDto = teams.stream()
-                .map(BuildDtos::buildTeamSummaryUserDto)
+        List<TeamResponseDto> teamsDto = teams.stream()
+                .map(BuildDtos::buildTeamResponseDto)
                 .toList();
         user.setManagedTeams(teams);
 
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(teamMapper.toSummaryUserDto(teams.get(0))).thenReturn(teamsDto.get(0));
-        when(teamMapper.toSummaryUserDto(teams.get(1))).thenReturn(teamsDto.get(1));
+        when(teamMapper.toResponseDto(teams.get(0))).thenReturn(teamsDto.get(0));
+        when(teamMapper.toResponseDto(teams.get(1))).thenReturn(teamsDto.get(1));
 
-        List<TeamSummaryUserDto> result = userService.findAllManagedTeamsByUserId(1);
+        List<TeamResponseDto> result = userService.findAllManagedTeamsByUserId(1);
 
         assertEquals(2, result.size());
         assertEquals(teamsDto.get(0), result.get(0));
         assertEquals(teamsDto.get(1), result.get(1));
         verify(userRepository, times(1)).findById(user.getId());
-        verify(teamMapper, times(1)).toSummaryUserDto(teams.get(0));
-        verify(teamMapper, times(1)).toSummaryUserDto(teams.get(1));
+        verify(teamMapper, times(1)).toResponseDto(teams.get(0));
+        verify(teamMapper, times(1)).toResponseDto(teams.get(1));
     }
 
     @Test
@@ -387,23 +453,23 @@ public class UserServiceTests {
     void testFindAllAssignedTeamsByUserId_Valid() {
         User user = BuildInstances.buildUser();
         List<Team> teams = BuildInstances.buildTeams();
-        List<TeamSummaryUserDto> teamsDto = teams.stream()
-                .map(BuildDtos::buildTeamSummaryUserDto)
+        List<TeamResponseDto> teamsDto = teams.stream()
+                .map(BuildDtos::buildTeamResponseDto)
                 .toList();
         user.setAssignedTeams(teams);
 
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(teamMapper.toSummaryUserDto(teams.get(0))).thenReturn(teamsDto.get(0));
-        when(teamMapper.toSummaryUserDto(teams.get(1))).thenReturn(teamsDto.get(1));
+        when(teamMapper.toResponseDto(teams.get(0))).thenReturn(teamsDto.get(0));
+        when(teamMapper.toResponseDto(teams.get(1))).thenReturn(teamsDto.get(1));
 
-        List<TeamSummaryUserDto> result = userService.findAllAssignedTeamsByUserId(1);
+        List<TeamResponseDto> result = userService.findAllAssignedTeamsByUserId(1);
 
         assertEquals(2, result.size());
         assertEquals(teamsDto.get(0), result.get(0));
         assertEquals(teamsDto.get(1), result.get(1));
         verify(userRepository, times(1)).findById(user.getId());
-        verify(teamMapper, times(1)).toSummaryUserDto(teams.get(0));
-        verify(teamMapper, times(1)).toSummaryUserDto(teams.get(1));
+        verify(teamMapper, times(1)).toResponseDto(teams.get(0));
+        verify(teamMapper, times(1)).toResponseDto(teams.get(1));
     }
 
     @Test
@@ -518,7 +584,7 @@ public class UserServiceTests {
                 .firstName("Example")
                 .lastName("User")
                 .phoneNumber("+407777777777")
-                .active(false)
+                .active(true)
                 .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
                 .build();
         User savedUser = BuildInstances.buildUser();
@@ -529,7 +595,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
-                null,
+                Role.USER,
                 null
         );
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(savedUser);
@@ -553,6 +619,7 @@ public class UserServiceTests {
         verify(userRepository, times(1)).existsByKeycloakId(user.getKeycloakId());
         verify(keycloakAdminService, times(1)).assignRole(keycloakId, Role.USER);
         verify(userMapper, times(1)).toEntity(createDto, keycloakId);
+        verify(organizationRepository, never()).save(any());
         verify(userRepository, times(1)).save(user);
         verify(userMapper, times(1)).toResponseDto(savedUser);
     }
@@ -568,7 +635,7 @@ public class UserServiceTests {
                 .lastName("User")
                 .phoneNumber("+407777777777")
                 .role(Role.MANAGER)
-                .active(false)
+                .active(true)
                 .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
                 .build();
         User savedUser = BuildInstances.buildUser();
@@ -579,8 +646,8 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
-                null,
-                Role.MANAGER
+                Role.MANAGER,
+                null
         );
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(savedUser);
 
@@ -602,6 +669,7 @@ public class UserServiceTests {
         verify(userRepository, times(1)).existsByKeycloakId(user.getKeycloakId());
         verify(keycloakAdminService, times(1)).assignRole(keycloakId, Role.MANAGER);
         verify(userMapper, times(1)).toEntity(createDto, keycloakId);
+        verify(organizationRepository, never()).save(any());
         verify(userRepository, times(1)).save(user);
         verify(userMapper, times(1)).toResponseDto(savedUser);
     }
@@ -617,7 +685,7 @@ public class UserServiceTests {
                 .firstName("Example")
                 .lastName("User")
                 .phoneNumber("+407777777777")
-                .active(false)
+                .active(true)
                 .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
                 .memberOrganizations(new ArrayList<>())
                 .build();
@@ -629,8 +697,8 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
-                organization.getId(),
-                null
+                Role.USER,
+                List.of(organization.getId())
         );
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(savedUser);
 
@@ -640,7 +708,8 @@ public class UserServiceTests {
         when(userRepository.existsByKeycloakId(keycloakId)).thenReturn(false);
         doNothing().when(keycloakAdminService).assignRole(keycloakId, Role.USER);
         when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
-        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        when(organizationRepository.findAllById(List.of(organization.getId()))).thenReturn(List.of(organization));
+        when(organizationRepository.save(organization)).thenReturn(organization);
         when(userRepository.save(user)).thenReturn(savedUser);
         when(userMapper.toResponseDto(savedUser)).thenReturn(responseDto);
 
@@ -654,7 +723,8 @@ public class UserServiceTests {
         verify(userRepository, times(1)).existsByKeycloakId(user.getKeycloakId());
         verify(keycloakAdminService, times(1)).assignRole(keycloakId, Role.USER);
         verify(userMapper, times(1)).toEntity(createDto, keycloakId);
-        verify(organizationRepository, times(1)).findById(organization.getId());
+        verify(organizationRepository, times(1)).findAllById(List.of(organization.getId()));
+        verify(organizationRepository, times(1)).save(organization);
         verify(userRepository, times(1)).save(user);
         verify(userMapper, times(1)).toResponseDto(savedUser);
     }
@@ -673,7 +743,7 @@ public class UserServiceTests {
                 .firstName("Example")
                 .lastName("User")
                 .phoneNumber("+407777777777")
-                .active(false)
+                .active(true)
                 .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
                 .memberOrganizations(new ArrayList<>(List.of(organization)))
                 .build();
@@ -687,8 +757,8 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
-                organization.getId(),
-                null
+                Role.USER,
+                List.of(organization.getId())
         );
 
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(savedUser);
@@ -699,7 +769,8 @@ public class UserServiceTests {
         when(userRepository.existsByKeycloakId(keycloakId)).thenReturn(false);
         doNothing().when(keycloakAdminService).assignRole(keycloakId, Role.USER);
         when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
-        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        when(organizationRepository.findAllById(List.of(organization.getId()))).thenReturn(List.of(organization));
+        when(organizationRepository.save(organization)).thenReturn(organization);
         when(userRepository.save(user)).thenReturn(savedUser);
         when(userMapper.toResponseDto(savedUser)).thenReturn(responseDto);
 
@@ -713,7 +784,121 @@ public class UserServiceTests {
         verify(userRepository, times(1)).existsByKeycloakId(user.getKeycloakId());
         verify(keycloakAdminService, times(1)).assignRole(keycloakId, Role.USER);
         verify(userMapper, times(1)).toEntity(createDto, keycloakId);
-        verify(organizationRepository, times(1)).findById(organization.getId());
+        verify(organizationRepository, times(1)).findAllById(List.of(organization.getId()));
+        verify(organizationRepository, times(1)).save(organization);
+        verify(userRepository, times(1)).save(user);
+        verify(userMapper, times(1)).toResponseDto(savedUser);
+    }
+
+    @Test
+    void testCreateUser_WithEmptyOrganizationsList() {
+        String keycloakId = "keycloak-uuid-1";
+
+        User user = User.builder()
+                .keycloakId(keycloakId)
+                .email("user1@example.com")
+                .username("User1")
+                .firstName("Example")
+                .lastName("User")
+                .phoneNumber("+407777777777")
+                .active(true)
+                .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
+                .memberOrganizations(new ArrayList<>())
+                .build();
+        User savedUser = BuildInstances.buildUser();
+        UserCreateDto createDto = new UserCreateDto(
+                "user1@example.com",
+                "password",
+                "User1",
+                "Example",
+                "User",
+                "+407777777777",
+                Role.USER,
+                List.of()
+        );
+        UserResponseDto responseDto = BuildDtos.buildUserResponseDto(savedUser);
+
+        when(userRepository.existsByEmail(createDto.getEmail())).thenReturn(false);
+        when(userRepository.existsByUsername(createDto.getUsername())).thenReturn(false);
+        when(keycloakAdminService.createUser(createDto)).thenReturn(keycloakId);
+        when(userRepository.existsByKeycloakId(keycloakId)).thenReturn(false);
+        doNothing().when(keycloakAdminService).assignRole(keycloakId, Role.USER);
+        when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
+        when(userRepository.save(user)).thenReturn(savedUser);
+        when(userMapper.toResponseDto(savedUser)).thenReturn(responseDto);
+        UserResponseDto result = userService.createUser(createDto);
+
+        assertEquals(responseDto, result);
+
+        verify(userRepository, times(1)).existsByEmail(user.getEmail());
+        verify(userRepository, times(1)).existsByUsername(user.getUsername());
+        verify(keycloakAdminService, times(1)).createUser(createDto);
+        verify(userRepository, times(1)).existsByKeycloakId(user.getKeycloakId());
+        verify(keycloakAdminService, times(1)).assignRole(keycloakId, Role.USER);
+        verify(userMapper, times(1)).toEntity(createDto, keycloakId);
+        verify(organizationRepository, never()).findAllById(any());
+        verify(organizationRepository, never()).save(any());
+        verify(userRepository, times(1)).save(user);
+        verify(userMapper, times(1)).toResponseDto(savedUser);
+
+    }
+
+    @Test
+    void testCreateUser_OrganizationAlreadyContainsUser() {
+        String keycloakId = "keycloak-uuid-1";
+
+        User user = User.builder()
+                .keycloakId(keycloakId)
+                .email("user1@example.com")
+                .username("User1")
+                .firstName("Example")
+                .lastName("User")
+                .phoneNumber("+407777777777")
+                .active(true)
+                .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
+                .memberOrganizations(new ArrayList<>())
+                .build();
+
+        Organization organization = BuildInstances.buildOrganization();
+        organization.setMembers(new ArrayList<>(List.of(user)));
+
+        User savedUser = BuildInstances.buildUser();
+        UserCreateDto createDto = new UserCreateDto(
+                "user1@example.com",
+                "password",
+                "User1",
+                "Example",
+                "User",
+                "+407777777777",
+                Role.USER,
+                List.of(organization.getId())
+        );
+        UserResponseDto responseDto = BuildDtos.buildUserResponseDto(savedUser);
+
+        when(userRepository.existsByEmail(createDto.getEmail())).thenReturn(false);
+        when(userRepository.existsByUsername(createDto.getUsername())).thenReturn(false);
+        when(keycloakAdminService.createUser(createDto)).thenReturn(keycloakId);
+        when(userRepository.existsByKeycloakId(keycloakId)).thenReturn(false);
+        doNothing().when(keycloakAdminService).assignRole(keycloakId, Role.USER);
+        when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
+        when(organizationRepository.findAllById(List.of(organization.getId()))).thenReturn(List.of(organization));
+        when(organizationRepository.save(organization)).thenReturn(organization);
+        when(userRepository.save(user)).thenReturn(savedUser);
+        when(userMapper.toResponseDto(savedUser)).thenReturn(responseDto);
+
+        UserResponseDto result = userService.createUser(createDto);
+
+        assertEquals(responseDto, result);
+        assertEquals(1, organization.getMembers().size());
+
+        verify(userRepository, times(1)).existsByEmail(user.getEmail());
+        verify(userRepository, times(1)).existsByUsername(user.getUsername());
+        verify(keycloakAdminService, times(1)).createUser(createDto);
+        verify(userRepository, times(1)).existsByKeycloakId(user.getKeycloakId());
+        verify(keycloakAdminService, times(1)).assignRole(keycloakId, Role.USER);
+        verify(userMapper, times(1)).toEntity(createDto, keycloakId);
+        verify(organizationRepository, times(1)).findAllById(List.of(organization.getId()));
+        verify(organizationRepository, times(1)).save(organization);
         verify(userRepository, times(1)).save(user);
         verify(userMapper, times(1)).toResponseDto(savedUser);
     }
@@ -727,7 +912,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
-                null,
+                Role.USER,
                 null
         );
 
@@ -749,7 +934,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
-                null,
+                Role.USER,
                 null
         );
 
@@ -773,7 +958,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
-                null,
+                Role.USER,
                 null
         );
 
@@ -799,7 +984,7 @@ public class UserServiceTests {
                 .firstName("Example")
                 .lastName("User")
                 .phoneNumber("+407777777777")
-                .active(false)
+                .active(true)
                 .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
                 .memberOrganizations(new ArrayList<>())
                 .build();
@@ -810,8 +995,8 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
-                1,
-                null
+                Role.USER,
+                List.of(1)
         );
 
         when(userRepository.existsByEmail(createDto.getEmail())).thenReturn(false);
@@ -820,13 +1005,14 @@ public class UserServiceTests {
         when(userRepository.existsByKeycloakId(keycloakId)).thenReturn(false);
         doNothing().when(keycloakAdminService).assignRole(keycloakId, Role.USER);
         when(userMapper.toEntity(createDto, keycloakId)).thenReturn(user);
-        when(organizationRepository.findById(1)).thenReturn(Optional.empty());
+        when(organizationRepository.findAllById(List.of(1))).thenReturn(List.of());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> userService.createUser(createDto));
 
-        assertEquals("Organization with id 1 not found", exception.getMessage());
+        assertEquals("One or more organizations were not found", exception.getMessage());
         verify(keycloakAdminService, times(1)).deleteUser(keycloakId);
+        verify(organizationRepository, never()).saveAll(any());
         verify(userRepository, never()).save(any());
     }
 
@@ -840,7 +1026,7 @@ public class UserServiceTests {
                 .firstName("Example")
                 .lastName("User")
                 .phoneNumber("+407777777777")
-                .active(false)
+                .active(true)
                 .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
                 .build();
         UserUpdateDto updateDto = new UserUpdateDto(
@@ -849,6 +1035,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
+                null,
                 null,
                 null
         );
@@ -869,6 +1056,8 @@ public class UserServiceTests {
         verify(userRepository, times(1)).existsByUsername(updatedUser.getUsername());
         verify(keycloakAdminService, never()).updateUserRole(any(), any());
         verify(userMapper, times(1)).updateEntityFromDto(updateDto, user);
+        verify(keycloakAdminService, never()).setUserEnabled(any(), anyBoolean());
+        verify(organizationRepository, never()).save(any());
         verify(userRepository, times(1)).save(user);
         verify(userMapper, times(1)).toResponseDto(updatedUser);
     }
@@ -884,7 +1073,7 @@ public class UserServiceTests {
                 .lastName("User")
                 .phoneNumber("+407777777777")
                 .role(Role.MANAGER)
-                .active(false)
+                .active(true)
                 .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
                 .build();
         UserUpdateDto updateDto = new UserUpdateDto(
@@ -894,7 +1083,8 @@ public class UserServiceTests {
                 "User",
                 "+407777777777",
                 null,
-                Role.MANAGER
+                Role.MANAGER,
+                null
         );
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(updatedUser);
 
@@ -912,6 +1102,8 @@ public class UserServiceTests {
         verify(userRepository, never()).existsByUsername(any());
         verify(keycloakAdminService, times(1)).updateUserRole(user.getKeycloakId(), Role.MANAGER);
         verify(userMapper, times(1)).updateEntityFromDto(updateDto, user);
+        verify(keycloakAdminService, never()).setUserEnabled(any(), anyBoolean());
+        verify(organizationRepository, never()).save(any());
         verify(userRepository, times(1)).save(user);
         verify(userMapper, times(1)).toResponseDto(updatedUser);
     }
@@ -928,14 +1120,16 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
-                organization.getId(),
-                null
+                null,
+                null,
+                List.of(organization.getId())
         );
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(updatedUser);
 
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
         doNothing().when(userMapper).updateEntityFromDto(updateDto, user);
+        when(organizationRepository.findAllById(List.of(organization.getId()))).thenReturn(List.of(organization));
+        when(organizationRepository.saveAll(any())).thenReturn(List.of(organization));
         when(userRepository.save(user)).thenReturn(updatedUser);
         when(userMapper.toResponseDto(updatedUser)).thenReturn(responseDto);
 
@@ -948,7 +1142,9 @@ public class UserServiceTests {
         verify(userRepository, never()).existsByUsername(any());
         verify(keycloakAdminService, never()).updateUserRole(any(), any());
         verify(userMapper, times(1)).updateEntityFromDto(updateDto, user);
-        verify(organizationRepository, times(1)).findById(organization.getId());
+        verify(keycloakAdminService, never()).setUserEnabled(any(), anyBoolean());
+        verify(organizationRepository, times(1)).findAllById(List.of(organization.getId()));
+        verify(organizationRepository, times(2)).saveAll(any());
         verify(userRepository, times(1)).save(user);
         verify(userMapper, times(1)).toResponseDto(updatedUser);
     }
@@ -967,14 +1163,16 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
-                organization.getId(),
-                null
+                null,
+                null,
+                List.of(organization.getId())
         );
         UserResponseDto responseDto = BuildDtos.buildUserResponseDto(updatedUser);
 
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
         doNothing().when(userMapper).updateEntityFromDto(updateDto, user);
+        when(organizationRepository.findAllById(List.of(organization.getId()))).thenReturn(List.of(organization));
+        when(organizationRepository.saveAll(any())).thenReturn(List.of(organization));
         when(userRepository.save(user)).thenReturn(updatedUser);
         when(userMapper.toResponseDto(updatedUser)).thenReturn(responseDto);
 
@@ -984,7 +1182,94 @@ public class UserServiceTests {
         assertEquals(1, user.getMemberOrganizations().size());
         assertEquals(1, organization.getMembers().size());
         verify(userRepository, times(1)).findById(user.getId());
-        verify(organizationRepository, times(1)).findById(organization.getId());
+        verify(keycloakAdminService, never()).setUserEnabled(any(), anyBoolean());
+        verify(organizationRepository, times(1)).findAllById(List.of(organization.getId()));
+        verify(organizationRepository, times(2)).saveAll(any());
+        verify(userRepository, times(1)).save(user);
+        verify(userMapper, times(1)).toResponseDto(updatedUser);
+    }
+
+    @Test
+    void testUpdateUser_ActiveFalse() {
+        User user = BuildInstances.buildUser();
+        User updatedUser = User.builder()
+                .id(1)
+                .email(user.getEmail())
+                .username(user.getUsername())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .phoneNumber(user.getPhoneNumber())
+                .active(true)
+                .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
+                .build();
+        UserUpdateDto updateDto = new UserUpdateDto(
+                null,
+                null,
+                user.getFirstName(),
+                user.getLastName(),
+                user.getPhoneNumber(),
+                false,
+                null,
+                null
+        );
+        UserResponseDto responseDto = BuildDtos.buildUserResponseDto(updatedUser);
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        doNothing().when(keycloakAdminService).setUserEnabled(user.getKeycloakId(), false);
+        doNothing().when(userMapper).updateEntityFromDto(updateDto, user);
+        when(userRepository.save(user)).thenReturn(updatedUser);
+        when(userMapper.toResponseDto(updatedUser)).thenReturn(responseDto);
+
+        UserResponseDto result = userService.updateUser(user.getId(), updateDto);
+
+        assertEquals(responseDto, result);
+        verify(keycloakAdminService, times(1)).setUserEnabled(user.getKeycloakId(), false);
+        verify(keycloakAdminService, never()).updateUserRole(any(), any());
+        verify(userMapper, times(1)).updateEntityFromDto(updateDto, user);
+        verify(organizationRepository, never()).save(any());
+        verify(userRepository, times(1)).save(user);
+        verify(userMapper, times(1)).toResponseDto(updatedUser);
+    }
+
+    @Test
+    void testUpdateUser_ActiveTrue() {
+        User user = BuildInstances.buildUser();
+        user.setActive(false);
+        User updatedUser = User.builder()
+                .id(1)
+                .email(user.getEmail())
+                .username(user.getUsername())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .phoneNumber(user.getPhoneNumber())
+                .active(true)
+                .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
+                .build();
+        UserUpdateDto updateDto = new UserUpdateDto(
+                null,
+                null,
+                user.getFirstName(),
+                user.getLastName(),
+                user.getPhoneNumber(),
+                true,
+                null,
+                null
+        );
+        UserResponseDto responseDto = BuildDtos.buildUserResponseDto(updatedUser);
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        doNothing().when(keycloakAdminService).setUserEnabled(user.getKeycloakId(), true);
+        doNothing().when(userMapper).updateEntityFromDto(updateDto, user);
+        when(userRepository.save(user)).thenReturn(updatedUser);
+        when(userMapper.toResponseDto(updatedUser)).thenReturn(responseDto);
+
+        UserResponseDto result = userService.updateUser(user.getId(), updateDto);
+
+        assertEquals(responseDto, result);
+        verify(keycloakAdminService, times(1)).setUserEnabled(user.getKeycloakId(), true);
+        verify(keycloakAdminService, never()).updateUserRole(any(), any());
+        verify(userMapper, times(1)).updateEntityFromDto(updateDto, user);
+        verify(organizationRepository, never()).save(any());
         verify(userRepository, times(1)).save(user);
         verify(userMapper, times(1)).toResponseDto(updatedUser);
     }
@@ -999,7 +1284,7 @@ public class UserServiceTests {
                 .firstName("Example")
                 .lastName("User")
                 .phoneNumber("+407777777777")
-                .active(false)
+                .active(true)
                 .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
                 .build();
         UserUpdateDto updateDto = new UserUpdateDto(
@@ -1008,6 +1293,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
+                null,
                 null,
                 null
         );
@@ -1026,6 +1312,8 @@ public class UserServiceTests {
         verify(userRepository, never()).existsByUsername(updatedUser.getUsername());
         verify(keycloakAdminService, never()).updateUserRole(any(), any());
         verify(userMapper, times(1)).updateEntityFromDto(updateDto, user);
+        verify(keycloakAdminService, never()).setUserEnabled(any(), anyBoolean());
+        verify(organizationRepository, never()).save(any());
         verify(userRepository, times(1)).save(user);
         verify(userMapper, times(1)).toResponseDto(updatedUser);
     }
@@ -1040,7 +1328,7 @@ public class UserServiceTests {
                 .firstName("Example")
                 .lastName("User")
                 .phoneNumber("+407777777777")
-                .active(false)
+                .active(true)
                 .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
                 .build();
         UserUpdateDto updateDto = new UserUpdateDto(
@@ -1049,6 +1337,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
+                null,
                 null,
                 null
         );
@@ -1068,31 +1357,40 @@ public class UserServiceTests {
         verify(userRepository, never()).existsByUsername(any());
         verify(keycloakAdminService, never()).updateUserRole(any(), any());
         verify(userMapper, times(1)).updateEntityFromDto(updateDto, user);
+        verify(keycloakAdminService, never()).setUserEnabled(any(), anyBoolean());
+        verify(organizationRepository, never()).save(any());
         verify(userRepository, times(1)).save(user);
         verify(userMapper, times(1)).toResponseDto(updatedUser);
     }
 
     @Test
-    void testUpdateUser_OrganizationNotFound() {
+    void testUpdateUser_OrganizationsNotFound() {
         User user = BuildInstances.buildUser();
-        user.setMemberOrganizations(new ArrayList<>());
+
+        List<Integer> organizationIds = List.of(1, 2);
+
         UserUpdateDto updateDto = new UserUpdateDto(
                 null,
                 null,
                 "Example",
                 "User",
                 "+407777777777",
-                1,
-                null
+                null,
+                null,
+                organizationIds
         );
 
+        Organization organization = BuildInstances.buildOrganization();
+
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(organizationRepository.findById(1)).thenReturn(Optional.empty());
+        when(organizationRepository.findAllById(organizationIds))
+                .thenReturn(List.of(organization));
 
         NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> userService.updateUser(user.getId(), updateDto));
 
-        assertEquals("Organization with id 1 not found", exception.getMessage());
+        assertEquals("One or more organizations were not found", exception.getMessage());
+        verify(organizationRepository, times(1)).saveAll(user.getMemberOrganizations());
         verify(userRepository, never()).save(any());
     }
 
@@ -1104,6 +1402,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
+                null,
                 null,
                 null
         );
@@ -1126,6 +1425,7 @@ public class UserServiceTests {
                 "User",
                 "+407777777777",
                 null,
+                null,
                 null
         );
 
@@ -1147,6 +1447,7 @@ public class UserServiceTests {
                 "Example",
                 "User",
                 "+407777777777",
+                null,
                 null,
                 null
         );
