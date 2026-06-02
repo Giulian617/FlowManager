@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react"
 import { useNavigate } from "react-router"
-import { statusMeta } from "../src/status"
+import { statusMeta } from "../utils/status"
 import { Bug, CheckSquare, Zap, BookOpen, X, ArrowUp, ArrowDown } from "lucide-react"
 
 const CURRENT_USER_ID = "user-1"
@@ -176,7 +176,7 @@ function KanbanColumn({ col, items, draggingId, isOver, onDragStart, onDragOver,
           <span className="text-xs font-medium text-slate-500">{items.length}</span>
         </div>
       </div>
-      <div className={`flex flex-col gap-3 p-4 min-h-[220px] rounded-b-3xl transition-colors duration-150 ${isOver ? "bg-slate-100" : "bg-slate-50"}`}>
+      <div className={`flex flex-col gap-3 p-4 min-h-55 rounded-b-3xl transition-colors duration-150 ${isOver ? "bg-slate-100" : "bg-slate-50"}`}>
         {items.map((item) => (
           <KanbanCard key={item.id} item={item} isDragging={draggingId === item.id} onDragStart={onDragStart} onClick={onCardClick} />
         ))}

@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react"
-import { useKeycloak } from "@react-keycloak/web"
 import { useLocation, useNavigate } from "react-router"
 import { Search, Bell, Settings, X, Check, Info, AlertTriangle, ChevronRight, User, Moon, Sun, Monitor, Shield, LogOut, Bug, BookOpen, Zap, CheckSquare } from "lucide-react"
 import { logout } from "../api/auth"
+import { useTheme } from "../context/ThemeContext"
 
 const MOCK_WORK_ITEMS = [
   { id: "5", projectId: "1", type: "Bug", title: "Implement attachment feature", status: "To Do" },
@@ -161,7 +161,7 @@ function NotificationsPopup({ onClose, notifications, setNotifications }: {
 function SettingsPopup({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const [theme, setTheme] = useState<"light" | "dark" | "system">("light")
+  const { theme, setTheme } = useTheme()
 
   return (
     <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden">
@@ -190,8 +190,7 @@ function SettingsPopup({ onClose }: { onClose: () => void }) {
       </div>
       <button
         onClick={() => {
-          const inOrg = location.pathname.startsWith("/org")
-          navigate(inOrg ? "/org/settings" : "/settings")
+          navigate("/settings")
           onClose()
         }}
         className="flex w-full items-center justify-between px-4 py-3 hover:bg-slate-50 transition"
@@ -207,7 +206,6 @@ function SettingsPopup({ onClose }: { onClose: () => void }) {
 }
 
 export default function TopBar() {
-  const { keycloak, initialized } = useKeycloak()
   const navigate = useNavigate()
 
   const [search, setSearch] = useState("")
@@ -240,9 +238,7 @@ export default function TopBar() {
     return () => document.removeEventListener("mousedown", h)
   }, [])
 
-  const userName = initialized && keycloak?.authenticated
-    ? keycloak.tokenParsed?.name || keycloak.tokenParsed?.preferred_username || "User"
-    : "Guest"
+  const userName = "Mihai Pop"
   const initials = userName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()
   const unreadCount = notifications.filter((n) => !n.read).length
 
@@ -315,13 +311,13 @@ export default function TopBar() {
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-100 text-blue-900 border border-blue-200 text-xs font-semibold">
               {initials}
             </span>
-            <span className="truncate max-w-[100px] text-left text-sm text-slate-900">{userName}</span>
+            <span className="truncate max-w-25 text-left text-sm text-slate-900">{userName}</span>
           </button>
           {profileMenuOpen && (
             <div className="absolute right-0 z-20 mt-2 w-48 rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-100">
                 <p className="text-sm font-semibold text-slate-900 truncate">{userName}</p>
-                <p className="text-xs text-slate-400 truncate">{keycloak?.tokenParsed?.email ?? "user@example.com"}</p>
+                <p className="text-xs text-slate-400 truncate">mihai.pop@example.com</p>
               </div>
               <button
                 onClick={() => {

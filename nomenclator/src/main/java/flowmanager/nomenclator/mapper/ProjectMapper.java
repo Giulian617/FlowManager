@@ -38,11 +38,20 @@ public class ProjectMapper {
     }
 
     public ProjectSummaryDto toSummaryDto(Project project) {
+        Organization organization = project.getOrganization();
+        OrganizationSummaryDto organizationSummaryDto = OrganizationSummaryDto.builder()
+                .id(organization.getId())
+                .name(organization.getName())
+                .description(organization.getDescription())
+                .build();
+
         return ProjectSummaryDto.builder()
                 .id(project.getId())
                 .name(project.getName())
                 .description(project.getDescription())
+                .endDate(project.getEndDate())
                 .itemCount(project.getWorkItems().size())
+                .teamCount(project.getTeams().size())
                 .memberCount((int) Stream.concat(
                                 Stream.concat(
                                         project.getTeams().stream().flatMap(team -> team.getMembers().stream()),
@@ -53,6 +62,7 @@ public class ProjectMapper {
                         .map(User::getId)
                         .distinct()
                         .count())
+                .organization(organizationSummaryDto)
                 .build();
     }
 

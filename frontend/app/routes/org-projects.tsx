@@ -485,7 +485,7 @@ export default function Projects() {
   const handleSelect = (project: ProjectResponseDto) => {
     localStorage.setItem("selectedProject", String(project.id))
     localStorage.setItem("selectedProjectName", project.name)
-    navigate("/dashboard")
+    navigate("/project/dashboard")
   }
 
   const filtered = projects.filter((p) => {

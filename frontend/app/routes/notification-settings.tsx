@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import { useState } from "react"
 import { Mail, Smartphone, Globe, ChevronDown } from "lucide-react"
 
 const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
@@ -6,7 +6,7 @@ const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
     onClick={(e) => { e.stopPropagation(); onChange(!value) }}
     className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${value ? "bg-slate-900" : "bg-slate-200"}`}
   >
-    <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${value ? "translate-x-[18px]" : "translate-x-0.5"}`} />
+    <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${value ? "translate-x-4.5" : "translate-x-0.5"}`} />
   </button>
 )
 
@@ -37,35 +37,31 @@ export default function Settings() {
   const [notifPush, setNotifPush] = useState(true)
   const [notifWeb, setNotifWeb] = useState(true)
   const [expandedChannel, setExpandedChannel] = useState<string | null>(null)
-
   const [emailSettings, setEmailSettings] = useState({ ...defaultTriggers })
   const [pushSettings, setPushSettings] = useState({ ...defaultTriggers })
   const [webSettings, setWebSettings] = useState({ ...defaultTriggers })
+  const [saved, setSaved] = useState(false)
 
   const channels = [
     { Icon: Mail, label: "Email notifications", enabled: notifEmail, setEnabled: setNotifEmail, settings: emailSettings, setSettings: setEmailSettings },
     { Icon: Smartphone, label: "Push notifications", enabled: notifPush, setEnabled: setNotifPush, settings: pushSettings, setSettings: setPushSettings },
     { Icon: Globe, label: "Web notifications", enabled: notifWeb, setEnabled: setNotifWeb, settings: webSettings, setSettings: setWebSettings },
   ]
+  const initialState = {
+    notifEmail, notifPush, notifWeb,
+    email: { ...defaultTriggers },
+    push: { ...defaultTriggers },
+    web: { ...defaultTriggers },
+  }
 
-  const [saved, setSaved] = useState(false)
-
-const initialState = {
-  notifEmail, notifPush, notifWeb,
-  email: { ...defaultTriggers },
-  push: { ...defaultTriggers },
-  web: { ...defaultTriggers },
-}
-
-const [lastSaved, setLastSaved] = useState(initialState)
-
-const isDirty =
-  notifEmail !== lastSaved.notifEmail ||
-  notifPush !== lastSaved.notifPush ||
-  notifWeb !== lastSaved.notifWeb ||
-  JSON.stringify(emailSettings) !== JSON.stringify(lastSaved.email) ||
-  JSON.stringify(pushSettings) !== JSON.stringify(lastSaved.push) ||
-  JSON.stringify(webSettings) !== JSON.stringify(lastSaved.web)
+  const [lastSaved, setLastSaved] = useState(initialState)
+  const isDirty =
+    notifEmail !== lastSaved.notifEmail ||
+    notifPush !== lastSaved.notifPush ||
+    notifWeb !== lastSaved.notifWeb ||
+    JSON.stringify(emailSettings) !== JSON.stringify(lastSaved.email) ||
+    JSON.stringify(pushSettings) !== JSON.stringify(lastSaved.push) ||
+    JSON.stringify(webSettings) !== JSON.stringify(lastSaved.web)
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">

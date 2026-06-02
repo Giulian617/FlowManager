@@ -59,10 +59,13 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain loginFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/auth/login", "/auth/refresh")
+                .securityMatcher(request ->
+                        List.of("/auth/login", "/auth/refresh").contains(request.getServletPath())
+                )
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().permitAll()
                 );
 
@@ -81,6 +84,8 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         .requestMatchers(HttpMethod.GET, "/users").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/users/**").hasRole("USER")
                         .requestMatchers(HttpMethod.PUT, "/users/**").hasRole("USER")

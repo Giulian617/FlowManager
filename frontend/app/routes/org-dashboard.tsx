@@ -58,42 +58,42 @@ export default function OrgDashboard() {
   const [workItems, setWorkItems] = useState<WorkItemSummaryDto[]>([])
   const [loading, setLoading] = useState(true)
     
-    useEffect(() => {
-      const orgId = Number(localStorage.getItem("selectedOrg"))
-      if (!orgId) {
-        navigate("/select-org");
-        return
-      }
-      
-      async function loadAll() {
-        try {
-          const [orgData, user] = await Promise.all([
-            getOrganizationById(orgId),
-            getCurrentUser(),
-          ])
-          setCurrentUser(user)
-          setOrg(orgData)
+  useEffect(() => {
+    const orgId = Number(localStorage.getItem("selectedOrg"))
+    if (!orgId) {
+      navigate("/select-org");
+      return
+    }
+    
+    async function loadAll() {
+      try {
+        const [orgData, user] = await Promise.all([
+          getOrganizationById(orgId),
+          getCurrentUser(),
+        ])
+        setCurrentUser(user)
+        setOrg(orgData)
 
-          if (user.role === "ADMIN") {
-            const items = await getWorkItemsByOrganizationId(orgId)
-            setWorkItems(items)
-          } else {
-            const [reported, assigned] = await Promise.all([
-              getReportedWorkItemsByUserId(user.id),
-              getAssignedWorkItemsByUserId(user.id),
-            ])
-            const merged = [...(reported ?? []), ...(assigned ?? [])]
-              .filter((item, i, arr) => arr.findIndex((x) => x.id === item.id) === i)
-            setWorkItems(merged)
-          }
-        } catch (err) {
-          console.error(err)
-        } finally {
-          setLoading(false)
+        if (user.role === "ADMIN") {
+          const items = await getWorkItemsByOrganizationId(orgId)
+          setWorkItems(items)
+        } else {
+          const [reported, assigned] = await Promise.all([
+            getReportedWorkItemsByUserId(user.id),
+            getAssignedWorkItemsByUserId(user.id),
+          ])
+          const merged = [...(reported ?? []), ...(assigned ?? [])]
+            .filter((item, i, arr) => arr.findIndex((x) => x.id === item.id) === i)
+          setWorkItems(merged)
         }
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
       }
-      loadAll()
-    }, [])
+    }
+    loadAll()
+  }, [])
 
   if(loading) {
     return (

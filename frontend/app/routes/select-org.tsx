@@ -295,7 +295,7 @@ export default function SelectOrg() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-slate-50">
       <div className="mb-10 flex items-center gap-3">
-        <div className="grid h-12 w-12 place-items-center rounded-3xl bg-slate-900 text-lg font-bold text-white">F</div>
+        <div className="grid h-12 w-12 place-items-center rounded-xl bg-slate-900 text-lg font-bold text-white flex-none">FM</div>
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">FlowManager</p>
           <p className="text-xs text-slate-400">Project workspace</p>
@@ -323,7 +323,7 @@ export default function SelectOrg() {
                 localStorage.setItem("selectedOrgName", org.name)
                 localStorage.setItem("selectedOrgAvatar", getAvatar(org.name))
                 if (localStorage.getItem("selectedOrg")) {
-                  navigate("/org/projects")
+                  navigate("/org/dashboard")
                 }
               }}
               className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:border-slate-300 hover:shadow-md"

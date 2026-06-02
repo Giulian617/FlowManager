@@ -1,11 +1,9 @@
 package flowmanager.nomenclator.service;
 
-import flowmanager.nomenclator.dto.ProjectCreateDto;
-import flowmanager.nomenclator.dto.ProjectResponseDto;
-import flowmanager.nomenclator.dto.ProjectUpdateDto;
-import flowmanager.nomenclator.dto.WorkItemSummaryDto;
+import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.ProjectMapper;
+import flowmanager.nomenclator.mapper.TeamMapper;
 import flowmanager.nomenclator.mapper.WorkItemMapper;
 import flowmanager.nomenclator.model.Organization;
 import flowmanager.nomenclator.model.Project;
@@ -30,6 +28,7 @@ public class ProjectService {
     private final TeamRepository teamRepository;
     private final ProjectMapper projectMapper;
     private final WorkItemMapper workItemMapper;
+    private final TeamMapper teamMapper;
     private final WorkItemService workItemService;
 
     private Project getProject(Integer projectId) {
@@ -47,15 +46,23 @@ public class ProjectService {
     }
 
     public List<WorkItemSummaryDto> findAllWorkItemsByProjectId(Integer projectId) {
-        Project project = getProject(projectId);
-
-        return project.getWorkItems().stream()
+        return getProject(projectId)
+                .getWorkItems()
+                .stream()
                 .map(workItemMapper::toSummaryDto)
                 .toList();
     }
 
-    public ProjectResponseDto findProjectById(Integer projectId) {
-        return projectMapper.toResponseDto(getProject(projectId));
+    public List<TeamSummaryOrganizationDto> findAllTeamsByProjectId(Integer projectId) {
+        return getProject(projectId)
+                .getTeams()
+                .stream()
+                .map(teamMapper::toSummaryOrganizationDto)
+                .toList();
+    }
+
+    public ProjectSummaryDto findProjectById(Integer projectId) {
+        return projectMapper.toSummaryDto(getProject(projectId));
     }
 
     @Transactional

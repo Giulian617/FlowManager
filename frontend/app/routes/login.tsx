@@ -47,7 +47,7 @@ export default function Login() {
 
       {/* Logo */}
       <div className="mb-10 flex items-center gap-3">
-        <div className="grid h-12 w-12 place-items-center rounded-3xl bg-slate-900 text-lg font-bold text-white">F</div>
+        <div className="grid h-12 w-12 place-items-center rounded-xl bg-slate-900 text-lg font-bold text-white flex-none">FM</div>
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">FlowManager</p>
           <p className="text-xs text-slate-400">Project workspace</p>

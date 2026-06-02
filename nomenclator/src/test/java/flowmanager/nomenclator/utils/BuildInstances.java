@@ -106,6 +106,7 @@ public final class BuildInstances {
 
     public static List<Project> buildProjects() {
         User manager = buildUser();
+        Organization organization = buildOrganization();
 
         return List.of(
                 Project.builder()
@@ -115,6 +116,7 @@ public final class BuildInstances {
                     .startDate(LocalDate.of(2026, 1, 1))
                     .endDate(LocalDate.of(2026,12,31))
                     .manager(manager)
+                    .organization(organization)
                     .workItems(new ArrayList<>())
                     .teams(new ArrayList<>())
                     .build(),
@@ -125,6 +127,7 @@ public final class BuildInstances {
                     .startDate(LocalDate.of(2026, 1, 20))
                     .endDate(LocalDate.of(2026,7,20))
                     .manager(manager)
+                    .organization(organization)
                     .workItems(new ArrayList<>())
                     .teams(new ArrayList<>())
                     .build()

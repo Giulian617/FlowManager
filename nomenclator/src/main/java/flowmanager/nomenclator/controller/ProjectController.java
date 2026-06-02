@@ -1,9 +1,6 @@
 package flowmanager.nomenclator.controller;
 
-import flowmanager.nomenclator.dto.ProjectCreateDto;
-import flowmanager.nomenclator.dto.ProjectResponseDto;
-import flowmanager.nomenclator.dto.ProjectUpdateDto;
-import flowmanager.nomenclator.dto.WorkItemSummaryDto;
+import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,9 +34,17 @@ public class ProjectController {
     }
 
     @PreAuthorize("@projectSecurity.canView(authentication, #projectId)")
+    @GetMapping("/{projectId}/teams")
+    public ResponseEntity<List<TeamSummaryOrganizationDto>> getAllTeamsByProjectId(
+            @PathVariable Integer projectId
+    ) {
+        return ResponseEntity.ok(projectService.findAllTeamsByProjectId(projectId));
+    }
+
+    @PreAuthorize("@projectSecurity.canView(authentication, #projectId)")
     @GetMapping("/{projectId}")
     @ResponseBody
-    public ResponseEntity<ProjectResponseDto> getProjectById(
+    public ResponseEntity<ProjectSummaryDto> getProjectById(
             @PathVariable Integer projectId
     ) {
         return ResponseEntity.ok(projectService.findProjectById(projectId));

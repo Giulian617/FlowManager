@@ -117,7 +117,9 @@ public final class BuildDtos {
                 .id(project.getId())
                 .name(project.getName())
                 .description(project.getDescription())
+                .endDate(project.getEndDate())
                 .itemCount(project.getWorkItems().size())
+                .teamCount(project.getTeams().size())
                 .memberCount((int) Stream.concat(
                                 Stream.concat(
                                         project.getTeams().stream().flatMap(team -> team.getMembers().stream()),
@@ -128,6 +130,7 @@ public final class BuildDtos {
                         .map(User::getId)
                         .distinct()
                         .count())
+                .organization(buildOrganizationSummaryDto(project.getOrganization()))
                 .build();
     }
 

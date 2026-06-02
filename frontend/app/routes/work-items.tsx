@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from "react"
-import { priorityMeta, statusMeta, statusOptions, workItemStatusMap } from "../src/status"
+import { priorityMeta, statusMeta, statusOptions, workItemStatusMap } from "../utils/status"
 import { ListFilter, Search, Plus, X, Bug, CheckSquare, Zap, BookOpen, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, UserCircle, ChevronDown, ArrowLeft } from "lucide-react"
 import { useNavigate } from "react-router"
 import { useSearchParams } from "react-router"
@@ -361,7 +361,7 @@ export default function WorkItems() {
                 <th className="px-4 py-3 text-xs text-left font-semibold uppercase tracking-[0.15em] text-slate-700">Title</th>
                 <th className="px-4 py-3 text-xs text-left font-semibold uppercase tracking-[0.15em] text-slate-700">Assigned To</th>
                 <th className="px-4 py-3 text-xs text-left font-semibold uppercase tracking-[0.15em] text-slate-700">Status</th>
-                <th className="w-[100px] px-3 pr-6 py-3 text-xs text-center font-semibold uppercase tracking-[0.15em] text-slate-700">Severity</th>
+                <th className="w-25 px-3 pr-6 py-3 text-xs text-center font-semibold uppercase tracking-[0.15em] text-slate-700">Severity</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
@@ -404,7 +404,7 @@ export default function WorkItems() {
                         <span className="text-sm text-slate-700">{item.status}</span>
                       </div>
                     </td>
-                    <td className="w-[100px] px-3 pr-6 py-3 text-center">
+                    <td className="w-25 px-3 pr-6 py-3 text-center">
                       <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${priorityClass.className}`}>
                         {item.priority}
                       </span>

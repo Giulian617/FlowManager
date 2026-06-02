@@ -1,14 +1,11 @@
 import React, { useRef, useState } from "react"
-import { useKeycloak } from "@react-keycloak/web"
 import { Camera, Mail, User, Phone, Building2, Shield, Eye, EyeOff } from "lucide-react"
 
 export default function Profile() {
-  const { keycloak } = useKeycloak()
-
   const [avatar, setAvatar] = useState<string | null>(null)
-  const [firstName, setFirstName] = useState(keycloak?.tokenParsed?.given_name ?? "Mihai")
-  const [lastName, setLastName] = useState(keycloak?.tokenParsed?.family_name ?? "Pop")
-  const [email, setEmail] = useState(keycloak?.tokenParsed?.email ?? "mihai.pop@acme.com")
+  const [firstName, setFirstName] = useState("Mihai")
+  const [lastName, setLastName] = useState("Pop")
+  const [email, setEmail] = useState("mihai.pop@acme.com")
   const [phone, setPhone] = useState("+40 712 345 678")
   const [role, setRole] = useState("Developer")
   const [bio, setBio] = useState("")

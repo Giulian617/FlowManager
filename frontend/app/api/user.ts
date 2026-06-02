@@ -28,7 +28,7 @@ export async function getAssignedProjectsByUserId(userId: number) {
   return response.json()
 }
 
-export async function getManageddTeamsByUserId(userId: number) {
+export async function getManagedTeamsByUserId(userId: number) {
   const response = await apiFetch(`/users/${userId}/teams/manager`)
   if (!response.ok) throw new Error("Failed to fetch teams")
   return response.json()
