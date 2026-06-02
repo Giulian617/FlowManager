@@ -48,7 +48,7 @@ const MOCK_PROJECTS: Record<string, string> = {
 
 const fullNav = [
   { to: "/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
-  { to: "/projects", label: "Projects", icon: <FolderKanban className="h-4 w-4" /> },
+  // { to: "/projects", label: "Projects", icon: <FolderKanban className="h-4 w-4" /> },
   { to: "/teams", label: "Teams", icon: <Users className="h-4 w-4" /> },
   { to: "/work-items", label: "Work Items", icon: <List className="h-4 w-4" /> },
   { to: "/kanban", label: "Kanban Board", icon: <KanbanSquare className="h-4 w-4" /> },
@@ -115,7 +115,7 @@ function AppShell() {
 
           {/* Logo */}
           <div className="mb-3 flex items-center gap-2.5">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-slate-900 text-sm font-bold text-white flex-none">F</div>
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-slate-900 text-sm font-bold text-white flex-none">FM</div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-900">FlowManager</p>
               <p className="text-[11px] text-slate-400 truncate max-w-[130px]">

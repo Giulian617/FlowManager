@@ -4,7 +4,7 @@ export default [
   index("routes/login.tsx"),
   route("select-org", "routes/select-org.tsx"),
   route("dashboard", "routes/dashboard.tsx"),
-  route("projects", "routes/projects.tsx"),
+  // route("projects", "routes/projects.tsx"),
   route("teams", "routes/teams.tsx"),
   route("work-items", "routes/work-items.tsx"),
   route("work-items/:id/edit", "routes/work-items-edit.tsx"),
