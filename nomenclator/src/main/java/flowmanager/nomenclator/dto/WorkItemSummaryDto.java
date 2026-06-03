@@ -9,7 +9,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @SuperBuilder
@@ -23,7 +24,10 @@ import java.time.LocalDateTime;
         "status",
         "severity",
         "createdAt",
-        "projectId"
+        "dueDate",
+        "projectId",
+        "reporter",
+        "assignees"
 })
 public class WorkItemSummaryDto {
     private Integer id;
@@ -32,6 +36,9 @@ public class WorkItemSummaryDto {
     private ItemType itemType;
     private Status status;
     private Severity severity;
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
+    private LocalDate dueDate;
     private Integer projectId;
+    private UserSummaryDto reporter;
+    private List<UserSummaryDto> assignees;
 }

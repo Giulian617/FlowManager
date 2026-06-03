@@ -3,6 +3,7 @@ package flowmanager.nomenclator.utils;
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.model.*;
 
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -46,7 +47,12 @@ public final class BuildDtos {
                 .status(workItem.getStatus())
                 .severity(workItem.getSeverity())
                 .createdAt(workItem.getCreatedAt())
+                .dueDate(workItem.getDueDate())
                 .projectId(workItem.getProject() != null ? workItem.getProject().getId() : null)
+                .reporter(workItem.getReporter() != null ? buildUserSummaryDto(workItem.getReporter()) : null)
+                .assignees(workItem.getAssignees() != null
+                        ? workItem.getAssignees().stream().map(BuildDtos::buildUserSummaryDto).toList()
+                        : new ArrayList<>())
                 .build();
     }
 
@@ -201,14 +207,6 @@ public final class BuildDtos {
                         .map(BuildDtos::buildUserSummaryDto)
                         .toList()
                 )
-                .build();
-    }
-
-    public static TeamSummaryUserDto buildTeamSummaryUserDto(Team team) {
-        return TeamSummaryUserDto.builder()
-                .id(team.getId())
-                .name(team.getName())
-                .organization(buildOrganizationSummaryDto(team.getOrganization()))
                 .build();
     }
 

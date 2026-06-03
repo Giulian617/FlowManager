@@ -4,6 +4,7 @@ import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.ProjectMapper;
 import flowmanager.nomenclator.mapper.TeamMapper;
+import flowmanager.nomenclator.mapper.UserMapper;
 import flowmanager.nomenclator.mapper.WorkItemMapper;
 import flowmanager.nomenclator.model.Organization;
 import flowmanager.nomenclator.model.Project;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +31,7 @@ public class ProjectService {
     private final ProjectMapper projectMapper;
     private final WorkItemMapper workItemMapper;
     private final TeamMapper teamMapper;
+    private final UserMapper userMapper;
     private final WorkItemService workItemService;
 
     private Project getProject(Integer projectId) {
@@ -45,11 +48,11 @@ public class ProjectService {
                 .toList();
     }
 
-    public List<WorkItemSummaryDto> findAllWorkItemsByProjectId(Integer projectId) {
+    public List<WorkItemResponseDto> findAllWorkItemsByProjectId(Integer projectId) {
         return getProject(projectId)
                 .getWorkItems()
                 .stream()
-                .map(workItemMapper::toSummaryDto)
+                .map(workItemMapper::toResponseDto)
                 .toList();
     }
 
@@ -58,6 +61,19 @@ public class ProjectService {
                 .getTeams()
                 .stream()
                 .map(teamMapper::toSummaryOrganizationDto)
+                .toList();
+    }
+
+    public List<UserSummaryDto> findAllMembersByProjectId(Integer projectId) {
+        return getProject(projectId)
+                .getTeams()
+                .stream()
+                .flatMap(team -> Stream.concat(
+                        team.getMembers().stream(),
+                        Stream.of(team.getManager())
+                ))
+                .distinct()
+                .map(userMapper::toSummaryDto)
                 .toList();
     }
 

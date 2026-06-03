@@ -16,6 +16,12 @@ export async function getTeamsByProjectId(projectId: number) {
   return response.json()
 }
 
+export async function getMembersByProjectId(projectId: number) {
+  const response = await apiFetch(`/projects/${projectId}/members`)
+  if (!response.ok) throw new Error("Failed to fetch project members")
+  return response.json()
+}
+
 export async function getProjectById(projectId: number) {
   const response = await apiFetch(`/projects/${projectId}`)
   if (!response.ok) throw new Error("Failed to fetch project")

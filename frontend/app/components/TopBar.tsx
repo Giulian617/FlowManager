@@ -161,6 +161,7 @@ function NotificationsPopup({ onClose, notifications, setNotifications }: {
 function SettingsPopup({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate()
   const location = useLocation()
+  const routePrefix = location.pathname.startsWith("/org") ? "/org" : "/project"
   const { theme, setTheme } = useTheme()
 
   return (
@@ -190,7 +191,7 @@ function SettingsPopup({ onClose }: { onClose: () => void }) {
       </div>
       <button
         onClick={() => {
-          navigate("/settings")
+          navigate(`${routePrefix}/notification-settings`)
           onClose()
         }}
         className="flex w-full items-center justify-between px-4 py-3 hover:bg-slate-50 transition"
@@ -221,7 +222,7 @@ export default function TopBar() {
   const profileRef = useRef<HTMLDivElement>(null)
 
   const location = useLocation()
-  const inOrg = location.pathname.startsWith("/org")
+  const routePrefix = location.pathname.startsWith("/org") ? "/org" : "/project"
 
   useEffect(() => {
     setHasProject(!!localStorage.getItem("selectedProject") && !location.pathname.startsWith("/org"))
@@ -322,7 +323,7 @@ export default function TopBar() {
               <button
                 onClick={() => {
                   setProfileMenuOpen(false)
-                  navigate("/profile")
+                  navigate(`${routePrefix}/profile`)
                 }}
                 className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"
               >
@@ -332,7 +333,7 @@ export default function TopBar() {
               <button
                 onClick={() => {
                   setProfileMenuOpen(false)
-                  navigate("/profile")
+                  navigate(`${routePrefix}/profile`)
                 }}
                 className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"
               >

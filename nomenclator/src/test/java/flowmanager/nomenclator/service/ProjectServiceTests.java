@@ -4,6 +4,7 @@ import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.ProjectMapper;
 import flowmanager.nomenclator.mapper.TeamMapper;
+import flowmanager.nomenclator.mapper.UserMapper;
 import flowmanager.nomenclator.mapper.WorkItemMapper;
 import flowmanager.nomenclator.model.*;
 import flowmanager.nomenclator.repository.OrganizationRepository;
@@ -47,6 +48,9 @@ public class ProjectServiceTests {
 
     @Mock
     private TeamMapper teamMapper;
+
+    @Mock
+    private UserMapper userMapper;
 
     @Mock
     private WorkItemService workItemService;
@@ -95,23 +99,23 @@ public class ProjectServiceTests {
     void testFindAllWorkItemsByProjectId_Valid() {
         Project project = BuildInstances.buildProject();
         List<WorkItem> workItems = BuildInstances.buildWorkItems();
-        List<WorkItemSummaryDto> workItemsDto = workItems.stream()
-                .map(BuildDtos::buildWorkItemSummaryDto)
+        List<WorkItemResponseDto> workItemsDto = workItems.stream()
+                .map(BuildDtos::buildWorkItemResponseDto)
                 .toList();
         project.setWorkItems(workItems);
 
         when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
-        when(workItemMapper.toSummaryDto(workItems.get(0))).thenReturn(workItemsDto.get(0));
-        when(workItemMapper.toSummaryDto(workItems.get(1))).thenReturn(workItemsDto.get(1));
+        when(workItemMapper.toResponseDto(workItems.get(0))).thenReturn(workItemsDto.get(0));
+        when(workItemMapper.toResponseDto(workItems.get(1))).thenReturn(workItemsDto.get(1));
 
-        List<WorkItemSummaryDto> result = projectService.findAllWorkItemsByProjectId(project.getId());
+        List<WorkItemResponseDto> result = projectService.findAllWorkItemsByProjectId(project.getId());
 
         assertEquals(2, result.size());
         assertEquals(workItemsDto.get(0), result.get(0));
         assertEquals(workItemsDto.get(1), result.get(1));
         verify(projectRepository, times(1)).findById(project.getId());
-        verify(workItemMapper, times(1)).toSummaryDto(workItems.get(0));
-        verify(workItemMapper, times(1)).toSummaryDto(workItems.get(1));
+        verify(workItemMapper, times(1)).toResponseDto(workItems.get(0));
+        verify(workItemMapper, times(1)).toResponseDto(workItems.get(1));
     }
 
     @Test
@@ -121,11 +125,11 @@ public class ProjectServiceTests {
 
         when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
 
-        List<WorkItemSummaryDto> result = projectService.findAllWorkItemsByProjectId(project.getId());
+        List<WorkItemResponseDto> result = projectService.findAllWorkItemsByProjectId(project.getId());
 
         assertEquals(0, result.size());
         verify(projectRepository, times(1)).findById(project.getId());
-        verify(workItemMapper, never()).toSummaryDto(any());
+        verify(workItemMapper, never()).toResponseDto(any());
     }
 
     @Test
@@ -181,6 +185,59 @@ public class ProjectServiceTests {
 
         NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> projectService.findAllWorkItemsByProjectId(1));
+
+        assertEquals("Project with id 1 not found", exception.getMessage());
+    }
+
+    @Test
+    void testFindAllMembersByProjectId_Valid() {
+        Project project = BuildInstances.buildProject();
+        List<Team> teams = BuildInstances.buildTeams();
+        User manager = BuildInstances.buildUser();
+        List<User> members = BuildInstances.buildUsers();
+
+        teams.get(0).setMembers(List.of(members.get(0)));
+        teams.get(1).setMembers(List.of(members.get(1)));
+        project.setTeams(teams);
+
+        UserSummaryDto managerDto = BuildDtos.buildUserSummaryDto(manager);
+        UserSummaryDto member0Dto = BuildDtos.buildUserSummaryDto(members.get(0));
+        UserSummaryDto member1Dto = BuildDtos.buildUserSummaryDto(members.get(1));
+
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+        when(userMapper.toSummaryDto(members.get(0))).thenReturn(member0Dto);
+        when(userMapper.toSummaryDto(members.get(1))).thenReturn(member1Dto);
+        when(userMapper.toSummaryDto(manager)).thenReturn(managerDto);
+
+        List<UserSummaryDto> result = projectService.findAllMembersByProjectId(project.getId());
+
+        assertNotNull(result);
+        assertTrue(result.contains(member0Dto));
+        assertTrue(result.contains(member1Dto));
+        assertTrue(result.contains(managerDto));
+        verify(projectRepository, times(1)).findById(project.getId());
+    }
+
+    @Test
+    void testFindAllMembersByProjectId_Empty() {
+        Project project = BuildInstances.buildProject();
+        project.setTeams(List.of());
+
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+
+        List<UserSummaryDto> result = projectService.findAllMembersByProjectId(project.getId());
+
+        assertEquals(0, result.size());
+        verify(projectRepository, times(1)).findById(project.getId());
+        verify(userMapper, never()).toSummaryDto(any());
+    }
+
+    @Test
+    void testFindAllMembersByProjectId_NotFound() {
+        when(projectRepository.findById(1)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> projectService.findAllMembersByProjectId(1));
 
         assertEquals("Project with id 1 not found", exception.getMessage());
     }

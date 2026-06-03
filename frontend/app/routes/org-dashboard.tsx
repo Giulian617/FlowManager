@@ -232,7 +232,7 @@ export default function OrgDashboard() {
             return (
               <div
                 key={item.id}
-                  onClick={() => navigate(`/work-items/${item.id}/edit`)}
+                  onClick={() => navigate(`/project/work-items/${item.id}/edit`)}
                   className={`flex items-start gap-3 rounded-2xl border p-4 cursor-pointer transition hover:opacity-80 ${activityColors[type]}`}
               >
               <span className="mt-0.5">{activityIcons[type]}</span>

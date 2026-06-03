@@ -19,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -202,7 +203,7 @@ public class WorkItemServiceTests {
                 .itemType(ItemType.Task)
                 .status(Status.In_Progress)
                 .severity(Severity.High)
-                .createdAt(LocalDateTime.of(2026, 5, 15, 13, 27, 51))
+                .createdAt(LocalDate.of(2026, 5, 15))
                 .project(BuildInstances.buildProject())
                 .reporter(BuildInstances.buildUser())
                 .build();
@@ -286,7 +287,7 @@ public class WorkItemServiceTests {
                 .itemType(ItemType.Task)
                 .status(Status.To_do)
                 .severity(Severity.Low)
-                .createdAt(LocalDateTime.of(2026, 3, 20, 18, 33, 30))
+                .createdAt(LocalDate.of(2026, 3, 20))
                 .project(project)
                 .reporter(reporter)
                 .assignees(new ArrayList<>())
@@ -337,7 +338,7 @@ public class WorkItemServiceTests {
                 .itemType(ItemType.Task)
                 .status(Status.To_do)
                 .severity(Severity.Low)
-                .createdAt(LocalDateTime.of(2026, 3, 20, 18, 33, 30))
+                .createdAt(LocalDate.of(2026, 3, 20))
                 .project(project)
                 .reporter(reporter)
                 .assignees(new ArrayList<>())
@@ -453,7 +454,7 @@ public class WorkItemServiceTests {
                 .itemType(ItemType.Task)
                 .status(Status.To_do)
                 .severity(Severity.Low)
-                .createdAt(LocalDateTime.of(2026, 3, 20, 18, 33, 30))
+                .createdAt(LocalDate.of(2026, 3, 20))
                 .project(project)
                 .reporter(reporter)
                 .assignees(new ArrayList<>())
@@ -659,7 +660,7 @@ public class WorkItemServiceTests {
                 .severity(Severity.Medium)
                 .reporter(BuildInstances.buildUser())
                 .project(BuildInstances.buildProject())
-                .createdAt(LocalDateTime.of(2026, 3, 20, 18, 33, 30))
+                .createdAt(LocalDate.of(2026, 3, 20))
                 .assignees(new ArrayList<>())
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())
@@ -708,7 +709,7 @@ public class WorkItemServiceTests {
                 .severity(Severity.Medium)
                 .reporter(BuildInstances.buildUser())
                 .project(BuildInstances.buildProject())
-                .createdAt(LocalDateTime.of(2026, 3, 20, 18, 33, 30))
+                .createdAt(LocalDate.of(2026, 3, 20))
                 .assignees(new ArrayList<>())
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())
@@ -750,7 +751,7 @@ public class WorkItemServiceTests {
                 .severity(Severity.Medium)
                 .reporter(BuildInstances.buildUser())
                 .project(BuildInstances.buildProject())
-                .createdAt(LocalDateTime.of(2026, 3, 20, 18, 33, 30))
+                .createdAt(LocalDate.of(2026, 3, 20))
                 .assignees(new ArrayList<>())
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())

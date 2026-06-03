@@ -1,18 +1,18 @@
 import React, { useState } from "react"
-import KanbanBoard from "../components/KanbanBoard"
-import { LayoutDashboard, ListFilter, ArrowUp, ArrowDown, ArrowUpDown, X, Plus, ChevronDown, Bug, CheckSquare, Zap, BookOpen } from "lucide-react"
+import { ListFilter, ArrowUp, ArrowDown, ArrowUpDown, X, Plus, ChevronDown, Bug, CheckSquare, Zap, BookOpen } from "lucide-react"
 import { useNavigate } from "react-router"
+import KanbanBoard from "../components/KanbanBoard"
 
-const typeOptions = ["Bug", "Task", "Epic", "User Story"]
+const typeOptions = ["Task", "Bug", "User Story", "Epic"]
 const sortOptions = ["Default", "Deadline", "Severity"] as const
 
-type WorkItemType = "Bug" | "Task" | "Epic" | "User Story"
+type WorkItemType = "Task" | "Bug" | "User Story" | "Epic" 
 
 const typeConfig: Record<WorkItemType, { textClass: string; bgClass: string; borderClass: string; icon: React.ReactNode; description: string }> = {
-  Bug:          { textClass: "text-rose-700",    bgClass: "bg-rose-50",    borderClass: "border-rose-200",   icon: <Bug className="h-5 w-5" />,         description: "Track a defect or unexpected behaviour" },
   Task:         { textClass: "text-sky-700",     bgClass: "bg-sky-50",     borderClass: "border-sky-200",    icon: <CheckSquare className="h-5 w-5" />, description: "A unit of work to be completed" },
-  Epic:         { textClass: "text-violet-700",  bgClass: "bg-violet-50",  borderClass: "border-violet-200", icon: <Zap className="h-5 w-5" />,         description: "A large body of work spanning multiple items" },
+  Bug:          { textClass: "text-rose-700",    bgClass: "bg-rose-50",    borderClass: "border-rose-200",   icon: <Bug className="h-5 w-5" />,         description: "Track a defect or unexpected behaviour" },
   "User Story": { textClass: "text-emerald-700", bgClass: "bg-emerald-50", borderClass: "border-emerald-200",icon: <BookOpen className="h-5 w-5" />,    description: "Describe functionality from the user's perspective" },
+  Epic:         { textClass: "text-violet-700",  bgClass: "bg-violet-50",  borderClass: "border-violet-200", icon: <Zap className="h-5 w-5" />,         description: "A large body of work spanning multiple items" },
 }
 
 function TypeSelectorModal({ onSelect, onClose }: { onSelect: (t: WorkItemType) => void; onClose: () => void }) {
@@ -191,7 +191,7 @@ export default function Kanban() {
         <TypeSelectorModal
           onSelect={(type) => {
             setShowModal(false)
-            navigate(`/work-items/new/${type.toLowerCase().replace(" ", "-")}`)
+            navigate(`/project/work-items/new/${type.toLowerCase().replace(" ", "-")}`)
           }}
           onClose={() => setShowModal(false)}
         />

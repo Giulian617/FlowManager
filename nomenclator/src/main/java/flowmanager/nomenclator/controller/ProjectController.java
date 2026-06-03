@@ -27,7 +27,7 @@ public class ProjectController {
 
     @PreAuthorize("@projectSecurity.canView(authentication, #projectId)")
     @GetMapping("/{projectId}/work-items")
-    public ResponseEntity<List<WorkItemSummaryDto>> getAllWorkItemsByProjectId(
+    public ResponseEntity<List<WorkItemResponseDto>> getAllWorkItemsByProjectId(
             @PathVariable Integer projectId
     ) {
         return ResponseEntity.ok(projectService.findAllWorkItemsByProjectId(projectId));
@@ -39,6 +39,14 @@ public class ProjectController {
             @PathVariable Integer projectId
     ) {
         return ResponseEntity.ok(projectService.findAllTeamsByProjectId(projectId));
+    }
+
+    @PreAuthorize("@projectSecurity.canView(authentication, #projectId)")
+    @GetMapping("/{projectId}/members")
+    public ResponseEntity<List<UserSummaryDto>> getAllMembersByProjectId(
+            @PathVariable Integer projectId
+    ) {
+        return ResponseEntity.ok(projectService.findAllMembersByProjectId(projectId));
     }
 
     @PreAuthorize("@projectSecurity.canView(authentication, #projectId)")

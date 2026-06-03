@@ -36,22 +36,22 @@ export const workItemStatusMap: Record<string, keyof typeof statusMeta> = {
   Testing: "Testing",
 }
 
-export const priorityMeta = {
-  Critical: {
-    label: "Critical",
-    className: "bg-rose-600/10 text-rose-700",
-  },
-  High: {
-    label: "High",
-    className: "bg-amber-600/10 text-amber-700",
+export const severityMeta = {
+  Low: {
+    label: "Low",
+    className: "bg-emerald-600/10 text-emerald-700",
   },
   Medium: {
     label: "Medium",
     className: "bg-sky-600/10 text-sky-700",
   },
-  Low: {
-    label: "Low",
-    className: "bg-emerald-600/10 text-emerald-700",
+  High: {
+    label: "High",
+    className: "bg-amber-600/10 text-amber-700",
+  },
+  Critical: {
+    label: "Critical",
+    className: "bg-rose-600/10 text-rose-700",
   },
   Blocker: {
     label: "Blocker",

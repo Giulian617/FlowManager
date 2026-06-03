@@ -55,7 +55,7 @@ public final class BuildInstances {
                     .itemType(ItemType.Task)
                     .status(Status.To_do)
                     .severity(Severity.Low)
-                    .createdAt(LocalDateTime.of(2026, 3, 20, 18, 33, 30))
+                    .createdAt(LocalDate.of(2026, 3, 20))
                     .project(project)
                     .reporter(reporter)
                     .build(),
@@ -66,7 +66,7 @@ public final class BuildInstances {
                     .itemType(ItemType.Task)
                     .status(Status.In_Progress)
                     .severity(Severity.High)
-                    .createdAt(LocalDateTime.of(2026, 5, 15, 13, 27, 51))
+                    .createdAt(LocalDate.of(2026, 5, 15))
                     .project(project)
                     .reporter(reporter)
                     .build()

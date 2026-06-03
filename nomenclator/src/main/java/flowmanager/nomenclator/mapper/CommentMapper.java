@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -27,8 +29,27 @@ public class CommentMapper {
         comment.setUpdatedAt(LocalDateTime.now());
     }
 
+    private List<UserSummaryDto> mapAssignees(List<User> assignedUsers) {
+        if (assignedUsers == null) return new ArrayList<>();
+
+        return assignedUsers.stream()
+                .map(assignedUser -> new UserSummaryDto(
+                        assignedUser.getId(),
+                        assignedUser.getUsername(),
+                        assignedUser.getRole()
+                ))
+                .toList();
+    }
+
     private WorkItemSummaryDto getWorkItemSummaryDto(Comment comment) {
         WorkItem workItem = comment.getWorkItem();
+        User reporter = workItem.getReporter();
+        UserSummaryDto reporterDto = new UserSummaryDto(
+                reporter.getId(),
+                reporter.getUsername(),
+                reporter.getRole()
+        );
+
         return new WorkItemSummaryDto(
                 workItem.getId(),
                 workItem.getTitle(),
@@ -37,7 +58,10 @@ public class CommentMapper {
                 workItem.getStatus(),
                 workItem.getSeverity(),
                 workItem.getCreatedAt(),
-                workItem.getProject().getId()
+                workItem.getDueDate(),
+                workItem.getProject().getId(),
+                reporterDto,
+                mapAssignees(workItem.getAssignees())
         );
     }
 
