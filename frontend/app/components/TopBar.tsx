@@ -170,21 +170,23 @@ export default function TopBar() {
       <div className="flex items-center gap-3">
 
         {/* Notifications */}
-        <div ref={notifRef} className="relative ml-auto">
-          <button
-            onClick={() => { setNotifOpen((o) => !o); setSettingsOpen(false); setProfileMenuOpen(false) }}
-            className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm transition hover:bg-slate-100"
-          >
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-semibold text-white">{unreadCount}</span>
-            )}
-            <Bell className="h-5 w-5" />
-          </button>
-          {notifOpen && <NotificationsPopup onClose={() => setNotifOpen(false)} notifications={notifications} setNotifications={setNotifications} />}
-        </div>
+        {routePrefix === "/project" && (
+          <div ref={notifRef} className="relative ml-auto">
+            <button
+              onClick={() => { setNotifOpen((o) => !o); setSettingsOpen(false); setProfileMenuOpen(false) }}
+              className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm transition hover:bg-slate-100"
+            >
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-semibold text-white">{unreadCount}</span>
+              )}
+              <Bell className="h-5 w-5" />
+            </button>
+            {notifOpen && <NotificationsPopup onClose={() => setNotifOpen(false)} notifications={notifications} setNotifications={setNotifications} />}
+          </div>
+        )}
 
         {/* Settings */}
-        <div ref={settingsRef} className="relative">
+        <div ref={settingsRef} className={`relative ${routePrefix !== "/project" ? "ml-auto" : ""}`}>
           <button
             onClick={() => { setSettingsOpen((o) => !o); setNotifOpen(false); setProfileMenuOpen(false) }}
             className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm transition hover:bg-slate-100"

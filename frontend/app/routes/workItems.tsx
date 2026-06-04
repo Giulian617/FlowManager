@@ -1,7 +1,8 @@
 import React, { useMemo, useState, useRef, useEffect } from "react"
-import { severityMeta, statusMeta, workItemStatusMap } from "../utils/status"
+import { severityMeta, statusMeta } from "../utils/status"
 import { ListFilter, Search, Plus, X, Bug, CheckSquare, Zap, BookOpen, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, UserCircle, ChevronDown } from "lucide-react"
 import { useNavigate, useSearchParams } from "react-router"
+import { getCurrentUser } from "../api/user"
 import { getWorkItemsByProjectId  } from "../api/project"
 import type { WorkItemSummaryDto } from "../types/workItem"
 import NewWorkItemModal from "../components/NewWorkItemModal"
@@ -9,8 +10,6 @@ import NewWorkItemModal from "../components/NewWorkItemModal"
 const typeOptions = ["Task", "Bug", "User Story", "Epic"]
 const severityOptions = ["Low", "Medium", "High", "Critical", "Blocker"]
 const statusFilterOptions = ["To Do", "In progress", "Testing", "Done", "Closed"]
-
-type WorkItemType = "Task" | "Bug" | "User Story" | "Epic"
 
 const typeIcons: Record<string, { textClass: string; icon: React.ReactNode }> = {
   Bug: { textClass: "text-rose-700", icon: <Bug className="h-4 w-4" /> },
@@ -21,7 +20,7 @@ const typeIcons: Record<string, { textClass: string; icon: React.ReactNode }> = 
 
 const backendStatusMap: Record<string, keyof typeof statusMeta> = {
   To_do:      "ToDo",
-  In_progress: "InProgress",
+  In_Progress: "InProgress",
   Testing:    "Testing",
   Done:       "Done",
   Closed:     "Closed",
@@ -210,6 +209,15 @@ export default function WorkItems() {
   const [page, setPage] = useState(1)
   const [showModal, setShowModal] = useState(false)
 
+  const handleNewWorkItem = async () => {
+    const user = await getCurrentUser()
+    if (user.role === "USER") {
+      navigate("/project/work-items/new/bug")
+    } else {
+      setShowModal(true)
+    }
+  }
+
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const itemsPerPage = 12
@@ -301,7 +309,7 @@ export default function WorkItems() {
               <p className="text-sm leading-6 text-slate-600">Filter and review work items by type, status, severity, creator, and assignee.</p>
             </div>
             <button
-              onClick={() => setShowModal(true)}
+              onClick={handleNewWorkItem}
               className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
             >
               <Plus className="h-4 w-4" />

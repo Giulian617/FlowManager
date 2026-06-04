@@ -369,7 +369,7 @@ export default function OrgLayout() {
         {/* Organization*/}
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-slate-900 text-xs font-bold text-white">
+            <div className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-slate-900 text-sm font-bold text-white">
               {selectedOrgAvatar}
             </div>
 

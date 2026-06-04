@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router"
-import { User, Calendar, Users, Search, X, Plus, Pencil, Trash2, ChevronDown, AlertCircle } from "lucide-react"
+import { User, Calendar, Users, Search, X, Plus, Pencil, Trash2, ChevronDown, AlertCircle, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight  } from "lucide-react"
 import {
   getCurrentUser,
   getManagedTeamsByUserId,
@@ -399,6 +399,7 @@ export default function Teams({ mode }: { mode: "org" | "project" }) {
   const [editTeam, setEditTeam] = useState<TeamResponseDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<TeamResponseDto | null>(null)
   const [viewTeam, setViewTeam] = useState<TeamResponseDto | null>(null)
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     const storedOrgId = Number(localStorage.getItem("selectedOrg"))
@@ -479,6 +480,12 @@ export default function Teams({ mode }: { mode: "org" | "project" }) {
     )
   })
 
+  const itemsPerPage = 6
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
+  const paginated = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage)
+
+  useEffect(() => { setPage(1) }, [query])
+
   if (loading) return (
     <div className="flex items-center justify-center py-24">
       <p className="text-slate-500">Loading teams…</p>
@@ -532,67 +539,113 @@ export default function Teams({ mode }: { mode: "org" | "project" }) {
           <p className="text-xs text-slate-400">Try a different name, manager, or member.</p>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((team) => {
-            const canModify = currentUser?.role === "ADMIN" || team.manager?.id === currentUser?.id
-            return (
-              <div key={team.id}
-                onClick={() => setViewTeam(team)}
-                className="relative group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 duration-150 space-y-4 cursor-pointer">
-                {canModify && (
-                  <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={(e) => { e.stopPropagation(); setEditTeam(team) }}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:bg-slate-50 hover:text-slate-700" title="Edit">
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); setDeleteTarget(team) }}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-rose-100 bg-white text-rose-400 transition hover:bg-rose-50 hover:text-rose-600" title="Delete">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                )}
-                <div className={canModify ? "pr-14" : ""}>
-                  <h2 className="text-base font-semibold text-slate-900">{team.name}</h2>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">{team.description}</p>
-                </div>
-                <div className="border-t border-slate-100" />
-                <div className="space-y-2.5">
-                  <div className="flex items-center gap-2.5">
-                    <User className="h-3.5 w-3.5 flex-none text-slate-400" />
-                    <span className="text-xs text-slate-500">Manager</span>
-                    <span className="ml-auto text-xs font-medium text-slate-700">{team.manager?.username ?? "—"}</span>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <Calendar className="h-3.5 w-3.5 flex-none text-slate-400" />
-                    <span className="text-xs text-slate-500">Created</span>
-                    <span className="ml-auto text-xs font-medium text-slate-700">{formatDate(team.createdAt)}</span>
-                  </div>
-                </div>
-                <div className="border-t border-slate-100" />
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2.5">
-                    <Users className="h-3.5 w-3.5 text-slate-400" />
-                    <span className="text-xs text-slate-500">
-                      {team.members?.length ?? 0} member{(team.members?.length ?? 0) !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  {(team.members?.length ?? 0) > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {team.members!.map((member) => (
-                        <div key={member.id} className="flex items-center gap-1.5 rounded-lg bg-slate-50 border border-slate-200 pl-1 pr-2.5 py-1">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-[9px] font-semibold flex-none">
-                            {member.username[0].toUpperCase()}
-                          </div>
-                          <span className="text-xs text-slate-600">{member.username}</span>
-                        </div>
-                      ))}
+        <>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {paginated.map((team) => {
+              const canModify = currentUser?.role === "ADMIN" || team.manager?.id === currentUser?.id
+              return (
+                <div key={team.id}
+                  onClick={() => setViewTeam(team)}
+                  className="relative group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 duration-150 space-y-4 cursor-pointer">
+                  {canModify && (
+                    <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={(e) => { e.stopPropagation(); setEditTeam(team) }}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:bg-slate-50 hover:text-slate-700" title="Edit">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); setDeleteTarget(team) }}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-rose-100 bg-white text-rose-400 transition hover:bg-rose-50 hover:text-rose-600" title="Delete">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   )}
+                  <div className={canModify ? "pr-14" : ""}>
+                    <h2 className="text-base font-semibold text-slate-900">{team.name}</h2>
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">{team.description}</p>
+                  </div>
+                  <div className="border-t border-slate-100" />
+                  <div className="space-y-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <User className="h-3.5 w-3.5 flex-none text-slate-400" />
+                      <span className="text-xs text-slate-500">Manager</span>
+                      <span className="ml-auto text-xs font-medium text-slate-700">{team.manager?.username ?? "—"}</span>
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <Calendar className="h-3.5 w-3.5 flex-none text-slate-400" />
+                      <span className="text-xs text-slate-500">Created</span>
+                      <span className="ml-auto text-xs font-medium text-slate-700">{formatDate(team.createdAt)}</span>
+                    </div>
+                  </div>
+                  <div className="border-t border-slate-100" />
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-2.5">
+                      <Users className="h-3.5 w-3.5 text-slate-400" />
+                      <span className="text-xs text-slate-500">
+                        {team.members?.length ?? 0} member{(team.members?.length ?? 0) !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    {(team.members?.length ?? 0) > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {team.members!.map((member) => (
+                          <div key={member.id} className="flex items-center gap-1.5 rounded-lg bg-slate-50 border border-slate-200 pl-1 pr-2.5 py-1">
+                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-[9px] font-semibold flex-none">
+                              {member.username[0].toUpperCase()}
+                            </div>
+                            <span className="text-xs text-slate-600">{member.username}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
+              )
+            })}
+          </div>
+
+          <div className="flex items-center justify-between text-sm text-slate-600">
+            <span>
+              Showing {(page - 1) * itemsPerPage + 1}–{Math.min(filtered.length, page * itemsPerPage)} of {filtered.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setPage(1)} disabled={page === 1}
+                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 disabled:opacity-40 hover:bg-slate-50">
+                <ChevronsLeft className="h-4 w-4" />
+              </button>
+              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
+                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 disabled:opacity-40 hover:bg-slate-50">
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <div className="flex items-center gap-1.5 px-2">
+                <span className="text-slate-500">Page</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={5}
+                  value={page}
+                  onChange={(e) => {
+                    const next = Number(e.target.value.replace(/\D/g, ""))
+                    if (!isNaN(next) && e.target.value !== "") {
+                      setPage(Math.min(Math.max(1, next), totalPages))
+                    } else if (e.target.value === "") {
+                      setPage(1)
+                    }
+                  }}
+                  className="h-8 w-10 rounded-2xl border border-slate-400 bg-white px-0 text-center text-sm leading-8 text-slate-800 outline-none appearance-none focus:border-slate-500 focus:ring-1 focus:ring-slate-300"
+                />
+                <span>/ {totalPages}</span>
               </div>
-            )
-          })}
-        </div>
+              <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 disabled:opacity-40 hover:bg-slate-50">
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <button onClick={() => setPage(totalPages)} disabled={page === totalPages}
+                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 disabled:opacity-40 hover:bg-slate-50">
+                <ChevronsRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       {showCreate && (

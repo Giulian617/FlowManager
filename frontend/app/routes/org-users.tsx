@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { useNavigate} from "react-router"
-import { Search, X, Plus, Pencil, Trash2, AlertCircle, ChevronDown, Building2, Mail, Phone, Check, EyeOff, Eye } from "lucide-react"
+import { Search, X, Plus, Pencil, Trash2, AlertCircle, ChevronDown, Building2, Mail, Phone, EyeOff, Eye, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight  } from "lucide-react"
 import {
   getCurrentUser,
   createUser,
@@ -407,6 +407,7 @@ export default function OrgUsers() {
   const [showCreate, setShowCreate] = useState(false)
   const [editUser, setEditUser] = useState<UserResponseDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<UserResponseDto | null>(null)
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     const id = typeof window !== "undefined" ? Number(localStorage.getItem("selectedOrg")) : 0
@@ -454,6 +455,12 @@ export default function OrgUsers() {
       u.role.toLowerCase().includes(q)
     )
   })
+
+  const itemsPerPage = 9
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
+  const paginated = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage)
+
+  useEffect(() => { setPage(1) }, [query])
 
   if (loading) return (
     <div className="flex items-center justify-center py-24">
@@ -512,8 +519,9 @@ export default function OrgUsers() {
           <p className="text-xs text-slate-400">Try a different name, username, email, or role.</p>
         </div>
       ) : (
+      <>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((user) => (
+          {paginated.map((user) => (
             <div key={user.id} className="relative group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 duration-150">
               {currentUser?.role === "ADMIN" && (
                 <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -568,6 +576,51 @@ export default function OrgUsers() {
             </div>
           ))}
         </div>
+
+        <div className="flex items-center justify-between text-sm text-slate-600">
+            <span>
+              Showing {(page - 1) * itemsPerPage + 1}–{Math.min(filtered.length, page * itemsPerPage)} of {filtered.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setPage(1)} disabled={page === 1}
+                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 disabled:opacity-40 hover:bg-slate-50">
+                <ChevronsLeft className="h-4 w-4" />
+              </button>
+              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
+                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 disabled:opacity-40 hover:bg-slate-50">
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <div className="flex items-center gap-1.5 px-2">
+                <span className="text-slate-500">Page</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={5}
+                  value={page}
+                  onChange={(e) => {
+                    const next = Number(e.target.value.replace(/\D/g, ""))
+                    if (!isNaN(next) && e.target.value !== "") {
+                      setPage(Math.min(Math.max(1, next), totalPages))
+                    } else if (e.target.value === "") {
+                      setPage(1)
+                    }
+                  }}
+                  className="h-8 w-10 rounded-2xl border border-slate-400 bg-white px-0 text-center text-sm leading-8 text-slate-800 outline-none appearance-none focus:border-slate-500 focus:ring-1 focus:ring-slate-300"
+                />
+                <span>/ {totalPages}</span>
+              </div>
+              <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 disabled:opacity-40 hover:bg-slate-50">
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <button onClick={() => setPage(totalPages)} disabled={page === totalPages}
+                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 disabled:opacity-40 hover:bg-slate-50">
+                <ChevronsRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       {showCreate && (

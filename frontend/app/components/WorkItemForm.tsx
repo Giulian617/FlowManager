@@ -11,8 +11,11 @@ import {
   getMembersByProjectId,
 } from "../api/project"
 import {
+  getWorkItemComments,
   createWorkItem,
   updateWorkItem,
+  setWorkItemParent,
+  removeWorkItemParent,
   deleteWorkItem,
 } from "../api/workItem"
 import type {
@@ -22,10 +25,18 @@ import type {
   WorkItemResponseDto,
 } from "../types/workItem"
 import type { UserSummaryDto } from "../types/user"
-import type { ItemType, Severity } from "../types/enums"
+import type { ItemType, Severity, Status } from "../types/enums"
 import { statusMeta } from "../utils/status"
+import CommentSection from "./CommentSection"
 
 const severityOptions = ["Low", "Medium", "High", "Critical", "Blocker"]
+const statusOptions: { value: Status; label: string }[] = [
+  { value: "To_do",       label: "To Do" },
+  { value: "In_Progress", label: "In Progress" },
+  { value: "Testing",     label: "Testing" },
+  { value: "Done",        label: "Done" },
+  { value: "Closed",      label: "Closed" },
+]
 
 function initials(username: string): string {
   const parts = username.split(/[.\s_-]/).filter(Boolean)
@@ -35,7 +46,7 @@ function initials(username: string): string {
 
 const backendStatusMap: Record<string, keyof typeof statusMeta> = {
   To_do:       "ToDo",
-  In_progress: "InProgress",
+  In_Progress: "InProgress",
   Testing:     "Testing",
   Done:        "Done",
   Closed:      "Closed",
@@ -380,78 +391,6 @@ function ChildItemsField({ value, onChange, candidates }: {
   )
 }
 
-type Comment = { id: number; author: string; text: string; date: string }
-
-function CommentSection({ currentUser }: { currentUser: UserSummaryDto | null }) {
-  const [comments, setComments] = useState<Comment[]>([])
-  const [draft, setDraft] = useState("")
-
-  const submit = () => {
-    if (!draft.trim() || !currentUser) return
-    setComments((c) => [...c, {
-      id: Date.now(),
-      author: currentUser.username,
-      text: draft.trim(),
-      date: new Date().toLocaleString("ro-RO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
-    }])
-    setDraft("")
-  }
-
-  const authorName = currentUser?.username ?? ""
-
-  return (
-    <div className="space-y-4">
-      <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Comments</h2>
-      {comments.length === 0 && (
-        <p className="text-sm text-slate-400 italic">No comments yet. Be the first to comment.</p>
-      )}
-      <div className="space-y-3">
-        {comments.map((c) => (
-          <div key={c.id} className="flex gap-3">
-            <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-900 text-xs font-semibold">
-              {initials(c.author)}
-            </div>
-            <div className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-sm font-semibold text-slate-900">{c.author}</span>
-                <span className="text-xs text-slate-400">{c.date}</span>
-              </div>
-              <p className="text-sm text-slate-700 whitespace-pre-wrap">{c.text}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="flex gap-3">
-        {authorName && (
-          <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-900 text-xs font-semibold">
-            {initials(authorName)}
-          </div>
-        )}
-        <div className="flex-1 rounded-2xl border border-slate-200 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-slate-200 focus-within:border-slate-400 transition">
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) submit() }}
-            placeholder="Add a comment… (Ctrl+Enter to submit)"
-            rows={3}
-            className="w-full resize-none bg-transparent px-4 py-3 text-sm text-slate-700 outline-none placeholder:text-slate-400"
-          />
-          <div className="flex items-center justify-end border-t border-slate-100 px-3 py-2">
-            <button
-              type="button"
-              onClick={submit}
-              disabled={!draft.trim()}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <Send className="h-3 w-3" /> Send
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export type WorkItemType = "bug" | "task" | "user-story" | "epic"
 export type WorkItemMode = "new" | "edit" | "view"
 
@@ -533,7 +472,6 @@ export default function WorkItemForm({
   const cfg = configs[type]
   const isView = mode === "view"
   const isEdit = mode === "edit"
-  const isNew  = mode === "new"
 
   const [currentUser, setCurrentUser] = useState<UserSummaryDto | null>(null)
   const [projectMembers, setProjectMembers] = useState<UserSummaryDto[]>([])
@@ -545,23 +483,19 @@ export default function WorkItemForm({
 
   const [title, setTitle]           = useState(initialData?.title ?? "")
   const [description, setDesc]      = useState(initialData?.description ?? "")
-  const [acceptanceCriteria, setAC] = useState("")
+  const [status, setStatus] = useState<string>(initialData?.status ?? "To_do")
   const [severity, setSeverity]     = useState<string>(initialData?.severity ?? "")
   const [assignees, setAssignees]   = useState<string[]>(initialData?.assignees?.map((a) => String(a.id)) ?? [])
   const [deadline, setDeadline]     = useState(initialData?.dueDate ?? "")
-  const [startDate, setStartDate]   = useState("")
-  const [endDate, setEndDate]       = useState(initialData?.dueDate ?? "")
   const [parent, setParent]         = useState(initialData?.parent ? String(initialData.parent.id) : "")
   const [children, setChildren]     = useState<string[]>(initialData?.children?.map((c) => String(c.id)) ?? [])
 
   const [baseline, setBaseline] = useState({
     title:              initialData?.title ?? "",
     description:        initialData?.description ?? "",
-    acceptanceCriteria: "",
+    status:             initialData?.status ?? "To_do" as Status,
     severity:           initialData?.severity ?? "",
     deadline:           initialData?.dueDate ?? "",
-    startDate:          "",
-    endDate:            initialData?.dueDate ?? "",
     parent:             initialData?.parent ? String(initialData.parent.id) : "",
     assignees:          JSON.stringify(initialData?.assignees?.map((a) => String(a.id)) ?? []),
     children:           JSON.stringify(initialData?.children?.map((c) => String(c.id)) ?? []),
@@ -595,11 +529,9 @@ export default function WorkItemForm({
   const isDirty =
     title              !== baseline.title ||
     description        !== baseline.description ||
-    acceptanceCriteria !== baseline.acceptanceCriteria ||
+    status             !== baseline.status ||
     severity           !== baseline.severity ||
     deadline           !== baseline.deadline ||
-    startDate          !== baseline.startDate ||
-    endDate            !== baseline.endDate ||
     parent             !== baseline.parent ||
     JSON.stringify(assignees) !== baseline.assignees ||
     JSON.stringify(children)  !== baseline.children
@@ -608,6 +540,17 @@ export default function WorkItemForm({
   const descOk     = description.trim() !== ""
   const severityOk = severity !== ""
   const canSave    = titleOk && descOk && severityOk && (!isEdit || isDirty)
+
+  const canEdit = currentUser && initialData && (
+    currentUser.role === "ADMIN" ||
+    currentUser.role === "MANAGER" ||
+    currentUser.id === initialData.reporter?.id
+  )
+
+  const canDelete = currentUser && initialData && (
+    currentUser.role === "ADMIN" ||
+    currentUser.role === "MANAGER"
+  )
 
   const handleSave = async () => {
     if (!canSave) return
@@ -621,12 +564,44 @@ export default function WorkItemForm({
         const payload: WorkItemUpdateDto = {
           title,
           description,
+          status: status as Status,
           severity: severity as Severity,
-          dueDate: endDate,
+          dueDate: deadline || undefined,
           assigneesIds: assignees.map(Number),
         }
         await updateWorkItem(initialData!.id, payload)
-        setBaseline({ title, description, acceptanceCriteria, severity, deadline, startDate, endDate, parent, assignees: JSON.stringify(assignees), children: JSON.stringify(children) })
+
+        // Sync parent
+        const originalParent = baseline.parent
+        if (parent !== originalParent) {
+          if (parent) {
+            await setWorkItemParent(initialData!.id, Number(parent))
+          } else {
+            await removeWorkItemParent(initialData!.id)
+          }
+        }
+
+        // Sync children
+        const originalChildren = JSON.parse(baseline.children) as string[]
+        const added   = children.filter((id) => !originalChildren.includes(id))
+        const removed = originalChildren.filter((id) => !children.includes(id))
+
+        await Promise.all([
+          ...added.map((id)   => setWorkItemParent(Number(id), initialData!.id)),
+          ...removed.map((id) => removeWorkItemParent(Number(id))),
+        ])
+
+        setBaseline({
+          title,
+          description,
+          status: status as Status,
+          severity,
+          deadline,
+          parent,
+          assignees: JSON.stringify(assignees),
+          children:  JSON.stringify(children),
+        })
+
       } else {
         const payload: WorkItemCreateDto = {
           title,
@@ -635,14 +610,23 @@ export default function WorkItemForm({
           severity: severity as Severity,
           projectId,
           parentId: parent ? Number(parent) : undefined,
-          dueDate: endDate,
+          dueDate: deadline,
           assigneesIds: assignees.map(Number),
         }
-        await createWorkItem(payload)
+        const created = await createWorkItem(payload)
+
+        if (children.length > 0) {
+          await Promise.all(children.map((id) => setWorkItemParent(Number(id), created.id)))
+        }
+
         navigate("/project/work-items")
       }
     } catch (e) {
-      setSaveError("Failed to save. Please try again.")
+      if (e instanceof Error) {
+        setSaveError(e.message)
+      } else {
+        setSaveError("Failed to save. Please try again.")
+      }
     } finally {
       setSaving(false)
     }
@@ -692,22 +676,26 @@ export default function WorkItemForm({
           {/* View mode: Edit + Delete buttons in header */}
           {isView && initialData && (
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => navigate(`/project/work-items/${initialData.id}/edit`)}
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-slate-300"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                Edit
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(true)}
-                className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Delete
-              </button>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/project/work-items/${initialData.id}/edit`)}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-slate-300"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </button>
+              )}
+              {canDelete && (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -816,7 +804,7 @@ export default function WorkItemForm({
           {/* Comments*/}
           {isView && (
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <CommentSection currentUser={currentUser} />
+              <CommentSection currentUser={currentUser} workItemId={initialData!.id} reporterId={initialData?.reporter?.id}/>
             </div>
           )}
         </div>
@@ -828,10 +816,38 @@ export default function WorkItemForm({
             {/* Status */}
             <div>
               <FieldLabel>Status</FieldLabel>
-              <LockedField>
-                <span className={`h-2 w-2 rounded-full flex-none ${statusClass?.dotClass ?? "bg-sky-500"}`} />
-                <span className="text-sm text-slate-600">{statusClass?.label ?? initialData?.status ?? "To Do"}</span>
-              </LockedField>
+              {isView ? (
+                <ReadOnlyField>
+                  <span className={`h-2 w-2 rounded-full flex-none ${statusMeta[backendStatusMap[status] ?? "ToDo"]?.dotClass ?? "bg-sky-500"}`} />
+                  <span className="text-sm text-slate-600">{statusMeta[backendStatusMap[status] ?? "ToDo"]?.label ?? status}</span>
+                </ReadOnlyField>
+              ) : (
+                <SelectDropdown
+                  value={status}
+                  options={statusOptions.map((s) => s.value)}
+                  onChange={setStatus}
+                  renderOption={(v) => {
+                    const key = backendStatusMap[v] ?? "ToDo"
+                    const meta = statusMeta[key]
+                    return (
+                      <div className="flex items-center gap-2">
+                        <span className={`h-2 w-2 rounded-full flex-none ${meta?.dotClass ?? "bg-slate-300"}`} />
+                        <span>{meta?.label ?? v}</span>
+                      </div>
+                    )
+                  }}
+                  renderSelected={(v) => {
+                    const key = backendStatusMap[v] ?? "ToDo"
+                    const meta = statusMeta[key]
+                    return (
+                      <div className="flex items-center gap-2">
+                        <span className={`h-2 w-2 rounded-full flex-none ${meta?.dotClass ?? "bg-slate-300"}`} />
+                        <span>{meta?.label ?? v}</span>
+                      </div>
+                    )
+                  }}
+                />
+              )}
             </div>
 
             {/* Severity */}
@@ -871,7 +887,7 @@ export default function WorkItemForm({
             {/* Created By */}
             <div>
               <FieldLabel>Created By</FieldLabel>
-              <LockedField>
+              <ReadOnlyField>
                 {reporter ? (
                   <>
                     <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-900 text-[10px] font-semibold flex-none">
@@ -882,16 +898,16 @@ export default function WorkItemForm({
                 ) : (
                   <span className="text-sm text-slate-400">Loading…</span>
                 )}
-              </LockedField>
+              </ReadOnlyField>
             </div>
 
             {/* Created Date */}
             <div>
               <FieldLabel>Created Date</FieldLabel>
-              <LockedField>
+              <ReadOnlyField>
                 <Calendar className="h-3.5 w-3.5 flex-none text-slate-400" />
                 <span className="text-sm text-slate-600">{createdDate}</span>
-              </LockedField>
+              </ReadOnlyField>
             </div>
 
             {/* Deadline */}
@@ -900,7 +916,12 @@ export default function WorkItemForm({
               {isView ? (
                 <ReadOnlyField>
                   <Calendar className="h-3.5 w-3.5 flex-none text-slate-400" />
-                  <span className="text-sm text-slate-600">{deadline || <span className="text-slate-400 italic">Not set</span>}</span>
+                  <span className="text-sm text-slate-600">
+                    {deadline
+                      ? new Date(deadline).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" })
+                      : <span className="text-slate-400 italic">Not set</span>
+                    }
+                  </span>
                 </ReadOnlyField>
               ) : (
                 <div className="relative">

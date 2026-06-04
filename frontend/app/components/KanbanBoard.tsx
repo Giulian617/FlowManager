@@ -32,7 +32,7 @@ type ColStatus = (typeof COLUMNS)[number]
 
 const backendStatusMap: Record<string, ColStatus> = {
   To_do:       "ToDo",
-  In_progress: "InProgress",
+  In_Progress: "InProgress",
   Testing:     "Testing",
   Done:        "Done",
   Closed:      "Closed",
@@ -40,7 +40,7 @@ const backendStatusMap: Record<string, ColStatus> = {
 
 const frontendStatusMap: Record<ColStatus, string> = {
   ToDo:       "To_do",
-  InProgress: "In_progress",
+  InProgress: "In_Progress",
   Testing:    "Testing",
   Done:       "Done",
   Closed:     "Closed",

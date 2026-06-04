@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
-import { useNavigate, useLocation } from "react-router"
-import { Calendar, User, Users, Search, Plus, X, ChevronDown, AlertCircle, Pencil, Trash2 } from "lucide-react"
+import { useNavigate} from "react-router"
+import { Calendar, User, Users, Search, Plus, X, ChevronDown, AlertCircle, Pencil, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
 import {
   getCurrentUser,
   getManagedProjectsByUserId,
@@ -413,6 +413,7 @@ export default function Projects() {
   const [showCreate, setShowCreate] = useState(false)
   const [editProject, setEditProject] = useState<ProjectResponseDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ProjectResponseDto | null>(null)
+  const [page, setPage] = useState(1)
   
   useEffect(() => {
     const orgId = typeof window !== "undefined" ? Number(localStorage.getItem("selectedOrg")) : 0
@@ -497,6 +498,12 @@ export default function Projects() {
     )
   })
 
+  const itemsPerPage = 6
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
+  const paginated = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage)
+
+  useEffect(() => { setPage(1) }, [query])
+
   if (loading) return (
     <div className="flex items-center justify-center py-24">
       <p className="text-slate-500">Loading projects…</p>
@@ -554,95 +561,140 @@ export default function Projects() {
             )}
         </div>
         ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((project) => {
-            const overdue     = isOverdue(project.endDate)
-            const nearDeadline = isNearDeadline(project.endDate)
+        <>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {paginated.map((project) => {
+              const overdue      = isOverdue(project.endDate)
+              const nearDeadline = isNearDeadline(project.endDate)
+              const canModify    = currentUser?.role === "ADMIN" || project.manager?.id === currentUser?.id
 
-            const canModify = currentUser?.role === "ADMIN" || project.manager?.id === currentUser?.id
-
-            return (
-              <div key={project.id} className="relative group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 duration-150">
-                {canModify && (
-                  <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setEditProject(project) }}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
-                      title="Edit"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setDeleteTarget(project) }}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-rose-100 bg-white text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
-                      title="Delete"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                )}
-
-                <button className="w-full text-left" onClick={() => handleSelect(project)}>
-                  <div className="flex items-start gap-3 mb-4">
-                    <div className={`flex h-10 w-10 flex-none items-center justify-center rounded-2xl "bg-slate-500" text-white text-xs font-bold`}>
-                      {project.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
-                    </div>
-                    <div className="min-w-0 pr-14">
-                      <h2 className="text-base font-semibold text-slate-900 leading-tight truncate">{project.name}</h2>
-                      <p className="text-xs text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">{project.description}</p>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-slate-100 mb-4" />
-
-                  <div className="space-y-2.5 mb-4">
-                    <div className="flex items-center gap-2.5">
-                      <User className="h-3.5 w-3.5 flex-none text-slate-400" />
-                      <span className="text-xs text-slate-500">Manager</span>
-                      <span className="ml-auto text-xs font-medium text-slate-700">{project.manager?.username ?? "—"}</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <Calendar className="h-3.5 w-3.5 flex-none text-slate-400" />
-                      <span className="text-xs text-slate-500">Start date</span>
-                      <span className="ml-auto text-xs font-medium text-slate-700">{formatDate(project.startDate)}</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <Calendar className="h-3.5 w-3.5 flex-none text-slate-400" />
-                      <span className="text-xs text-slate-500">End date</span>
-                      <span className={`ml-auto text-xs font-medium ${overdue ? "text-rose-600" : nearDeadline ? "text-amber-600" : "text-slate-700"}`}>
-                        {formatDate(project.endDate)}
-                        {overdue      && <span className="ml-1.5 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600">Overdue</span>}
-                        {!overdue && nearDeadline && <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">Soon</span>}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-slate-100 mb-4" />
-
-                  <div className="flex items-center gap-1.5">
-                    <Users className="h-3.5 w-3.5 text-slate-400" />
-                    <span className="text-xs text-slate-500">
-                      {project.teams?.length ?? 0} team{(project.teams?.length ?? 0) !== 1 ? "s" : ""}
-                    </span>
-                    <span className="mx-1 text-slate-200">·</span>
-                    <span className="text-xs text-slate-500">
-                      {project.workItems?.length ?? 0} work item{(project.workItems?.length ?? 0) !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  {(project.teams?.length ?? 0) > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {project.teams!.map((t) => (
-                        <span key={t.id} className="inline-flex items-center rounded-lg bg-slate-50 border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600">
-                          {t.name}
-                        </span>
-                      ))}
+              return (
+                <div key={project.id} className="relative group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 duration-150">
+                  {canModify && (
+                    <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setEditProject(project) }}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
+                        title="Edit"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(project) }}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-rose-100 bg-white text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   )}
-                </button>
+
+                  <button className="w-full text-left" onClick={() => handleSelect(project)}>
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className={`flex h-10 w-10 flex-none items-center justify-center rounded-2xl "bg-slate-500" text-white text-xs font-bold`}>
+                        {project.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 pr-14">
+                        <h2 className="text-base font-semibold text-slate-900 leading-tight truncate">{project.name}</h2>
+                        <p className="text-xs text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">{project.description}</p>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-100 mb-4" />
+
+                    <div className="space-y-2.5 mb-4">
+                      <div className="flex items-center gap-2.5">
+                        <User className="h-3.5 w-3.5 flex-none text-slate-400" />
+                        <span className="text-xs text-slate-500">Manager</span>
+                        <span className="ml-auto text-xs font-medium text-slate-700">{project.manager?.username ?? "—"}</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <Calendar className="h-3.5 w-3.5 flex-none text-slate-400" />
+                        <span className="text-xs text-slate-500">Start date</span>
+                        <span className="ml-auto text-xs font-medium text-slate-700">{formatDate(project.startDate)}</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <Calendar className="h-3.5 w-3.5 flex-none text-slate-400" />
+                        <span className="text-xs text-slate-500">End date</span>
+                        <span className={`ml-auto text-xs font-medium ${overdue ? "text-rose-600" : nearDeadline ? "text-amber-600" : "text-slate-700"}`}>
+                          {formatDate(project.endDate)}
+                          {overdue && <span className="ml-1.5 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600">Overdue</span>}
+                          {!overdue && nearDeadline && <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">Soon</span>}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-100 mb-4" />
+
+                    <div className="flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5 text-slate-400" />
+                      <span className="text-xs text-slate-500">
+                        {project.teams?.length ?? 0} team{(project.teams?.length ?? 0) !== 1 ? "s" : ""}
+                      </span>
+                      <span className="mx-1 text-slate-200">·</span>
+                      <span className="text-xs text-slate-500">
+                        {project.workItems?.length ?? 0} work item{(project.workItems?.length ?? 0) !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    {(project.teams?.length ?? 0) > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {project.teams!.map((t) => (
+                          <span key={t.id} className="inline-flex items-center rounded-lg bg-slate-50 border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600">
+                            {t.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="flex items-center justify-between text-sm text-slate-600">
+            <span>
+              Showing {(page - 1) * itemsPerPage + 1}–{Math.min(filtered.length, page * itemsPerPage)} of {filtered.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setPage(1)} disabled={page === 1}
+                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 disabled:opacity-40 hover:bg-slate-50">
+                <ChevronsLeft className="h-4 w-4" />
+              </button>
+              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
+                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 disabled:opacity-40 hover:bg-slate-50">
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <div className="flex items-center gap-1.5 px-2">
+                <span className="text-slate-500">Page</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={5}
+                  value={page}
+                  onChange={(e) => {
+                    const next = Number(e.target.value.replace(/\D/g, ""))
+                    if (!isNaN(next) && e.target.value !== "") {
+                      setPage(Math.min(Math.max(1, next), totalPages))
+                    } else if (e.target.value === "") {
+                      setPage(1)
+                    }
+                  }}
+                  className="h-8 w-10 rounded-2xl border border-slate-400 bg-white px-0 text-center text-sm leading-8 text-slate-800 outline-none appearance-none focus:border-slate-500 focus:ring-1 focus:ring-slate-300"
+                />
+                <span>/ {totalPages}</span>
               </div>
-            )
-          })}
-        </div>
+              <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 disabled:opacity-40 hover:bg-slate-50">
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <button onClick={() => setPage(totalPages)} disabled={page === totalPages}
+                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 disabled:opacity-40 hover:bg-slate-50">
+                <ChevronsRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       {showCreate && (
