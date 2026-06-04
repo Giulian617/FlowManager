@@ -40,5 +40,5 @@ export default function WorkItemEdit() {
     </div>
   )
 
-  return <WorkItemForm type={typeMap[item.itemType]} initialData={item} />
+  return <WorkItemForm type={typeMap[item.itemType]} mode="edit" initialData={item} />
 }

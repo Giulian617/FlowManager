@@ -135,7 +135,7 @@ public class UserServiceTests {
     @Test
     void testGetCurrentUser_Valid() {
         User user = BuildInstances.buildUser();
-        UserSummaryDto summaryDto = BuildDtos.buildUserSummaryDto(user);
+        UserResponseDto responseDto = BuildDtos.buildUserResponseDto(user);
 
         Authentication auth = mock(Authentication.class);
         Jwt jwt = mock(Jwt.class);
@@ -143,11 +143,11 @@ public class UserServiceTests {
         when(auth.getPrincipal()).thenReturn(jwt);
         when(jwt.getSubject()).thenReturn(user.getKeycloakId());
         when(userRepository.findByKeycloakId(user.getKeycloakId())).thenReturn(Optional.of(user));
-        when(userMapper.toSummaryDto(user)).thenReturn(summaryDto);
+        when(userMapper.toResponseDto(user)).thenReturn(responseDto);
 
-        UserSummaryDto result = userService.getCurrentUser(auth);
+        UserResponseDto result = userService.getCurrentUser(auth);
 
-        assertEquals(summaryDto, result);
+        assertEquals(responseDto, result);
         verify(userRepository, times(1)).findByKeycloakId(user.getKeycloakId());
         verify(userMapper, times(1)).toSummaryDto(user);
     }

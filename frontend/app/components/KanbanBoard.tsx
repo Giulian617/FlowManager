@@ -1,34 +1,20 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react"
 import { useNavigate } from "react-router"
 import { statusMeta } from "../utils/status"
-import { Bug, CheckSquare, Zap, BookOpen, X, ArrowUp, ArrowDown } from "lucide-react"
-
-const CURRENT_USER_ID = "user-1"
-
-// Mock data ---------------------------------------------
-const MOCK_TICKETS = [
-  { id: "1", projectId: "1", type: "Bug", title: "Login button unresponsive on Safari", status: "ToDo", assigneeId: "user-1", assigneeName: "Mihai Pop", assignees: [{ id: "user-1", name: "Mihai Pop" }, { id: "user-2", name: "Ana Serban" }, { id: "user-3", name: "Luke Tomson" }], priority: "High", severity: "High", deadline: "2026-05-25" },
-  { id: "2", projectId: "1", type: "Task", title: "Implement dark mode toggle", status: "ToDo", assigneeId: "user-1", assigneeName: "Mihai Pop", priority: "Medium", severity: "Medium", deadline: "2026-06-10" },
-  { id: "3", projectId: "1", type: "User Story", title: "As a user I can export reports as PDF", status: "InProgress", assigneeId: "user-1", assigneeName: "Mihai Pop", assignees: [{ id: "user-1", name: "Mihai Pop" }, { id: "user-2", name: "Ana Serban" }], priority: "High", severity: "High", deadline: "2026-05-30" },
-  { id: "4", projectId: "2", type: "Epic", title: "Notification system redesign", status: "InProgress", assigneeId: "user-1", assigneeName: "Mihai Pop", priority: "Blocker", severity: "Blocker", deadline: "2026-05-22" },
-  { id: "5", projectId: "2", type: "Bug", title: "Dropdown closes on hover outside", status: "Testing", assigneeId: "user-1", assigneeName: "Mihai Pop", priority: "Low", severity: "Low", deadline: "2026-06-15" },
-  { id: "6", projectId: "3", type: "Task", title: "Migrate API calls to React Query", status: "Done", assigneeId: "user-1", assigneeName: "Mihai Pop", priority: "Medium", severity: "Medium", deadline: "2026-05-20" },
-  { id: "7", projectId: "3", type: "Bug", title: "Avatar initials wrong for CJK names", status: "Closed", assigneeId: "user-1", assigneeName: "Mihai Pop", priority: "Low", severity: "Low", deadline: "2026-05-18" },
-  { id: "8", projectId: "4", type: "Task", title: "Update onboarding flow", status: "ToDo", assigneeId: "user-2", assigneeName: "Ana Serban", priority: "Medium", severity: "Medium", deadline: "2026-06-05" },
-]
-
-// Types ---------------------------------------------
+import { Bug, CheckSquare, Zap, BookOpen, X } from "lucide-react"
+import { getWorkItemsByProjectId } from "../api/project"
+import { updateWorkItem } from "../api/workItem"
+import type { WorkItemSummaryDto } from "../types/workItem"
+import type { Status } from "../types/enums"
 
 type WorkItem = {
   id: string
-  projectId?: string
   type?: string
   title: string
   status: string
   assigneeId?: string
   assigneeName?: string
   assignees?: { id: string; name: string }[]
-  priority?: string
   severity?: string
   deadline?: string
 }
@@ -37,36 +23,48 @@ type ToastMsg = {
   id: string
   text: string
   itemId: string
-  fromStatus: string
-  toStatus: string
+  fromStatus: ColStatus
+  toStatus: ColStatus
 }
 
 const COLUMNS = ["ToDo", "InProgress", "Testing", "Done", "Closed"] as const
 type ColStatus = (typeof COLUMNS)[number]
 
-const typeOptions = ["All", "Bug", "Task", "Epic", "User Story"]
+const backendStatusMap: Record<string, ColStatus> = {
+  To_do:       "ToDo",
+  In_progress: "InProgress",
+  Testing:     "Testing",
+  Done:        "Done",
+  Closed:      "Closed",
+}
 
-// Stiluri ----------------------------------------------
+const frontendStatusMap: Record<ColStatus, string> = {
+  ToDo:       "To_do",
+  InProgress: "In_progress",
+  Testing:    "Testing",
+  Done:       "Done",
+  Closed:     "Closed",
+}
 
-const priorityMeta: Record<string, string> = {
-  Blocker: "bg-slate-200 text-slate-900",
-  Critical: "bg-rose-600/10 text-rose-700",
-  High:"bg-amber-600/10 text-amber-700",
-  Medium: "bg-sky-600/10 text-sky-700",
+const severityMeta: Record<string, string> = {
   Low: "bg-emerald-600/10 text-emerald-700",
+  Medium: "bg-sky-600/10 text-sky-700",
+  High:"bg-amber-600/10 text-amber-700",
+  Critical: "bg-rose-600/10 text-rose-700",
+  Blocker: "bg-slate-200 text-slate-900",
 }
 
 const typeIcons: Record<string, { textClass: string; icon: React.ReactNode }> = {
-  Bug: { textClass: "text-rose-700", icon: <Bug className="h-3.5 w-3.5" /> },
   Task: { textClass: "text-sky-700", icon: <CheckSquare className="h-3.5 w-3.5" /> },
-  Epic: { textClass: "text-violet-700", icon: <Zap className="h-3.5 w-3.5" /> },
+  Bug: { textClass: "text-rose-700", icon: <Bug className="h-3.5 w-3.5" /> },
   "User Story": { textClass: "text-emerald-700", icon: <BookOpen className="h-3.5 w-3.5" /> },
+  Epic: { textClass: "text-violet-700", icon: <Zap className="h-3.5 w-3.5" /> },
 }
 
-function getInitials(name?: string) {
-  if (!name) return "?"
-  const p = name.trim().split(/\s+/)
-  return p.length === 1 ? p[0][0].toUpperCase() : (p[0][0] + p[p.length - 1][0]).toUpperCase()
+function initials(username: string): string {
+  const parts = username.split(/[.\s_-]/).filter(Boolean)
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+  return username.slice(0, 2).toUpperCase()
 }
 
 function formatDate(d?: string) {
@@ -80,11 +78,22 @@ function formatDate(d?: string) {
 
 function isOverdue(d?: string, status?: string) {
   if (!d || status === "Done" || status === "Closed") return false
-  const diff = new Date(d).getTime() - new Date().getTime()
-  return diff < 0
+  return new Date(d).getTime() < new Date().getTime()
 }
 
-// Card ---------------------------------------------
+function mapWorkItem(w: WorkItemSummaryDto): WorkItem {
+  return {
+    id:          String(w.id),
+    type:        w.itemType === "User_Story" ? "User Story" : w.itemType,
+    title:       w.title,
+    status:      backendStatusMap[w.status as string] ?? "ToDo",
+    assigneeId:  w.assignees?.[0] ? String(w.assignees[0].id) : undefined,
+    assigneeName: w.assignees?.[0]?.username,
+    assignees:   w.assignees?.map((a) => ({ id: String(a.id), name: a.username })) ?? [],
+    severity:    w.severity,
+    deadline:    w.dueDate ?? undefined,
+  }
+}
 
 function KanbanCard({ item, isDragging, onDragStart, onClick }: {
   item: WorkItem
@@ -93,8 +102,7 @@ function KanbanCard({ item, isDragging, onDragStart, onClick }: {
   onClick: (id: string) => void
 }) {
   const typeMeta = item.type ? typeIcons[item.type] : undefined
-  const prio = item.priority ?? item.severity
-  const overdue = isOverdue(item.deadline, item.status)
+  const overdue  = isOverdue(item.deadline, item.status)
 
   return (
     <div
@@ -113,30 +121,27 @@ function KanbanCard({ item, isDragging, onDragStart, onClick }: {
           </span>
           <span className="text-[10px] font-medium text-slate-400">#{item.id}</span>
         </div>
-        {prio && (
-          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.13em] ${priorityMeta[prio] ?? "bg-slate-100 text-slate-600"}`}>
-            {prio}
+        {item.severity && (
+          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.13em] ${severityMeta[item.severity] ?? "bg-slate-100 text-slate-600"}`}>
+            {item.severity}
           </span>
         )}
-      </div> 
+      </div>
 
-      {/* Titlu */}
       <p className="mb-3 text-sm font-semibold leading-snug text-slate-900">{item.title}</p>
 
-      {/* Footer*/}
       <div className="flex items-center justify-between gap-2">
         <div className="flex -space-x-2">
-        {(item.assignees ?? (item.assigneeName ? [{ id: item.assigneeId ?? "", name: item.assigneeName }] : [])).map((a) => (
-          <div
-            key={a.id}
-            className="flex h-7 w-7 flex-none items-center justify-center rounded-full border-2 border-white bg-blue-100 text-[10px] font-semibold text-blue-900"
-            title={a.name}
-          >
-            {getInitials(a.name)}
-          </div>
-        ))}
+          {(item.assignees ?? (item.assigneeName ? [{ id: item.assigneeId ?? "", name: item.assigneeName }] : [])).map((a) => (
+            <div
+              key={a.id}
+              className="flex h-7 w-7 flex-none items-center justify-center rounded-full border-2 border-white bg-blue-100 text-[10px] font-semibold text-blue-900"
+              title={a.name}
+            >
+              {initials(a.name)}
+            </div>
+          ))}
         </div>
-
         <div className={`flex items-center gap-1 text-xs ${overdue ? "text-red-600 font-semibold" : "text-slate-400"}`}>
           <span>{formatDate(item.deadline)}</span>
         </div>
@@ -144,8 +149,6 @@ function KanbanCard({ item, isDragging, onDragStart, onClick }: {
     </div>
   )
 }
-
-//Column ---------------------------------------------
 
 function KanbanColumn({ col, items, draggingId, isOver, onDragStart, onDragOver, onDrop, onDragLeave, onCardClick }: {
   col: ColStatus
@@ -191,8 +194,6 @@ function KanbanColumn({ col, items, draggingId, isOver, onDragStart, onDragOver,
   )
 }
 
-// Toast ---------------------------------------------
-
 function Toast({ toast, onUndo, onDismiss }: {
   toast: ToastMsg
   onUndo: (t: ToastMsg) => void
@@ -211,7 +212,9 @@ function Toast({ toast, onUndo, onDismiss }: {
   )
 }
 
-// KanbanBoard ---------------------------------------------
+const SEVERITY_ORDER: Record<string, number> = {
+  Blocker: 0, Critical: 1, High: 2, Medium: 3, Low: 4,
+}
 
 export default function KanbanBoard({
   sortBy = "Default",
@@ -237,102 +240,52 @@ export default function KanbanBoard({
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
-  // Fetch ----------------------------------------------
-
-  // const load = useCallback(async () => {
-  //   setLoading(true)
-  //   setError(null)
-  //   try {
-  //     const resp = await fetch(`/api/tickets?assignedTo=${encodeURIComponent(CURRENT_USER_ID)}`, {
-  //       headers: { Accept: "application/json" },
-  //     })
-  //     if (!resp.ok) throw new Error(`Failed to fetch tickets (${resp.status})`)
-  //     const data: WorkItem[] = await resp.json()
-  //     setItems(data ?? [])
-  //   } catch (err: any) {
-  //     setError(err.message ?? "Error fetching tickets")
-  //   } finally {
-  //     setLoading(false)
-  //   }
-  // }, [])
-
-  const [projectId, setProjectId] = useState<string | null>(null)
-
-  useEffect(() => {
-    setProjectId(localStorage.getItem("selectedProject"))
-  }, [])
-
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      await new Promise((r) => setTimeout(r, 400))
-      const pid = localStorage.getItem("selectedProject")
-      setItems(
-        MOCK_TICKETS.filter((t) =>
-          t.assigneeId === CURRENT_USER_ID &&
-          (!pid || t.projectId === pid)
-        )
-      )
+      const pid = Number(localStorage.getItem("selectedProject"))
+      const data = await getWorkItemsByProjectId(pid)
+      setItems(data.map(mapWorkItem))
     } catch (err: any) {
-      setError(err.message ?? "Error fetching tickets")
+      setError(err.message ?? "Error fetching work items")
     } finally {
       setLoading(false)
     }
   }, [])
 
   useEffect(() => { load() }, [load])
-
-  // Filtrare ----------------------------------------------
-
+  
   const visibleItems = useMemo(() => items.filter((item) => {
     if (typeFilter.size > 0 && !typeFilter.has(item.type ?? "")) return false
-    {
-      if (!item.deadline) return false
-      const d = new Date(item.deadline)
-      const now = new Date()
-      const next7 = new Date(now)
-      next7.setDate(now.getDate() + 7)
-    
-    }
     return true
   }), [items, typeFilter])
 
-  const SEVERITY_ORDER: Record<string, number> = {
-  Blocker: 0, Critical: 1, High: 2, Medium: 3, Low: 4,
-}
-
-const byColumn = useMemo(() => {
-  const map: Record<string, WorkItem[]> = {}
-  COLUMNS.forEach((c) => (map[c] = []))
-  visibleItems.forEach((item) => {
-    const s = item.status ?? "ToDo"
-    if (map[s]) map[s].push(item)
-    else map["ToDo"].push(item)
-  })
-
-  COLUMNS.forEach((col) => {
-    map[col].sort((a, b) => {
-      let result = 0
-      if (sortBy === "Deadline") {
-        if (!a.deadline) return 1
-        if (!b.deadline) return -1
-        result = new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
-      } else if (sortBy === "Severity") {
-        const aPrio = SEVERITY_ORDER[a.severity ?? a.priority ?? ""] ?? 99
-        const bPrio = SEVERITY_ORDER[b.severity ?? b.priority ?? ""] ?? 99
-        result = aPrio - bPrio
-      }
-      return sortDir === "desc" ? -result : result
+  const byColumn = useMemo(() => {
+    const map: Record<string, WorkItem[]> = {}
+    COLUMNS.forEach((c) => (map[c] = []))
+    visibleItems.forEach((item) => {
+      const s = item.status ?? "ToDo"
+      if (map[s]) map[s].push(item)
+      else map["ToDo"].push(item)
     })
-  })
-
-  return map
-}, [visibleItems, sortBy, sortDir])
-
-  
-
-  // Drag & Drop ----------------------------------------------
+    COLUMNS.forEach((col) => {
+      map[col].sort((a, b) => {
+        let result = 0
+        if (sortBy === "Deadline") {
+          if (!a.deadline) return 1
+          if (!b.deadline) return -1
+          result = new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
+        } else if (sortBy === "Severity") {
+          const aPrio = SEVERITY_ORDER[a.severity ?? ""] ?? 99
+          const bPrio = SEVERITY_ORDER[b.severity ?? ""] ?? 99
+          result = aPrio - bPrio
+        }
+        return sortDir === "desc" ? -result : result
+      })
+    })
+    return map
+  }, [visibleItems, sortBy, sortDir])
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     e.dataTransfer.effectAllowed = "move"
@@ -347,67 +300,60 @@ const byColumn = useMemo(() => {
   }, [])
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
-  if ((e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) return
-  setDragOverCol(null)
-}, [])
-  const handleDragEnd = useCallback(() => { setDraggingId(null); setDragOverCol(null) }, [])
+    if ((e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) return
+    setDragOverCol(null)
+  }, [])
+
+  const handleDragEnd = useCallback(() => {
+    setDraggingId(null)
+    setDragOverCol(null)
+  }, [])
 
   const handleDrop = useCallback(async (e: React.DragEvent, toCol: ColStatus) => {
-  e.preventDefault()
-  const id = e.dataTransfer.getData("itemId")
-  setDraggingId(null)
-  setDragOverCol(null)
+    e.preventDefault()
+    const id = e.dataTransfer.getData("itemId")
+    setDraggingId(null)
+    setDragOverCol(null)
 
-  const item = items.find((i) => i.id === id)
-  if (!item || item.status === toCol) return
-  const fromStatus = item.status
+    const item = items.find((i) => i.id === id)
+    if (!item || item.status === toCol) return
+    const fromStatus = item.status as ColStatus
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status: toCol } : i)))
 
-  // Optimistic update
-  setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status: toCol } : i)))
+    const toastId = `t-${Date.now()}`
+    setToasts((prev) => [...prev, {
+      id: toastId,
+      text: `${item.type ?? "Item"} #${item.id} "${item.title}" moved to ${statusMeta[toCol as keyof typeof statusMeta]?.label ?? toCol}.`,
+      itemId: id, fromStatus, toStatus: toCol,
+    }])
+    toastTimers.current[toastId] = setTimeout(() => dismissToast(toastId), 5000)
 
-  // Toast
-  const toastId = `t-${Date.now()}`
-  setToasts((prev) => [...prev, {
-    id: toastId,
-    text: `${item.type ?? "Item"} #${item.id} "${item.title}" moved to ${statusMeta[toCol as keyof typeof statusMeta]?.label ?? toCol}.`,
-    itemId: id, fromStatus, toStatus: toCol,
-  }])
-  toastTimers.current[toastId] = setTimeout(() => dismissToast(toastId), 5000)
+    try {
+      await updateWorkItem(Number(id), { status: frontendStatusMap[toCol] as Status })
+    } catch {
+      setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status: fromStatus } : i)))
+      clearTimeout(toastTimers.current[toastId])
+      delete toastTimers.current[toastId]
+      setToasts((prev) => prev.filter((t) => t.id !== toastId))
+      setError(`Could not move "${item.title}". Please try again.`)
+    }
+  }, [items, dismissToast])
 
-  // try {
-  //   const resp = await fetch(`/api/tickets/${id}/status`, {
-  //     method: "PATCH",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify({ status: toCol }),
-  //   })
-  //   if (!resp.ok) throw new Error()
-  // } catch {
-  //   setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status: fromStatus } : i)))
-  //   clearTimeout(toastTimers.current[toastId])
-  //   delete toastTimers.current[toastId]
-  //   setToasts((prev) => prev.filter((t) => t.id !== toastId))
-  //   setError(`Could not move "${item.title}". Please try again.`)
-  // }
-}, [items, dismissToast])
+  const handleUndo = useCallback(async (toast: ToastMsg) => {
+    dismissToast(toast.id)
+    setItems((prev) =>
+      prev.map((i) => (i.id === toast.itemId ? { ...i, status: toast.fromStatus } : i))
+    )
+    try {
+      await updateWorkItem(Number(toast.itemId), { status: frontendStatusMap[toast.fromStatus] as Status })
+    } catch {
+      setError(`Could not undo move. Please try again.`)
+    }
+  }, [dismissToast])
 
-  const handleUndo = useCallback((toast: ToastMsg) => {
-  dismissToast(toast.id)
-  setItems((prev) =>
-    prev.map((i) => (i.id === toast.itemId ? { ...i, status: toast.fromStatus } : i))
-  )
-
-
-  // fetch(`/api/tickets/${toast.itemId}/status`, {
-  //   method: "PATCH",
-  //   headers: { "Content-Type": "application/json" },
-  //   body: JSON.stringify({ status: toast.fromStatus }),
-  // })
-}, [dismissToast])
-
-  // Render ----------------------------------------------
   if (loading) return (
     <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
-      Loading Kanban board...
+      Loading Kanban board…
     </div>
   )
 
@@ -422,8 +368,6 @@ const byColumn = useMemo(() => {
 
   return (
     <div className="relative space-y-4" onDragEnd={handleDragEnd}>
-
-      {/* Board */}
       <div className="grid gap-4 lg:grid-cols-5">
         {COLUMNS.map((col) => (
           <KanbanColumn
@@ -435,7 +379,7 @@ const byColumn = useMemo(() => {
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             onDragLeave={handleDragLeave}
-            onCardClick={(id) => navigate(`/work-items/${id}/edit`)}
+            onCardClick={(id) => navigate(`/project/work-items/${id}/edit`)}
           />
         ))}
       </div>
@@ -446,7 +390,6 @@ const byColumn = useMemo(() => {
         </div>
       )}
 
-      {/* Toasts */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
         {toasts.map((toast) => (
           <Toast key={toast.id} toast={toast} onUndo={handleUndo} onDismiss={dismissToast} />

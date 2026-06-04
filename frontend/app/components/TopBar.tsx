@@ -2,22 +2,8 @@ import React, { useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router"
 import { Search, Bell, Settings, X, Check, Info, AlertTriangle, ChevronRight, User, Moon, Sun, Monitor, Shield, LogOut, Bug, BookOpen, Zap, CheckSquare } from "lucide-react"
 import { logout } from "../api/auth"
+import { getCurrentUser } from "../api/user"
 import { useTheme } from "../context/ThemeContext"
-
-const MOCK_WORK_ITEMS = [
-  { id: "5", projectId: "1", type: "Bug", title: "Implement attachment feature", status: "To Do" },
-  { id: "4", projectId: "1", type: "Task", title: "Drop-down button not working", status: "Closed" },
-  { id: "3", projectId: "2", type: "Epic", title: "Save settings button not working", status: "Closed" },
-  { id: "2", projectId: "2", type: "User Story", title: "Implement user settings", status: "In progress" },
-  { id: "1", projectId: "1", type: "Bug", title: "Login functionality not working", status: "Testing" },
-]
-
-const WORK_ITEM_ICONS: Record<string, { textClass: string; icon: React.ReactNode }> = {
-  Bug: { textClass: "text-rose-700", icon: <Bug className="h-4 w-4" /> },
-  Task: { textClass: "text-sky-700", icon: <CheckSquare className="h-4 w-4" /> },
-  Epic: { textClass: "text-violet-700", icon: <Zap className="h-4 w-4" /> },
-  "User Story": { textClass: "text-emerald-700", icon: <BookOpen className="h-4 w-4" /> },
-}
 
 const MOCK_NOTIFICATIONS = [
   { id: "1", type: "info", title: "New comment on WI #2", desc: "Mihai Pop left a comment on your task.", time: "2m ago", read: false, workItemId: "2" },
@@ -27,70 +13,10 @@ const MOCK_NOTIFICATIONS = [
   { id: "5", type: "success", title: "WI #5 moved in Testing", desc: "Auth token refresh bug is in testing.", time: "2d ago", read: true, workItemId: "5" },
 ]
 
-const WORK_ITEM_COLORS: Record<string, string> = {
-  Bug: "bg-rose-100 text-rose-700",
-  Task: "bg-sky-100 text-sky-700",
-  "User Story": "bg-emerald-100 text-emerald-700",
-  Epic: "bg-violet-100 text-violet-700",
-}
-
-function SearchDropdown({ query, onNavigate }: { query: string; onNavigate: () => void }) {
-  const navigate = useNavigate()
-  const q = query.toLowerCase()
-
-  const projectId = typeof window !== "undefined"
-    ? localStorage.getItem("selectedProject")
-    : null
-
-  const results = MOCK_WORK_ITEMS.filter((w) =>
-    (!projectId || w.projectId === projectId) &&
-    (w.title.toLowerCase().includes(q) || w.id.toLowerCase().includes(q))
-  ).slice(0, 5)
-
-  return (
-    <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden">
-      {results.length === 0 ? (
-        <div className="px-4 py-5 text-center">
-          <p className="text-sm text-slate-400">No work items found for "<span className="font-medium text-slate-600">{query}</span>"</p>
-        </div>
-      ) : (
-        <>
-          <p className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Work Items</p>
-          {results.map((w) => (
-            <button
-              key={w.id}
-              onMouseDown={(e) => {
-                e.preventDefault()
-                navigate(`/work-items?search=${encodeURIComponent(w.title)}`)
-                onNavigate()
-              }}
-              className="flex w-full items-center gap-3 px-4 py-2.5 hover:bg-slate-100 transition"
-            >
-              <div className={`flex h-6 w-6 flex-none items-center justify-center rounded-lg ${WORK_ITEM_COLORS[w.type]}`}>
-                {WORK_ITEM_ICONS[w.type]?.icon}
-              </div>
-              <span className="text-xs font-semibold text-slate-400 flex-none">{w.id}</span>
-              <span className="text-sm text-slate-700 flex-1 text-left truncate">{w.title}</span>
-              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md flex-none border ${WORK_ITEM_COLORS[w.type]}`}>{w.type}</span>
-            </button>
-          ))}
-          <div className="border-t border-slate-100">
-            <button
-              onMouseDown={(e) => {
-                e.preventDefault()
-                navigate(`/work-items?search=${encodeURIComponent(query)}`)
-                onNavigate()
-              }}
-              className="flex w-full items-center justify-between px-4 py-2.5 hover:bg-slate-50 transition"
-            >
-              <span className="text-sm text-slate-500">See all results for "<span className="font-medium text-slate-700">{query}</span>"</span>
-              <ChevronRight className="h-4 w-4 text-slate-400" />
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  )
+function getInitials(username: string): string {
+  const parts = username.split(/[.\s_-]/).filter(Boolean)
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+  return username.slice(0, 2).toUpperCase()
 }
 
 function NotificationsPopup({ onClose, notifications, setNotifications }: {
@@ -208,92 +134,57 @@ function SettingsPopup({ onClose }: { onClose: () => void }) {
 
 export default function TopBar() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const routePrefix = location.pathname.startsWith("/org") ? "/org" : "/project"
 
-  const [search, setSearch] = useState("")
+  const [currentUser, setCurrentUser] = useState<{ username: string; email: string } | null>(null)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS)
-  const [hasProject, setHasProject] = useState(false)
 
-  const searchRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
   const settingsRef = useRef<HTMLDivElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
 
-  const location = useLocation()
-  const routePrefix = location.pathname.startsWith("/org") ? "/org" : "/project"
-
   useEffect(() => {
-    setHasProject(!!localStorage.getItem("selectedProject") && !location.pathname.startsWith("/org"))
+    getCurrentUser().then(setCurrentUser).catch(() => {})
   }, [])
 
   useEffect(() => {
-    const h = (e: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {}
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false)
-      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setSettingsOpen(false)
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileMenuOpen(false)
-    }
-    document.addEventListener("mousedown", h)
-    return () => document.removeEventListener("mousedown", h)
-  }, [])
+      const h = (e: MouseEvent) => {
+        if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false)
+        if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setSettingsOpen(false)
+        if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileMenuOpen(false)
+      }
+      document.addEventListener("mousedown", h)
+      return () => document.removeEventListener("mousedown", h)
+    }, [])
 
-  const userName = "Mihai Pop"
-  const initials = userName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()
+  const userName = currentUser?.username ?? ""
+  const initials = getInitials(userName)
   const unreadCount = notifications.filter((n) => !n.read).length
 
   return (
     <div className="mb-6 rounded-3xl border border-slate-200 bg-slate-50 p-3 shadow-sm">
       <div className="flex items-center gap-3">
 
-        {/* Search */}
-        {hasProject && (
-          <div ref={searchRef} className="relative flex min-w-0 flex-1">
-            <div className="flex w-full items-center rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-              <Search className="mr-3 h-4 w-4 flex-none text-slate-400" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search work items..."
-                className="w-full bg-transparent text-sm text-slate-700 outline-none"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && search.trim()) {
-                    navigate(`/work-items?search=${encodeURIComponent(search.trim())}`)
-                    setSearch("")
-                  }
-                }}
-              />
-              {search && (
-                <button onClick={() => setSearch("")} className="text-slate-300 hover:text-slate-500 transition">
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-            {search.length > 0 && (
-              <SearchDropdown query={search} onNavigate={() => setSearch("")} />
-            )}
-          </div>
-        )}
-
         {/* Notifications */}
-        {hasProject && (
-          <div ref={notifRef} className="relative">
-            <button
-              onClick={() => { setNotifOpen((o) => !o); setSettingsOpen(false); setProfileMenuOpen(false) }}
-              className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm transition hover:bg-slate-100"
-            >
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-semibold text-white">{unreadCount}</span>
-              )}
-              <Bell className="h-5 w-5" />
-            </button>
-            {notifOpen && <NotificationsPopup onClose={() => setNotifOpen(false)} notifications={notifications} setNotifications={setNotifications} />}
-          </div>
-        )}
+        <div ref={notifRef} className="relative ml-auto">
+          <button
+            onClick={() => { setNotifOpen((o) => !o); setSettingsOpen(false); setProfileMenuOpen(false) }}
+            className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm transition hover:bg-slate-100"
+          >
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-semibold text-white">{unreadCount}</span>
+            )}
+            <Bell className="h-5 w-5" />
+          </button>
+          {notifOpen && <NotificationsPopup onClose={() => setNotifOpen(false)} notifications={notifications} setNotifications={setNotifications} />}
+        </div>
 
         {/* Settings */}
-        <div ref={settingsRef} className={`relative ${!hasProject ? "ml-auto" : ""}`}>
+        <div ref={settingsRef} className="relative">
           <button
             onClick={() => { setSettingsOpen((o) => !o); setNotifOpen(false); setProfileMenuOpen(false) }}
             className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm transition hover:bg-slate-100"
@@ -318,23 +209,17 @@ export default function TopBar() {
             <div className="absolute right-0 z-20 mt-2 w-48 rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-100">
                 <p className="text-sm font-semibold text-slate-900 truncate">{userName}</p>
-                <p className="text-xs text-slate-400 truncate">mihai.pop@example.com</p>
+                <p className="text-xs text-slate-400 truncate">{currentUser?.email ?? ""}</p>
               </div>
               <button
-                onClick={() => {
-                  setProfileMenuOpen(false)
-                  navigate(`${routePrefix}/profile`)
-                }}
+                onClick={() => { setProfileMenuOpen(false); navigate(`${routePrefix}/profile`) }}
                 className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"
               >
                 <User className="h-4 w-4 text-slate-400" />
                 View profile
               </button>
               <button
-                onClick={() => {
-                  setProfileMenuOpen(false)
-                  navigate(`${routePrefix}/profile`)
-                }}
+                onClick={() => { setProfileMenuOpen(false); navigate(`${routePrefix}/profile`) }}
                 className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"
               >
                 <Shield className="h-4 w-4 text-slate-400" />

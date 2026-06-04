@@ -379,7 +379,7 @@ export default function WorkItems() {
                     <tr
                       key={item.id}
                       className="hover:bg-slate-50 cursor-pointer"
-                      onClick={() => navigate(`/project/work-items/${item.id}/edit`)}
+                      onClick={() => navigate(`/project/work-items/${item.id}`)}
                     >
                       <td className="whitespace-nowrap px-4 py-3 font-semibold text-slate-900">{item.id}</td>
                       <td className="px-4 py-3 text-slate-900">

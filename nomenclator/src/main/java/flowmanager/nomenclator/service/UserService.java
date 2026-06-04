@@ -60,12 +60,12 @@ public class UserService {
                 .toList();
     }
 
-    public UserSummaryDto getCurrentUser(Authentication auth) {
+    public UserResponseDto getCurrentUser(Authentication auth) {
         String keycloakId = Utils.getCurrentUserId(auth);
         User user = userRepository.findByKeycloakId(keycloakId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        return userMapper.toSummaryDto(user);
+        return userMapper.toResponseDto(user);
     }
 
     public List<CommentResponseUserDto> findAllCommentsByUserId(Integer userId) {

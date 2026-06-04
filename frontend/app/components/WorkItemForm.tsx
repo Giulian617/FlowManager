@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react"
 import {
   Bug, CheckSquare, Zap, BookOpen, ArrowLeft, ChevronDown, Search, UserCircle,
-  AlertCircle, Send, Paperclip, Calendar, Link2, Lock, X, Plus
+  AlertCircle, Send, Calendar, Link2, Lock, X, Plus, Pencil, Trash2
 } from "lucide-react"
 import { useNavigate } from "react-router"
 import { severityMeta } from "../utils/status"
@@ -13,6 +13,7 @@ import {
 import {
   createWorkItem,
   updateWorkItem,
+  deleteWorkItem,
 } from "../api/workItem"
 import type {
   WorkItemCreateDto,
@@ -22,6 +23,7 @@ import type {
 } from "../types/workItem"
 import type { UserSummaryDto } from "../types/user"
 import type { ItemType, Severity } from "../types/enums"
+import { statusMeta } from "../utils/status"
 
 const severityOptions = ["Low", "Medium", "High", "Critical", "Blocker"]
 
@@ -29,6 +31,14 @@ function initials(username: string): string {
   const parts = username.split(/[.\s_-]/).filter(Boolean)
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
   return username.slice(0, 2).toUpperCase()
+}
+
+const backendStatusMap: Record<string, keyof typeof statusMeta> = {
+  To_do:       "ToDo",
+  In_progress: "InProgress",
+  Testing:     "Testing",
+  Done:        "Done",
+  Closed:      "Closed",
 }
 
 function FieldLabel({ children, required, satisfied }: {
@@ -51,6 +61,14 @@ function LockedField({ children }: { children: React.ReactNode }) {
     <div className="flex items-center gap-2.5 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
       {children}
       <Lock className="ml-auto h-3 w-3 flex-none text-slate-300" />
+    </div>
+  )
+}
+
+function ReadOnlyField({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2.5 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+      {children}
     </div>
   )
 }
@@ -435,6 +453,7 @@ function CommentSection({ currentUser }: { currentUser: UserSummaryDto | null })
 }
 
 export type WorkItemType = "bug" | "task" | "user-story" | "epic"
+export type WorkItemMode = "new" | "edit" | "view"
 
 interface WorkItemFormConfig {
   icon: React.ReactNode
@@ -503,20 +522,26 @@ const configs: Record<WorkItemType, WorkItemFormConfig> = {
 
 export default function WorkItemForm({
     type,
+    mode = "new",
     initialData
 }: {
   type: WorkItemType
+  mode?: WorkItemMode
   initialData?: WorkItemResponseDto
 }) {
   const navigate = useNavigate()
   const cfg = configs[type]
-  const isEdit = !!initialData
+  const isView = mode === "view"
+  const isEdit = mode === "edit"
+  const isNew  = mode === "new"
 
   const [currentUser, setCurrentUser] = useState<UserSummaryDto | null>(null)
   const [projectMembers, setProjectMembers] = useState<UserSummaryDto[]>([])
   const [projectWorkItems, setProjectWorkItems] = useState<WorkItemSummaryDto[]>([])
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const [title, setTitle]           = useState(initialData?.title ?? "")
   const [description, setDesc]      = useState(initialData?.description ?? "")
@@ -623,6 +648,25 @@ export default function WorkItemForm({
     }
   }
 
+  const handleDelete = async () => {
+    if (!initialData) return
+    setDeleting(true)
+    try {
+      await deleteWorkItem(initialData.id)
+      navigate("/project/work-items")
+    } catch (e) {
+      console.error("Failed to delete work item", e)
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
+
+  const statusKey   = backendStatusMap[initialData?.status ?? ""] ?? "ToDo"
+  const statusClass = statusMeta[statusKey]
+  const assignedUsers = projectMembers.filter((m) => assignees.includes(String(m.id)))
+
+  const modeLabel = isView ? "View Work Item" : isEdit ? "Edit Work Item" : "New Work Item"
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -634,53 +678,127 @@ export default function WorkItemForm({
         >
           <ArrowLeft className="h-4 w-4" /> Back to Work Items
         </button>
-        <div className="flex items-center gap-3">
-          <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${cfg.iconBg} ${cfg.iconBorder}`}>
-            {cfg.icon}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${cfg.iconBg} ${cfg.iconBorder}`}>
+              {cfg.icon}
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{modeLabel}</p>
+              <h1 className="text-2xl font-semibold text-slate-900">{cfg.heading}</h1>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-              {isEdit ? "Edit Work Item" : "New Work Item"}
-            </p>
-            <h1 className="text-2xl font-semibold text-slate-900">{cfg.heading}</h1>
-          </div>
+
+          {/* View mode: Edit + Delete buttons in header */}
+          {isView && initialData && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigate(`/project/work-items/${initialData.id}/edit`)}
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-slate-300"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete
+              </button>
+            </div>
+          )}
         </div>
       </header>
+
+      {/* Delete confirmation modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-xl space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 flex-none items-center justify-center rounded-2xl bg-rose-50 border border-rose-200">
+                <Trash2 className="h-4 w-4 text-rose-600" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-slate-900">Delete work item?</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  This will permanently delete <span className="font-semibold text-slate-700">#{initialData?.id} — {initialData?.title}</span>. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 rounded-2xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-40"
+              >
+                {deleting ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
         {/* Left column */}
         <div className="space-y-5">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
+
+            {/* Title */}
             <div>
-              <FieldLabel required satisfied={titleOk}>Title</FieldLabel>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder={cfg.titlePlaceholder}
-                className={`w-full rounded-2xl border bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 ${
-                  !titleOk
-                    ? "border-rose-400 hover:border-rose-400 focus:border-rose-400 focus:ring-rose-100"
-                    : "border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-slate-200"
-                }`}
-              />
+              <FieldLabel required={!isView} satisfied={titleOk}>Title</FieldLabel>
+              {isView ? (
+                <p className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900">
+                  {title || <span className="text-slate-400 italic">No title</span>}
+                </p>
+              ) : (
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder={cfg.titlePlaceholder}
+                  className={`w-full rounded-2xl border bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 ${
+                    !titleOk
+                      ? "border-rose-400 hover:border-rose-400 focus:border-rose-400 focus:ring-rose-100"
+                      : "border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-slate-200"
+                  }`}
+                />
+              )}
             </div>
 
+            {/* Description */}
             <div>
-              <FieldLabel required satisfied={descOk}>Description</FieldLabel>
-              <textarea
-                value={description}
-                onChange={(e) => setDesc(e.target.value)}
-                placeholder={cfg.descPlaceholder}
-                rows={6}
-                className={`w-full resize-none rounded-2xl border bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 ${
-                  !descOk
-                    ? "border-rose-400 hover:border-rose-400 focus:border-rose-400 focus:ring-rose-100"
-                    : "border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-slate-200"
-                }`}
-              />
+              <FieldLabel required={!isView} satisfied={descOk}>Description</FieldLabel>
+              {isView ? (
+                <p className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700 whitespace-pre-wrap min-h-24">
+                  {description || <span className="text-slate-400 italic">No description provided.</span>}
+                </p>
+              ) : (
+                <textarea
+                  value={description}
+                  onChange={(e) => setDesc(e.target.value)}
+                  placeholder={cfg.descPlaceholder}
+                  rows={6}
+                  className={`w-full resize-none rounded-2xl border bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 ${
+                    !descOk
+                      ? "border-rose-400 hover:border-rose-400 focus:border-rose-400 focus:ring-rose-100"
+                      : "border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-slate-200"
+                  }`}
+                />
+              )}
             </div>
 
-            {(!titleOk || !descOk || !severityOk) && (
+            {!isView && (!titleOk || !descOk || !severityOk) && (
               <div className="flex items-center gap-2 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-700">
                 <AlertCircle className="h-4 w-4 flex-none" />
                 <span>Title, description, and severity are required to save.</span>
@@ -695,43 +813,62 @@ export default function WorkItemForm({
             )}
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <CommentSection currentUser={currentUser} />
-          </div>
+          {/* Comments*/}
+          {isView && (
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <CommentSection currentUser={currentUser} />
+            </div>
+          )}
         </div>
 
         {/* Right column */}
         <div className="space-y-5">
           <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm space-y-3.5">
+
+            {/* Status */}
             <div>
               <FieldLabel>Status</FieldLabel>
               <LockedField>
-                <span className="h-2 w-2 rounded-full flex-none bg-sky-500" />
-                <span className="text-sm text-slate-600">{initialData?.status ?? "To Do"}</span>
+                <span className={`h-2 w-2 rounded-full flex-none ${statusClass?.dotClass ?? "bg-sky-500"}`} />
+                <span className="text-sm text-slate-600">{statusClass?.label ?? initialData?.status ?? "To Do"}</span>
               </LockedField>
             </div>
 
+            {/* Severity */}
             <div>
-              <FieldLabel required satisfied={severityOk}>Severity</FieldLabel>
-              <SelectDropdown
-                value={severity}
-                options={severityOptions}
-                onChange={setSeverity}
-                placeholder="Select severity…"
-                error={!severityOk}
-                renderOption={(v) => (
-                  <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.15em] ${severityMeta[v as keyof typeof severityMeta]?.className}`}>
-                    {v}
-                  </span>
-                )}
-                renderSelected={(v) => (
-                  <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.15em] ${severityMeta[v as keyof typeof severityMeta]?.className}`}>
-                    {v}
-                  </span>
-                )}
-              />
+              <FieldLabel required={!isView} satisfied={severityOk}>Severity</FieldLabel>
+              {isView ? (
+                <ReadOnlyField>
+                  {severity ? (
+                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.15em] ${severityMeta[severity as keyof typeof severityMeta]?.className}`}>
+                      {severity}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-slate-400 italic">Not set</span>
+                  )}
+                </ReadOnlyField>
+              ) : (
+                <SelectDropdown
+                  value={severity}
+                  options={severityOptions}
+                  onChange={setSeverity}
+                  placeholder="Select severity…"
+                  error={!severityOk}
+                  renderOption={(v) => (
+                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.15em] ${severityMeta[v as keyof typeof severityMeta]?.className}`}>
+                      {v}
+                    </span>
+                  )}
+                  renderSelected={(v) => (
+                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.15em] ${severityMeta[v as keyof typeof severityMeta]?.className}`}>
+                      {v}
+                    </span>
+                  )}
+                />
+              )}
             </div>
 
+            {/* Created By */}
             <div>
               <FieldLabel>Created By</FieldLabel>
               <LockedField>
@@ -748,6 +885,7 @@ export default function WorkItemForm({
               </LockedField>
             </div>
 
+            {/* Created Date */}
             <div>
               <FieldLabel>Created Date</FieldLabel>
               <LockedField>
@@ -756,72 +894,143 @@ export default function WorkItemForm({
               </LockedField>
             </div>
 
+            {/* Deadline */}
             <div>
               <FieldLabel>Deadline</FieldLabel>
-              <div className="relative">
-                <Calendar className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              {isView ? (
+                <ReadOnlyField>
+                  <Calendar className="h-3.5 w-3.5 flex-none text-slate-400" />
+                  <span className="text-sm text-slate-600">{deadline || <span className="text-slate-400 italic">Not set</span>}</span>
+                </ReadOnlyField>
+              ) : (
+                <div className="relative">
+                  <Calendar className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                   <input
                     type="date"
                     value={deadline}
                     onChange={(e) => setDeadline(e.target.value)}
                     className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-2 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
                   />
-              </div>
+                </div>
+              )}
             </div>
 
+            {/* Assigned To */}
             <div>
               <FieldLabel>Assigned To</FieldLabel>
-              <AssigneeMultiDropdown value={assignees} onChange={setAssignees} options={projectMembers} />
+              {isView ? (
+                <div className="space-y-1.5">
+                  {assignedUsers.length === 0 ? (
+                    <ReadOnlyField>
+                      <UserCircle className="h-4 w-4 text-slate-400" />
+                      <span className="text-sm text-slate-400 italic">Unassigned</span>
+                    </ReadOnlyField>
+                  ) : (
+                    assignedUsers.map((user) => (
+                      <ReadOnlyField key={user.id}>
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-900 text-[10px] font-semibold flex-none">
+                          {initials(user.username)}
+                        </div>
+                        <span className="text-sm text-slate-700">{user.username}</span>
+                      </ReadOnlyField>
+                    ))
+                  )}
+                </div>
+              ) : (
+                <AssigneeMultiDropdown value={assignees} onChange={setAssignees} options={projectMembers} />
+              )}
             </div>
 
+            {/* Parent */}
             {cfg.showParent && (
               <div>
                 <FieldLabel>{cfg.parentLabel}</FieldLabel>
-                <ParentField
-                value={parent}
-                onChange={setParent}
-                candidates={projectWorkItems.filter((w) =>
-                    type === "user-story"
-                    ? w.itemType === "Epic"
-                    : ["Epic", "User_Story"].includes(w.itemType)
+                {isView ? (
+                  <ReadOnlyField>
+                    <Link2 className="h-3.5 w-3.5 flex-none text-slate-400" />
+                    {parent ? (
+                      (() => {
+                        const p = projectWorkItems.find((w) => String(w.id) === parent)
+                        return p
+                          ? <span className="text-sm text-slate-700"><span className="font-semibold text-slate-400 mr-1">#{p.id}</span>{p.title}</span>
+                          : <span className="text-sm text-slate-700">#{parent}</span>
+                      })()
+                    ) : (
+                      <span className="text-sm text-slate-400 italic">None</span>
+                    )}
+                  </ReadOnlyField>
+                ) : (
+                  <ParentField
+                    value={parent}
+                    onChange={setParent}
+                    candidates={projectWorkItems.filter((w) =>
+                      type === "user-story"
+                        ? w.itemType === "Epic"
+                        : ["Epic", "User_Story"].includes(w.itemType)
+                    )}
+                  />
                 )}
-                />
               </div>
             )}
 
+            {/* Child Items */}
             {cfg.showChildren && (
               <div>
                 <FieldLabel>Child Items</FieldLabel>
-                <ChildItemsField
-                value={children}
-                onChange={setChildren}
-                candidates={projectWorkItems.filter((w) =>
-                    type === "epic"
-                    ? w.itemType !== "Epic"
-                    : ["Task", "Bug"].includes(w.itemType)
+                {isView ? (
+                  <div className="space-y-1.5">
+                    {children.length === 0 ? (
+                      <ReadOnlyField>
+                        <span className="text-sm text-slate-400 italic">No child items</span>
+                      </ReadOnlyField>
+                    ) : (
+                      children.map((childId) => {
+                        const child = projectWorkItems.find((w) => String(w.id) === childId)
+                        return (
+                          <ReadOnlyField key={childId}>
+                            <span className="font-semibold text-slate-400 text-xs flex-none">#{childId}</span>
+                            <span className="text-sm text-slate-700 truncate">{child?.title ?? "—"}</span>
+                            {child && <span className="ml-auto text-xs text-slate-400 flex-none">{child.itemType}</span>}
+                          </ReadOnlyField>
+                        )
+                      })
+                    )}
+                  </div>
+                ) : (
+                  <ChildItemsField
+                    value={children}
+                    onChange={setChildren}
+                    candidates={projectWorkItems.filter((w) =>
+                      type === "epic"
+                        ? w.itemType !== "Epic"
+                        : ["Task", "Bug"].includes(w.itemType)
+                    )}
+                  />
                 )}
-                />
               </div>
             )}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              disabled={!canSave || saving}
-              onClick={handleSave}
-              className="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {saving ? "Saving…" : isEdit ? "Save Changes" : cfg.saveLabel}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-            >
-              Cancel
-            </button>
-          </div>
+          {/* Action buttons — only for new/edit */}
+          {!isView && (
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                disabled={!canSave || saving}
+                onClick={handleSave}
+                className="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {saving ? "Saving…" : isEdit ? "Save Changes" : cfg.saveLabel}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

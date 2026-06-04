@@ -9,5 +9,5 @@ export default function NewWorkItem() {
           <p className="text-sm">Supported types: bug, task, epic, user-story</p>
         </div>
       )
-  return <WorkItemForm type={type as WorkItemType} />
+  return <WorkItemForm type={type as WorkItemType} mode="new" />
 }

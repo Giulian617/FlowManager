@@ -10,6 +10,7 @@ export default [
     route("teams", "routes/project-teams.tsx"),
     route("work-items", "routes/workItems.tsx"),
     route("work-items/new/:type", "routes/workItems-new.tsx"),
+    route("work-items/:id", "routes/workItems-view.tsx"),
     route("work-items/:id/edit", "routes/workItems-edit.tsx"),
     route("kanban", "routes/project-kanban.tsx"),
     route("notification-settings", "routes/notification-settings.tsx", { id: "project-notification-settings" }),

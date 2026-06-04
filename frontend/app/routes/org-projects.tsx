@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { useNavigate } from "react-router"
+import { useNavigate, useLocation } from "react-router"
 import { Calendar, User, Users, Search, Plus, X, ChevronDown, AlertCircle, Pencil, Trash2 } from "lucide-react"
 import {
   getCurrentUser,
