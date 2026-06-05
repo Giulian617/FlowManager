@@ -47,18 +47,18 @@ const frontendStatusMap: Record<ColStatus, string> = {
 }
 
 const severityMeta: Record<string, string> = {
-  Low: "bg-emerald-600/10 text-emerald-700",
-  Medium: "bg-sky-600/10 text-sky-700",
-  High:"bg-amber-600/10 text-amber-700",
-  Critical: "bg-rose-600/10 text-rose-700",
-  Blocker: "bg-slate-200 text-slate-900",
+  Low:      "bg-emerald-600/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
+  Medium:   "bg-sky-600/10 text-sky-700 dark:bg-sky-500/15 dark:text-sky-400",
+  High:     "bg-amber-600/10 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
+  Critical: "bg-rose-600/10 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400",
+  Blocker:  "bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-slate-100",
 }
 
 const typeIcons: Record<string, { textClass: string; icon: React.ReactNode }> = {
-  Task: { textClass: "text-sky-700", icon: <CheckSquare className="h-3.5 w-3.5" /> },
-  Bug: { textClass: "text-rose-700", icon: <Bug className="h-3.5 w-3.5" /> },
-  "User Story": { textClass: "text-emerald-700", icon: <BookOpen className="h-3.5 w-3.5" /> },
-  Epic: { textClass: "text-violet-700", icon: <Zap className="h-3.5 w-3.5" /> },
+  Task:         { textClass: "text-sky-700 dark:text-sky-400",     icon: <CheckSquare className="h-3.5 w-3.5" /> },
+  Bug:          { textClass: "text-rose-700 dark:text-rose-400",   icon: <Bug className="h-3.5 w-3.5" /> },
+  "User Story": { textClass: "text-emerald-700 dark:text-emerald-400", icon: <BookOpen className="h-3.5 w-3.5" /> },
+  Epic:         { textClass: "text-violet-700 dark:text-violet-400", icon: <Zap className="h-3.5 w-3.5" /> },
 }
 
 function initials(username: string): string {
@@ -83,15 +83,15 @@ function isOverdue(d?: string, status?: string) {
 
 function mapWorkItem(w: WorkItemSummaryDto): WorkItem {
   return {
-    id:          String(w.id),
-    type:        w.itemType === "User_Story" ? "User Story" : w.itemType,
-    title:       w.title,
-    status:      backendStatusMap[w.status as string] ?? "ToDo",
-    assigneeId:  w.assignees?.[0] ? String(w.assignees[0].id) : undefined,
+    id:           String(w.id),
+    type:         w.itemType === "User_Story" ? "User Story" : w.itemType,
+    title:        w.title,
+    status:       backendStatusMap[w.status as string] ?? "ToDo",
+    assigneeId:   w.assignees?.[0] ? String(w.assignees[0].id) : undefined,
     assigneeName: w.assignees?.[0]?.username,
-    assignees:   w.assignees?.map((a) => ({ id: String(a.id), name: a.username })) ?? [],
-    severity:    w.severity,
-    deadline:    w.dueDate ?? undefined,
+    assignees:    w.assignees?.map((a) => ({ id: String(a.id), name: a.username })) ?? [],
+    severity:     w.severity,
+    deadline:     w.dueDate ?? undefined,
   }
 }
 
@@ -109,40 +109,40 @@ function KanbanCard({ item, isDragging, onDragStart, onClick }: {
       draggable
       onDragStart={(e) => onDragStart(e, item.id)}
       onClick={() => onClick(item.id)}
-      className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm cursor-grab active:cursor-grabbing select-none transition-all duration-150 ${
+      className={`rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm cursor-grab active:cursor-grabbing select-none transition-all duration-150 ${
         isDragging ? "opacity-40 scale-95 rotate-1" : "hover:shadow-md hover:-translate-y-0.5"
       }`}
     >
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1">
-          <span className={typeMeta?.textClass ?? "text-slate-500"}>{typeMeta?.icon}</span>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">
+          <span className={typeMeta?.textClass ?? "text-slate-500 dark:text-slate-400"}>{typeMeta?.icon}</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">
             {item.type ?? "Item"}
           </span>
-          <span className="text-[10px] font-medium text-slate-400">#{item.id}</span>
+          <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">#{item.id}</span>
         </div>
         {item.severity && (
-          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.13em] ${severityMeta[item.severity] ?? "bg-slate-100 text-slate-600"}`}>
+          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.13em] ${severityMeta[item.severity] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}>
             {item.severity}
           </span>
         )}
       </div>
 
-      <p className="mb-3 text-sm font-semibold leading-snug text-slate-900">{item.title}</p>
+      <p className="mb-3 text-sm font-semibold leading-snug text-slate-900 dark:text-slate-100">{item.title}</p>
 
       <div className="flex items-center justify-between gap-2">
         <div className="flex -space-x-2">
           {(item.assignees ?? (item.assigneeName ? [{ id: item.assigneeId ?? "", name: item.assigneeName }] : [])).map((a) => (
             <div
               key={a.id}
-              className="flex h-7 w-7 flex-none items-center justify-center rounded-full border-2 border-white bg-blue-100 text-[10px] font-semibold text-blue-900"
+              className="flex h-7 w-7 flex-none items-center justify-center rounded-full border-2 border-white dark:border-slate-800 bg-blue-100 dark:bg-blue-950 text-[10px] font-semibold text-blue-900 dark:text-blue-300"
               title={a.name}
             >
               {initials(a.name)}
             </div>
           ))}
         </div>
-        <div className={`flex items-center gap-1 text-xs ${overdue ? "text-red-600 font-semibold" : "text-slate-400"}`}>
+        <div className={`flex items-center gap-1 text-xs ${overdue ? "text-red-600 dark:text-red-400 font-semibold" : "text-slate-400 dark:text-slate-500"}`}>
           <span>{formatDate(item.deadline)}</span>
         </div>
       </div>
@@ -165,29 +165,29 @@ function KanbanColumn({ col, items, draggingId, isOver, onDragStart, onDragOver,
 
   return (
     <div
-      className={`flex flex-col rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-150 ${isOver ? "ring-2 ring-slate-300 scale-[1.01]" : ""}`}
+      className={`flex flex-col rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 shadow-sm transition-all duration-150 ${isOver ? "ring-2 ring-slate-300 dark:ring-slate-600 scale-[1.01]" : ""}`}
       onDragOver={(e) => onDragOver(e, col)}
       onDrop={(e) => onDrop(e, col)}
       onDragLeave={onDragLeave}
     >
-      <div className={`rounded-t-3xl border-b px-4 py-4 ${meta.headerClass}`}>
+      <div className={`rounded-t-3xl border-b dark:border-slate-700 px-4 py-4 ${meta.headerClass}`}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className={`h-2.5 w-2.5 rounded-full ${meta.dotClass}`} />
             <span className="text-sm font-semibold">{meta.label}</span>
           </div>
-          <span className="text-xs font-medium text-slate-500">{items.length}</span>
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{items.length}</span>
         </div>
       </div>
-      <div className={`flex flex-col gap-3 p-4 min-h-55 rounded-b-3xl transition-colors duration-150 ${isOver ? "bg-slate-100" : "bg-slate-50"}`}>
+      <div className={`flex flex-col gap-3 p-4 min-h-55 rounded-b-3xl transition-colors duration-150 ${isOver ? "bg-slate-100 dark:bg-slate-700/50" : "bg-slate-50 dark:bg-slate-800/30"}`}>
         {items.map((item) => (
           <KanbanCard key={item.id} item={item} isDragging={draggingId === item.id} onDragStart={onDragStart} onClick={onCardClick} />
         ))}
         {isOver && items.every((i) => i.id !== draggingId) && (
-          <div className="rounded-2xl border-2 border-dashed border-slate-300 py-6 text-center text-xs text-slate-400">Drop here</div>
+          <div className="rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 py-6 text-center text-xs text-slate-400 dark:text-slate-500">Drop here</div>
         )}
         {items.length === 0 && !isOver && (
-          <p className="text-sm text-slate-400">No cards yet</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500">No cards yet</p>
         )}
       </div>
     </div>
@@ -200,12 +200,12 @@ function Toast({ toast, onUndo, onDismiss }: {
   onDismiss: (id: string) => void
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-xl bg-slate-800 px-3 py-2 shadow-lg text-sm text-white">
+    <div className="flex items-center gap-2 rounded-xl bg-slate-800 dark:bg-slate-700 border dark:border-slate-600 px-3 py-2 shadow-lg text-sm text-white">
       <span className="flex-1">{toast.text}</span>
-      <button onClick={() => onUndo(toast)} className="ml-1 rounded-xl bg-white px-3 py-1 text-xs font-semibold text-slate-900 transition hover:bg-slate-100">
+      <button onClick={() => onUndo(toast)} className="ml-1 rounded-xl bg-white dark:bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-900 transition hover:bg-slate-100 dark:hover:bg-slate-300">
         Undo
       </button>
-      <button onClick={() => onDismiss(toast.id)} aria-label="Dismiss" className="rounded-full p-0.5 text-slate-300 transition hover:text-white">
+      <button onClick={() => onDismiss(toast.id)} aria-label="Dismiss" className="rounded-full p-0.5 text-slate-300 dark:text-slate-400 transition hover:text-white">
         <X className="h-3.5 w-3.5" />
       </button>
     </div>
@@ -255,7 +255,7 @@ export default function KanbanBoard({
   }, [])
 
   useEffect(() => { load() }, [load])
-  
+
   const visibleItems = useMemo(() => items.filter((item) => {
     if (typeFilter.size > 0 && !typeFilter.has(item.type ?? "")) return false
     return true
@@ -352,15 +352,15 @@ export default function KanbanBoard({
   }, [dismissToast])
 
   if (loading) return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
+    <div className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 text-center text-slate-500 dark:text-slate-400 shadow-sm">
       Loading Kanban board…
     </div>
   )
 
   if (error) return (
-    <div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center shadow-sm">
-      <p className="mb-4 text-rose-700">{error}</p>
-      <button onClick={load} className="rounded-2xl border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50">
+    <div className="rounded-3xl border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 p-8 text-center shadow-sm">
+      <p className="mb-4 text-rose-700 dark:text-rose-400">{error}</p>
+      <button onClick={load} className="rounded-2xl border border-rose-300 dark:border-rose-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-semibold text-rose-700 dark:text-rose-400 transition hover:bg-rose-50 dark:hover:bg-rose-950/40">
         Retry
       </button>
     </div>
@@ -385,7 +385,7 @@ export default function KanbanBoard({
       </div>
 
       {visibleItems.length === 0 && (
-        <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 text-center text-slate-600 shadow-sm">
+        <div className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-6 text-center text-slate-600 dark:text-slate-400 shadow-sm">
           No tickets match the current filters.
         </div>
       )}

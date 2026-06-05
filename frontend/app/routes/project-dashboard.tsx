@@ -19,17 +19,17 @@ const ITEM_TYPE_MAP: Record<ItemType, ActivityType> = {
 }
 
 const activityColors = {
-  task: "bg-sky-50 text-sky-700 border-sky-200",
-  bug: "bg-rose-50 text-rose-700 border-rose-200",
-  user_story: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  epic: "bg-violet-50 text-violet-700 border-violet-200",
+  task:       "bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-800",
+  bug:        "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800",
+  user_story: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
+  epic:       "bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-800",
 }
 
 const activityIcons = {
-  task: <CheckSquare className="h-4 w-4 flex-none" />,
-  bug: <Bug className="h-4 w-4 flex-none" />,
+  task:       <CheckSquare className="h-4 w-4 flex-none" />,
+  bug:        <Bug className="h-4 w-4 flex-none" />,
   user_story: <BookOpen className="h-4 w-4 flex-none" />,
-  epic: <Zap className="h-4 w-4 flex-none" />,
+  epic:       <Zap className="h-4 w-4 flex-none" />,
 }
 
 function formatDeadline(dateStr: string) {
@@ -82,17 +82,17 @@ export default function Dashboard() {
 
   if (loading) return (
     <div className="flex items-center justify-center py-24">
-      <p className="text-slate-500">Loading dashboard…</p>
+      <p className="text-slate-500 dark:text-slate-400">Loading dashboard…</p>
     </div>
   )
 
   if (!project) return (
-    <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white py-24 shadow-sm text-center gap-3">
-      <FolderKanban className="h-10 w-10 text-slate-300" />
-      <p className="text-sm font-medium text-slate-600">No project selected</p>
-      <p className="text-xs text-slate-400">Go to Projects and select one to get started.</p>
+    <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 py-24 shadow-sm text-center gap-3">
+      <FolderKanban className="h-10 w-10 text-slate-300 dark:text-slate-600" />
+      <p className="text-sm font-medium text-slate-600 dark:text-slate-300">No project selected</p>
+      <p className="text-xs text-slate-400 dark:text-slate-500">Go to Projects and select one to get started.</p>
       <button onClick={() => navigate("/org-projects")}
-        className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
+        className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-slate-900 dark:bg-slate-100 px-4 py-2 text-sm font-semibold text-white dark:text-slate-900 transition hover:bg-slate-800 dark:hover:bg-slate-300">
         <FolderKanban className="h-4 w-4" />
         Go to Projects
       </button>
@@ -108,71 +108,85 @@ export default function Dashboard() {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <header className="flex flex-col gap-1">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Dashboard</p>
-        <h1 className="text-3xl font-semibold text-slate-900">{project.name}</h1>
-        <p className="max-w-2xl text-sm leading-6 text-slate-600">{project.description}</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">Dashboard</p>
+        <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100">{project.name}</h1>
+        <p className="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">{project.description}</p>
       </header>
 
       <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-sm text-slate-500">Open work items</span>
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
+            <span className="text-sm text-slate-500 dark:text-slate-400">Open work items</span>
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-400">
               <ListChecks className="h-4 w-4" />
             </span>
           </div>
-          <div className="mt-4 text-4xl font-semibold text-slate-900">{openItems}</div>
-          <p className="mt-1 text-xs text-slate-400">{workItems.length} total</p>
+          <div className="mt-4 text-4xl font-semibold text-slate-900 dark:text-slate-100">{openItems}</div>
+          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{workItems.length} total</p>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-sm text-slate-500">Teams</span>
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700">
+            <span className="text-sm text-slate-500 dark:text-slate-400">Teams</span>
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400">
               <Users className="h-4 w-4" />
             </span>
           </div>
-          <div className="mt-4 text-4xl font-semibold text-slate-900">{project.teamCount}</div>
+          <div className="mt-4 text-4xl font-semibold text-slate-900 dark:text-slate-100">{project.teamCount}</div>
         </div>
 
-        <div className={`rounded-3xl border p-5 shadow-sm ${isOverdue ? "border-rose-200 bg-rose-50" : isNear ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-white"}`}>
+        <div className={`rounded-3xl border p-5 shadow-sm ${
+          isOverdue
+            ? "border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40"
+            : isNear
+            ? "border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40"
+            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50"
+        }`}>
           <div className="flex items-center justify-between gap-3">
-            <span className={`text-sm ${isOverdue ? "text-rose-600" : isNear ? "text-amber-600" : "text-slate-500"}`}>Deadline</span>
-            <span className={`inline-flex h-8 w-8 items-center justify-center rounded-2xl ${isOverdue ? "bg-rose-100 text-rose-700" : isNear ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>
+            <span className={`text-sm ${isOverdue ? "text-rose-600 dark:text-rose-400" : isNear ? "text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`}>
+              Deadline
+            </span>
+            <span className={`inline-flex h-8 w-8 items-center justify-center rounded-2xl ${
+              isOverdue
+                ? "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-400"
+                : isNear
+                ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400"
+                : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+            }`}>
               <Clock className="h-4 w-4" />
             </span>
           </div>
-          <div className={`mt-4 text-2xl font-semibold ${isOverdue ? "text-rose-700" : isNear ? "text-amber-700" : "text-slate-900"}`}>
+          <div className={`mt-4 text-2xl font-semibold ${isOverdue ? "text-rose-700 dark:text-rose-400" : isNear ? "text-amber-700 dark:text-amber-400" : "text-slate-900 dark:text-slate-100"}`}>
             {isOverdue ? `${Math.abs(days)} days overdue` : `${days} days left`}
           </div>
-          <p className={`mt-1 text-xs ${isOverdue ? "text-rose-500" : isNear ? "text-amber-500" : "text-slate-400"}`}>
+          <p className={`mt-1 text-xs ${isOverdue ? "text-rose-500 dark:text-rose-500" : isNear ? "text-amber-500 dark:text-amber-500" : "text-slate-400 dark:text-slate-500"}`}>
             {formatDeadline(project.endDate)}
           </p>
         </div>
       </div>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-6 shadow-sm">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Recent activity</h2>
-            <p className="text-sm text-slate-500 mt-0.5">Latest updates for this project</p>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Recent activity</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Latest updates for this project</p>
           </div>
-          <button onClick={() => navigate("/work-items")}
-            className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+          <button onClick={() => navigate("/project/work-items")}
+            className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 transition hover:bg-slate-50 dark:hover:bg-slate-700">
             View work items
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
 
         {recentItems.length === 0 ? (
-          <p className="py-8 text-center text-sm text-slate-400">No work items yet.</p>
+          <p className="py-8 text-center text-sm text-slate-400 dark:text-slate-500">No work items yet.</p>
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
             {recentItems.map((item) => {
               const type: ActivityType = ITEM_TYPE_MAP[item.itemType] ?? "task"
               return (
                 <div key={item.id}
-                  onClick={() => navigate(`/work-items/${item.id}/edit`)}
+                  onClick={() => navigate(`/project/work-items/${item.id}/edit`)}
                   className={`flex items-start gap-3 rounded-2xl border p-4 cursor-pointer transition hover:opacity-80 ${activityColors[type]}`}>
                   <span className="mt-0.5">{activityIcons[type]}</span>
                   <div className="min-w-0 flex-1">

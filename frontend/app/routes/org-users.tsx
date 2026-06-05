@@ -32,23 +32,33 @@ function ConfirmDeleteModal({ user, onConfirm, onClose }: {
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-sm rounded-3xl border border-slate-200 bg-white shadow-2xl p-6">
+      <div className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-sm rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xl p-6">
         <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-100">
-            <Trash2 className="h-5 w-5 text-rose-600" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-100 dark:bg-rose-950/40">
+            <Trash2 className="h-5 w-5 text-rose-600 dark:text-rose-400" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-slate-900">Delete user</h2>
-            <p className="text-xs text-slate-500 mt-0.5">This action cannot be undone.</p>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Delete user</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">This action cannot be undone.</p>
           </div>
         </div>
-        <p className="text-sm text-slate-600 mb-6">
-          Are you sure you want to delete <span className="font-semibold text-slate-900">"{fullName(user)}"</span>?
+        <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+          Are you sure you want to delete <span className="font-semibold text-slate-900 dark:text-slate-100">"{fullName(user)}"</span>?
         </p>
         <div className="flex gap-2">
-          <button onClick={onConfirm} className="flex-1 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700">Delete</button>
-          <button onClick={onClose} className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Cancel</button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 rounded-xl bg-slate-800 dark:bg-slate-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-slate-900 transition hover:bg-slate-700 dark:hover:bg-slate-200"
+          >
+            Delete
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-700"
+          >
+            Cancel
+          </button>
         </div>
       </div>
     </div>
@@ -71,17 +81,22 @@ function RoleDropdown({ value, onChange, error }: {
 
   return (
     <div ref={ref} className="relative">
-      <button type="button" onClick={() => setOpen((o) => !o)}
-        className={`flex w-full items-center justify-between rounded-xl border bg-white px-3 py-2.5 text-sm outline-none transition hover:border-slate-400 ${error ? "border-rose-300" : "border-slate-200"}`}>
-        <span className={value ? "text-slate-700" : "text-slate-400"}>{value || "Select role…"}</span>
-        <ChevronDown className="h-4 w-4 text-slate-400 flex-none" />
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-sm outline-none transition bg-white dark:bg-slate-700 hover:border-slate-400 dark:hover:border-slate-500 ${error ? "border-rose-300 dark:border-rose-700" : "border-slate-200 dark:border-slate-600"}`}
+      >
+        <span className={value ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500"}>{value || "Select role…"}</span>
+        <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-none" />
       </button>
       {open && (
-        <ul className="absolute left-0 z-30 mt-1.5 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+        <ul className="absolute left-0 z-30 mt-1.5 w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg overflow-hidden">
           {ROLE_OPTIONS.map((opt) => (
-            <li key={opt}
-              className={`px-3 py-2.5 text-sm cursor-pointer transition ${opt === value ? "bg-slate-200 text-slate-900" : "hover:bg-slate-100 text-slate-700"}`}
-              onMouseDown={(e) => { e.preventDefault(); onChange(opt); setOpen(false) }}>
+            <li
+              key={opt}
+              className={`px-3 py-2.5 text-sm cursor-pointer transition ${opt === value ? "bg-slate-200 dark:bg-slate-600 text-slate-900 dark:text-slate-100" : "hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"}`}
+              onMouseDown={(e) => { e.preventDefault(); onChange(opt); setOpen(false) }}
+            >
               {opt}
             </li>
           ))}
@@ -117,9 +132,13 @@ function OrgsPicker({ value, onChange, organizations }: {
       {selected.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-2">
           {selected.map((o) => (
-            <span key={o.id} className="inline-flex items-center gap-1 rounded-lg bg-slate-100 border border-slate-200 pl-2 pr-1 py-0.5 text-xs text-slate-700">
+            <span key={o.id} className="inline-flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 pl-2 pr-1 py-0.5 text-xs text-slate-700 dark:text-slate-300">
               {o.name}
-              <button type="button" onMouseDown={(e) => { e.preventDefault(); toggle(o.id) }} className="ml-0.5 text-slate-400 hover:text-slate-600">
+              <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); toggle(o.id) }}
+                className="ml-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+              >
                 <X className="h-3 w-3" />
               </button>
             </span>
@@ -129,45 +148,45 @@ function OrgsPicker({ value, onChange, organizations }: {
       <button
         type="button"
         onClick={() => { setOpen((o) => !o); setSearch("") }}
-        className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition hover:border-slate-400"
+        className="flex w-full items-center justify-between rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2.5 text-sm outline-none transition hover:border-slate-400 dark:hover:border-slate-500"
       >
         <div className="flex items-center gap-2">
-          <Building2 className="h-4 w-4 text-slate-400" />
-          <span className="text-slate-400">{value.length === 0 ? "Select organizations…" : "Add more…"}</span>
+          <Building2 className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+          <span className="text-slate-400 dark:text-slate-500">{value.length === 0 ? "Select organizations…" : "Add more…"}</span>
         </div>
-        <ChevronDown className="h-4 w-4 text-slate-400" />
+        <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500" />
       </button>
       {open && (
-        <div className="absolute left-0 z-30 mt-1.5 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100">
-            <Search className="h-3.5 w-3.5 text-slate-400 flex-none" />
+        <div className="absolute left-0 z-30 mt-1.5 w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg overflow-hidden">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100 dark:border-slate-700">
+            <Search className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 flex-none" />
             <input
               autoFocus
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search…"
-              className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+              className="w-full bg-transparent text-sm text-slate-700 dark:text-slate-300 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
           </div>
           <ul className="max-h-48 overflow-y-auto">
             {filtered.length === 0 ? (
-              <li className="px-3 py-3 text-xs text-slate-400">No results</li>
+              <li className="px-3 py-3 text-xs text-slate-400 dark:text-slate-500">No results</li>
             ) : filtered.map((o) => {
               const sel = value.includes(o.id)
               return (
                 <li
                   key={o.id}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 text-sm cursor-pointer transition hover:bg-slate-50 ${sel ? "bg-slate-50" : ""}`}
+                  className={`flex items-center gap-2.5 px-3 py-2.5 text-sm cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-700 ${sel ? "bg-slate-50 dark:bg-slate-700" : ""}`}
                   onMouseDown={(e) => { e.preventDefault(); toggle(o.id) }}
                 >
-                  <div className={`h-4 w-4 flex-none rounded border flex items-center justify-center transition-colors ${sel ? "bg-slate-900 border-slate-900" : "border-slate-300 bg-white"}`}>
+                  <div className={`h-4 w-4 flex-none rounded border flex items-center justify-center transition-colors ${sel ? "bg-slate-900 dark:bg-slate-100 border-slate-900 dark:border-slate-100" : "border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-700"}`}>
                     {sel && (
-                      <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <svg className="h-2.5 w-2.5 text-white dark:text-slate-900" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M2 6l3 3 5-5" />
                       </svg>
                     )}
                   </div>
-                  <span className="text-slate-700">{o.name}</span>
+                  <span className="text-slate-700 dark:text-slate-300">{o.name}</span>
                 </li>
               )
             })}
@@ -252,22 +271,26 @@ function UserFormModal({ initial, orgName, orgId, organizations, onClose, onSave
   }
 
   const inputCls = (valid: boolean) =>
-    `w-full rounded-xl border bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 ${
-      valid ? "border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-slate-200"
-            : "border-rose-300 focus:border-rose-400 focus:ring-rose-100"
+    `w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 ${
+      valid
+        ? "border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-slate-100 hover:border-slate-300 dark:hover:border-slate-500 focus:border-slate-400 dark:focus:border-slate-400 focus:ring-slate-200 dark:focus:ring-slate-700"
+        : "border-rose-300 dark:border-rose-700 bg-rose-50/30 dark:bg-rose-950/20 text-slate-900 dark:text-slate-100 focus:border-rose-400 dark:focus:border-rose-600 focus:ring-rose-100 dark:focus:ring-rose-900/30"
     }`
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg rounded-3xl border border-slate-200 bg-white shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xl flex flex-col max-h-[90vh]">
 
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-700">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">{isEdit ? "Edit User" : "Create User"}</h2>
-            <p className="text-sm text-slate-500 mt-0.5">{isEdit ? "Update user details." : "Fill in the details to create a new user."}</p>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{isEdit ? "Edit User" : "Create User"}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{isEdit ? "Update user details." : "Fill in the details to create a new user."}</p>
           </div>
-          <button onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-100 transition">
+          <button
+            onClick={onClose}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -275,44 +298,44 @@ function UserFormModal({ initial, orgName, orgId, organizations, onClose, onSave
         <div className="overflow-y-auto px-6 py-5 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                First Name <span className={firstOk ? "text-slate-300" : "text-rose-500"}>*</span>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                First Name <span className={firstOk ? "text-slate-300 dark:text-slate-600" : "text-rose-500 dark:text-rose-400"}>*</span>
               </label>
               <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="e.g. Mihai…" className={inputCls(firstOk)} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Last Name <span className={lastOk ? "text-slate-300" : "text-rose-500"}>*</span>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                Last Name <span className={lastOk ? "text-slate-300 dark:text-slate-600" : "text-rose-500 dark:text-rose-400"}>*</span>
               </label>
               <input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="e.g. Pop…" className={inputCls(lastOk)} />
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Username <span className={userOk ? "text-slate-300" : "text-rose-500"}>*</span>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              Username <span className={userOk ? "text-slate-300 dark:text-slate-600" : "text-rose-500 dark:text-rose-400"}>*</span>
             </label>
             <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="e.g. mihai.pop…" className={inputCls(userOk)} />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Email <span className={emailOk ? "text-slate-300" : "text-rose-500"}>*</span>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              Email <span className={emailOk ? "text-slate-300 dark:text-slate-600" : "text-rose-500 dark:text-rose-400"}>*</span>
             </label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="e.g. mihai.pop@acme.com…" className={inputCls(emailOk)} />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Phone Number <span className={phoneOk ? "text-slate-300" : "text-rose-500"}>*</span>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              Phone Number <span className={phoneOk ? "text-slate-300 dark:text-slate-600" : "text-rose-500 dark:text-rose-400"}>*</span>
             </label>
             <input value={phoneNumber} onChange={(e) => setPhone(e.target.value)} placeholder="e.g. +40721000001…" className={inputCls(phoneOk)} />
           </div>
 
           {!isEdit && (
             <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Password <span className={passwordOk ? "text-slate-300" : "text-rose-500"}>*</span>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                Password <span className={passwordOk ? "text-slate-300 dark:text-slate-600" : "text-rose-500 dark:text-rose-400"}>*</span>
               </label>
               <div className="relative">
                 <input
@@ -325,7 +348,7 @@ function UserFormModal({ initial, orgName, orgId, organizations, onClose, onSave
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -334,58 +357,62 @@ function UserFormModal({ initial, orgName, orgId, organizations, onClose, onSave
           )}
 
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Role <span className={roleOk ? "text-slate-300" : "text-rose-500"}>*</span>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              Role <span className={roleOk ? "text-slate-300 dark:text-slate-600" : "text-rose-500 dark:text-rose-400"}>*</span>
             </label>
             <RoleDropdown value={role} onChange={setRole} error={!roleOk} />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Organization{!isEdit && <span className="ml-1 text-rose-500">*</span>}
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              Organization{!isEdit && <span className="ml-1 text-rose-500 dark:text-rose-400">*</span>}
             </label>
-              <OrgsPicker
-                value={organizationIds}
-                onChange={setOrganizationIds}
-                organizations={organizations}
-              />
+            <OrgsPicker value={organizationIds} onChange={setOrganizationIds} organizations={organizations} />
           </div>
 
           {isEdit && (
-          <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <div>
-              <p className="text-sm font-medium text-slate-700">Active</p>
-              <p className="text-xs text-slate-400">User can log in and access the system</p>
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Active</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500">User can log in and access the system</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActive((a) => !a)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${active ? "bg-slate-900 dark:bg-slate-100" : "bg-slate-300 dark:bg-slate-600"}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-slate-900 transition-transform ${active ? "translate-x-6" : "translate-x-1"}`} />
+              </button>
             </div>
-            <button type="button" onClick={() => setActive((a) => !a)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${active ? "bg-slate-900" : "bg-slate-300"}`}>
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${active ? "translate-x-6" : "translate-x-1"}`} />
-            </button>
-          </div>
           )}
 
           {error && (
-            <div className="flex items-center gap-2 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-xs text-rose-700">
+            <div className="flex items-center gap-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 px-4 py-3 text-xs text-rose-700 dark:text-rose-300">
               <AlertCircle className="h-4 w-4 flex-none" />
               {error}
             </div>
           )}
 
           {!canSave && (
-            <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-700">
+            <div className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-4 py-3 text-xs text-amber-700 dark:text-amber-300">
               <AlertCircle className="h-4 w-4 flex-none" />
               {isEdit ? "All fields are required. Email must be valid." : "All fields including password are required. Email must be valid."}
             </div>
           )}
         </div>
 
-        <div className="flex gap-2 px-6 pb-6 pt-4 border-t border-slate-100">
-          <button onClick={onClose}
-            className="flex-1 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+        <div className="flex gap-2 px-6 pb-6 pt-4 border-t border-slate-100 dark:border-slate-700">
+          <button
+            onClick={onClose}
+            className="flex-1 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-700"
+          >
             Cancel
           </button>
-          <button onClick={handleSave} disabled={!canSave || saving}
-            className="flex-1 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed">
+          <button
+            onClick={handleSave}
+            disabled={!canSave || saving}
+            className="flex-1 rounded-xl bg-slate-900 dark:bg-slate-100 px-5 py-2.5 text-sm font-semibold text-white dark:text-slate-900 transition hover:bg-slate-800 dark:hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
             {saving ? "Saving…" : isEdit ? "Save Changes" : "Create User"}
           </button>
         </div>
@@ -464,32 +491,34 @@ export default function OrgUsers() {
 
   if (loading) return (
     <div className="flex items-center justify-center py-24">
-      <p className="text-slate-500">Loading users…</p>
+      <p className="text-slate-500 dark:text-slate-400">Loading users…</p>
     </div>
   )
 
   if (error) return (
     <div className="flex items-center justify-center py-24">
-      <p className="text-rose-500">{error}</p>
+      <p className="text-rose-500 dark:text-rose-400">{error}</p>
     </div>
   )
 
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-1">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Users</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">Users</p>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-slate-900">Users</h1>
+            <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100">Users</h1>
             {orgName && (
-              <p className="text-sm leading-6 text-slate-600">
-                All users in <span className="font-medium text-slate-700">{orgName}</span>
+              <p className="text-sm leading-6 text-slate-600 dark:text-slate-400">
+                All users in <span className="font-medium text-slate-700 dark:text-slate-300">{orgName}</span>
               </p>
             )}
           </div>
           {currentUser?.role === "ADMIN" && (
-            <button onClick={() => setShowCreate(true)}
-              className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+            <button
+              onClick={() => setShowCreate(true)}
+              className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 dark:bg-slate-700 px-5 py-3 text-sm font-semibold text-white dark:text-white transition hover:bg-slate-800 dark:hover:bg-slate-600"
+            >
               <Plus className="h-4 w-4" />
               New User
             </button>
@@ -497,101 +526,110 @@ export default function OrgUsers() {
         </div>
       </header>
 
-      <div className="flex w-full items-center gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-        <Search className="h-5 w-5 text-slate-400 flex-none" />
-        <input value={query} onChange={(e) => setQuery(e.target.value)}
+      <div className="flex w-full items-center gap-3 rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 shadow-sm">
+        <Search className="h-5 w-5 text-slate-400 dark:text-slate-500 flex-none" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by name, username, email or role…"
-          className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400" />
+          className="w-full bg-transparent text-sm text-slate-700 dark:text-slate-300 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
+        />
         {query && (
-          <button onClick={() => setQuery("")} className="text-slate-300 hover:text-slate-500 transition flex-none">
+          <button onClick={() => setQuery("")} className="text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 transition flex-none">
             <X className="h-4 w-4" />
           </button>
         )}
       </div>
 
       {users.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white py-20 shadow-sm text-center gap-2">
-          <p className="text-sm font-medium text-slate-600">No users found for this organization.</p>
+        <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-20 shadow-sm text-center gap-2">
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No users found for this organization.</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white py-20 shadow-sm text-center gap-2">
-          <p className="text-sm font-medium text-slate-600">No users match your search.</p>
-          <p className="text-xs text-slate-400">Try a different name, username, email, or role.</p>
+        <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-20 shadow-sm text-center gap-2">
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No users match your search.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Try a different name, username, email, or role.</p>
         </div>
       ) : (
-      <>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {paginated.map((user) => (
-            <div key={user.id} className="relative group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 duration-150">
-              {currentUser?.role === "ADMIN" && (
-                <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => setEditUser(user)}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:bg-slate-50 hover:text-slate-700" title="Edit">
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                  <button onClick={() => setDeleteTarget(user)}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-rose-100 bg-white text-rose-400 transition hover:bg-rose-50 hover:text-rose-600" title="Delete">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              )}
-
-              <div className="flex items-center gap-4 mb-4 pr-14">
-                <div className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-blue-100 text-blue-900 border border-blue-200 text-sm font-bold">
-                  {initials(user)}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base font-semibold text-slate-900 truncate">{fullName(user)}</h2>
-                    <span
-                      className={`inline-flex h-2 w-2 rounded-full flex-none ${user.active ? "bg-emerald-500" : "bg-slate-300"}`}
-                      title={user.active ? "Active" : "Inactive"}
-                    />
+        <>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {paginated.map((user) => (
+              <div key={user.id} className="relative group rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm transition hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 hover:-translate-y-0.5 duration-150">
+                {currentUser?.role === "ADMIN" && (
+                  <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => setEditUser(user)}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-300"
+                      title="Edit"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(user)}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-rose-100 dark:border-rose-900/50 bg-white dark:bg-slate-800 text-rose-400 dark:text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 dark:hover:text-rose-400"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
-                  <p className="text-xs text-slate-400 truncate">@{user.username}</p>
-                </div>
-              </div>
+                )}
 
-              <div className="border-t border-slate-100 mb-4" />
+                <div className="flex items-center gap-4 mb-4 pr-14">
+                  <div className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-sm font-bold">
+                    {initials(user)}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">{fullName(user)}</h2>
+                      <span
+                        className={`inline-flex h-2 w-2 rounded-full flex-none ${user.active ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"}`}
+                        title={user.active ? "Active" : "Inactive"}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 truncate">@{user.username}</p>
+                  </div>
+                </div>
 
-              <div className="space-y-2.5">
-                <div className="flex items-center gap-2.5">
-                  <Mail className="h-3.5 w-3.5 flex-none text-slate-400" />
-                  <span className="text-xs text-slate-500 truncate">{user.email}</span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <Phone className="h-3.5 w-3.5 flex-none text-slate-400" />
-                  <span className="text-xs text-slate-500">{user.phoneNumber}</span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <Building2 className="h-3.5 w-3.5 flex-none text-slate-400" />
-                  <span className="text-xs text-slate-500">Role</span>
-                  <span className="ml-auto">
-                    <span className="inline-flex rounded-full bg-slate-100 border border-slate-200 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
-                      {user.role}
+                <div className="border-t border-slate-100 dark:border-slate-700 mb-4" />
+
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <Mail className="h-3.5 w-3.5 flex-none text-slate-400 dark:text-slate-500" />
+                    <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Phone className="h-3.5 w-3.5 flex-none text-slate-400 dark:text-slate-500" />
+                    <span className="text-xs text-slate-500 dark:text-slate-400">{user.phoneNumber}</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Building2 className="h-3.5 w-3.5 flex-none text-slate-400 dark:text-slate-500" />
+                    <span className="text-xs text-slate-500 dark:text-slate-400">Role</span>
+                    <span className="ml-auto">
+                      <span className="inline-flex rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-2.5 py-0.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        {user.role}
+                      </span>
                     </span>
-                  </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <div className="flex items-center justify-between text-sm text-slate-600">
+          <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400">
             <span>
               Showing {(page - 1) * itemsPerPage + 1}–{Math.min(filtered.length, page * itemsPerPage)} of {filtered.length}
             </span>
             <div className="flex items-center gap-1">
               <button onClick={() => setPage(1)} disabled={page === 1}
-                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 disabled:opacity-40 hover:bg-slate-50">
+                className="inline-flex items-center rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-2.5 py-2 text-sm text-slate-700 dark:text-slate-300 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-700">
                 <ChevronsLeft className="h-4 w-4" />
               </button>
               <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
-                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 disabled:opacity-40 hover:bg-slate-50">
+                className="inline-flex items-center rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-2.5 py-2 text-sm text-slate-700 dark:text-slate-300 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-700">
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <div className="flex items-center gap-1.5 px-2">
-                <span className="text-slate-500">Page</span>
+                <span className="text-slate-500 dark:text-slate-400">Page</span>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -606,16 +644,16 @@ export default function OrgUsers() {
                       setPage(1)
                     }
                   }}
-                  className="h-8 w-10 rounded-2xl border border-slate-400 bg-white px-0 text-center text-sm leading-8 text-slate-800 outline-none appearance-none focus:border-slate-500 focus:ring-1 focus:ring-slate-300"
+                  className="h-8 w-10 rounded-2xl border border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-800 px-0 text-center text-sm leading-8 text-slate-800 dark:text-slate-200 outline-none appearance-none focus:border-slate-500 dark:focus:border-slate-400 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600"
                 />
-                <span>/ {totalPages}</span>
+                <span className="text-slate-500 dark:text-slate-400">/ {totalPages}</span>
               </div>
               <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 disabled:opacity-40 hover:bg-slate-50">
+                className="inline-flex items-center rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-2.5 py-2 text-sm text-slate-700 dark:text-slate-300 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-700">
                 <ChevronRight className="h-4 w-4" />
               </button>
               <button onClick={() => setPage(totalPages)} disabled={page === totalPages}
-                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 disabled:opacity-40 hover:bg-slate-50">
+                className="inline-flex items-center rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-2.5 py-2 text-sm text-slate-700 dark:text-slate-300 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-700">
                 <ChevronsRight className="h-4 w-4" />
               </button>
             </div>
@@ -644,9 +682,9 @@ export default function OrgUsers() {
       )}
       {deleteTarget && (
         <ConfirmDeleteModal
-        user={deleteTarget}
-        onConfirm={() => handleDelete(deleteTarget.id)}
-        onClose={() => setDeleteTarget(null)}
+          user={deleteTarget}
+          onConfirm={() => handleDelete(deleteTarget.id)}
+          onClose={() => setDeleteTarget(null)}
         />
       )}
     </div>

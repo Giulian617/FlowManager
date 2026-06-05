@@ -58,10 +58,10 @@ function FieldLabel({ children, required, satisfied }: {
   satisfied?: boolean
 }) {
   return (
-    <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+    <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
       {children}
       {required && (
-        <span className={`ml-1 transition-colors duration-300 ${satisfied ? "text-slate-300" : "text-rose-500"}`}>*</span>
+        <span className={`ml-1 transition-colors duration-300 ${satisfied ? "text-slate-300 dark:text-slate-600" : "text-rose-500 dark:text-rose-400"}`}>*</span>
       )}
     </label>
   )
@@ -69,16 +69,16 @@ function FieldLabel({ children, required, satisfied }: {
 
 function LockedField({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+    <div className="flex items-center gap-2.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 px-3 py-2">
       {children}
-      <Lock className="ml-auto h-3 w-3 flex-none text-slate-300" />
+      <Lock className="ml-auto h-3 w-3 flex-none text-slate-300 dark:text-slate-600" />
     </div>
   )
 }
 
 function ReadOnlyField({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+    <div className="flex items-center gap-2.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 px-3 py-2">
       {children}
     </div>
   )
@@ -107,24 +107,26 @@ function SelectDropdown({ value, options, onChange, placeholder, renderOption, r
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`flex w-full items-center justify-between rounded-xl border bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:ring-2 ${
-          error ? "border-rose-400 focus:border-rose-400 focus:ring-rose-100" : "border-slate-200 hover:border-slate-400 focus:ring-slate-100"
+        className={`flex w-full items-center justify-between rounded-xl border bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-700 dark:text-slate-300 outline-none transition focus:ring-2 ${
+          error
+            ? "border-rose-400 dark:border-rose-600 focus:border-rose-400 focus:ring-rose-100 dark:focus:ring-rose-900/30"
+            : "border-slate-200 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500 focus:ring-slate-100 dark:focus:ring-slate-700"
         }`}
       >
         <span className="text-sm">
           {value
             ? (renderSelected ? renderSelected(value) : value)
-            : <span className="text-slate-400">{placeholder ?? "Select…"}</span>
+            : <span className="text-slate-400 dark:text-slate-500">{placeholder ?? "Select…"}</span>
           }
         </span>
-        <ChevronDown className="h-3.5 w-3.5 text-slate-400 flex-none ml-2" />
+        <ChevronDown className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 flex-none ml-2" />
       </button>
       {open && (
-        <ul className="absolute left-0 z-20 mt-1.5 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+        <ul className="absolute left-0 z-20 mt-1.5 w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg overflow-hidden">
           {options.map((opt) => (
             <li
               key={opt}
-              className={`flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition hover:bg-slate-50 ${opt === value ? "font-semibold text-slate-900 bg-slate-50" : "text-slate-700"}`}
+              className={`flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-700 ${opt === value ? "font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-700" : "text-slate-700 dark:text-slate-300"}`}
               onMouseDown={(e) => { e.preventDefault(); onChange(opt); setOpen(false) }}
             >
               {renderOption ? renderOption(opt) : opt}
@@ -164,15 +166,15 @@ function AssigneeMultiDropdown({ value, onChange, options }: {
       {selectedUsers.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-1.5">
           {selectedUsers.map((user) => (
-            <span key={user.id} className="inline-flex items-center gap-1 rounded-lg bg-slate-100 border border-slate-200 pl-1.5 pr-1 py-0.5 text-xs text-slate-700">
-              <div className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-900 text-[9px] font-semibold flex-none">
+            <span key={user.id} className="inline-flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 pl-1.5 pr-1 py-0.5 text-xs text-slate-700 dark:text-slate-300">
+              <div className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[9px] font-semibold flex-none">
                 {initials(user.username)}
               </div>
               {user.username}
               <button
                 type="button"
                 onMouseDown={(e) => { e.preventDefault(); onChange(value.filter((v) => v !== String(user.id))) }}
-                className="ml-0.5 text-slate-400 hover:text-slate-600 transition"
+                className="ml-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -183,25 +185,25 @@ function AssigneeMultiDropdown({ value, onChange, options }: {
       <button
         type="button"
         onClick={() => { setOpen((o) => !o); setSearch("") }}
-        className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition hover:border-slate-400 focus:ring-2 focus:ring-slate-200"
+        className="flex w-full items-center justify-between rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm outline-none transition hover:border-slate-400 dark:hover:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700"
       >
         <div className="flex items-center gap-2">
-          <UserCircle className="h-4 w-4 text-slate-400" />
-          <span className="text-sm text-slate-400">{selectedUsers.length === 0 ? "Add assignee…" : "Add more…"}</span>
+          <UserCircle className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+          <span className="text-sm text-slate-400 dark:text-slate-500">{selectedUsers.length === 0 ? "Add assignee…" : "Add more…"}</span>
         </div>
-        <ChevronDown className="h-3.5 w-3.5 text-slate-400 flex-none" />
+        <ChevronDown className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 flex-none" />
       </button>
       {open && (
-        <div className="absolute left-0 z-20 mt-1.5 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
-          <div className="px-2.5 py-2 border-b border-slate-100">
-            <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5">
-              <Search className="h-3.5 w-3.5 text-slate-400 flex-none" />
+        <div className="absolute left-0 z-20 mt-1.5 w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg overflow-hidden">
+          <div className="px-2.5 py-2 border-b border-slate-100 dark:border-slate-700">
+            <div className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-2 py-1.5">
+              <Search className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 flex-none" />
               <input
                 autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search…"
-                className="w-full bg-transparent text-xs text-slate-700 outline-none"
+                className="w-full bg-transparent text-xs text-slate-700 dark:text-slate-300 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
           </div>
@@ -211,24 +213,24 @@ function AssigneeMultiDropdown({ value, onChange, options }: {
               return (
                 <li
                   key={opt.id}
-                  className={`flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer transition hover:bg-slate-50 ${selected ? "bg-slate-50" : ""}`}
+                  className={`flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-700 ${selected ? "bg-slate-50 dark:bg-slate-700" : ""}`}
                   onMouseDown={(e) => { e.preventDefault(); toggle(String(opt.id)) }}
                 >
-                  <div className={`h-4 w-4 flex-none rounded border flex items-center justify-center transition-colors ${selected ? "bg-slate-900 border-slate-900" : "border-slate-300 bg-white"}`}>
+                  <div className={`h-4 w-4 flex-none rounded border flex items-center justify-center transition-colors ${selected ? "bg-slate-900 dark:bg-slate-100 border-slate-900 dark:border-slate-100" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"}`}>
                     {selected && (
-                      <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <svg className="h-2.5 w-2.5 text-white dark:text-slate-900" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M2 6l3 3 5-5" />
                       </svg>
                     )}
                   </div>
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-900 text-[10px] font-semibold flex-none">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[10px] font-semibold flex-none">
                     {initials(opt.username)}
                   </div>
-                  <span>{opt.username}</span>
+                  <span className="text-slate-700 dark:text-slate-300">{opt.username}</span>
                 </li>
               )
             })}
-            {filtered.length === 0 && <li className="px-3 py-3 text-xs text-slate-400">No results</li>}
+            {filtered.length === 0 && <li className="px-3 py-3 text-xs text-slate-400 dark:text-slate-500">No results</li>}
           </ul>
         </div>
       )}
@@ -262,31 +264,31 @@ function ParentField({ value, onChange, candidates }: {
 
   return (
     <div ref={ref} className="relative">
-      <div className="flex items-center rounded-xl border border-slate-200 bg-white transition hover:border-slate-400 focus-within:ring-2 focus-within:ring-slate-100 overflow-hidden">
-        <Link2 className="ml-3 h-3.5 w-3.5 flex-none text-slate-400" />
+      <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 transition hover:border-slate-400 dark:hover:border-slate-500 focus-within:ring-2 focus-within:ring-slate-100 dark:focus-within:ring-slate-700 overflow-hidden">
+        <Link2 className="ml-3 h-3.5 w-3.5 flex-none text-slate-400 dark:text-slate-500" />
         <input
           value={typed}
           onChange={(e) => { setTyped(e.target.value); setOpen(true) }}
           onFocus={() => setOpen(true)}
           placeholder="Type ID or search…"
-          className="flex-1 bg-transparent px-2.5 py-2 text-sm text-slate-700 outline-none placeholder:text-slate-400"
+          className="flex-1 bg-transparent px-2.5 py-2 text-sm text-slate-700 dark:text-slate-300 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
         />
         {value && (
           <button
             type="button"
             onMouseDown={(e) => { e.preventDefault(); setTyped(""); onChange("") }}
-            className="mr-2.5 text-slate-300 hover:text-slate-500 transition"
+            className="mr-2.5 text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 transition"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         )}
       </div>
       {open && filtered.length > 0 && (
-        <ul className="absolute left-0 z-20 mt-1.5 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+        <ul className="absolute left-0 z-20 mt-1.5 w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg overflow-hidden">
           {filtered.map((p) => (
             <li
               key={p.id}
-              className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-slate-50 text-slate-700"
+              className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
               onMouseDown={(e) => {
                 e.preventDefault()
                 setTyped(`#${p.id} ${p.title}`)
@@ -294,9 +296,9 @@ function ParentField({ value, onChange, candidates }: {
                 setOpen(false)
               }}
             >
-              <span className="font-semibold text-slate-400 text-xs flex-none">#{p.id}</span>
+              <span className="font-semibold text-slate-400 dark:text-slate-500 text-xs flex-none">#{p.id}</span>
               <span className="truncate">{p.title}</span>
-              <span className="ml-auto text-xs text-slate-400 flex-none">{p.itemType}</span>
+              <span className="ml-auto text-xs text-slate-400 dark:text-slate-500 flex-none">{p.itemType}</span>
             </li>
           ))}
         </ul>
@@ -334,14 +336,14 @@ function ChildItemsField({ value, onChange, candidates }: {
       {selectedItems.length > 0 && (
         <div className="flex flex-col gap-1 mb-1.5">
           {selectedItems.map((item) => (
-            <span key={item.id} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 border border-slate-200 pl-2 pr-1 py-1 text-xs text-slate-700">
-              <span className="font-semibold text-slate-400">#{item.id}</span>
+            <span key={item.id} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 pl-2 pr-1 py-1 text-xs text-slate-700 dark:text-slate-300">
+              <span className="font-semibold text-slate-400 dark:text-slate-500">#{item.id}</span>
               <span className="truncate">{item.title}</span>
-              <span className="ml-auto text-[10px] text-slate-400 flex-none mr-1">{item.itemType}</span>
+              <span className="ml-auto text-[10px] text-slate-400 dark:text-slate-500 flex-none mr-1">{item.itemType}</span>
               <button
                 type="button"
                 onMouseDown={(e) => { e.preventDefault(); remove(String(item.id)) }}
-                className="text-slate-400 hover:text-slate-600 transition flex-none"
+                className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition flex-none"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -352,22 +354,22 @@ function ChildItemsField({ value, onChange, candidates }: {
       <button
         type="button"
         onClick={() => { setOpen((o) => !o); setSearch("") }}
-        className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition hover:border-slate-400 focus:ring-2 focus:ring-slate-100"
+        className="flex w-full items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm outline-none transition hover:border-slate-400 dark:hover:border-slate-500 focus:ring-2 focus:ring-slate-100 dark:focus:ring-slate-700"
       >
-        <Plus className="h-3.5 w-3.5 text-slate-400" />
-        <span className="text-sm text-slate-400">Link child item…</span>
+        <Plus className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
+        <span className="text-sm text-slate-400 dark:text-slate-500">Link child item…</span>
       </button>
       {open && (
-        <div className="absolute left-0 z-20 mt-1.5 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
-          <div className="px-2.5 py-2 border-b border-slate-100">
-            <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5">
-              <Search className="h-3.5 w-3.5 text-slate-400 flex-none" />
+        <div className="absolute left-0 z-20 mt-1.5 w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg overflow-hidden">
+          <div className="px-2.5 py-2 border-b border-slate-100 dark:border-slate-700">
+            <div className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-2 py-1.5">
+              <Search className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 flex-none" />
               <input
                 autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search…"
-                className="w-full bg-transparent text-xs text-slate-700 outline-none"
+                className="w-full bg-transparent text-xs text-slate-700 dark:text-slate-300 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
           </div>
@@ -375,15 +377,15 @@ function ChildItemsField({ value, onChange, candidates }: {
             {filtered.map((item) => (
               <li
                 key={item.id}
-                className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-slate-50 text-slate-700"
+                className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
                 onMouseDown={(e) => { e.preventDefault(); add(String(item.id)) }}
               >
-                <span className="font-semibold text-slate-400 text-xs flex-none">#{item.id}</span>
+                <span className="font-semibold text-slate-400 dark:text-slate-500 text-xs flex-none">#{item.id}</span>
                 <span className="truncate">{item.title}</span>
-                <span className="ml-auto text-xs text-slate-400 flex-none">{item.itemType}</span>
+                <span className="ml-auto text-xs text-slate-400 dark:text-slate-500 flex-none">{item.itemType}</span>
               </li>
             ))}
-            {filtered.length === 0 && <li className="px-3 py-3 text-xs text-slate-400">No items available</li>}
+            {filtered.length === 0 && <li className="px-3 py-3 text-xs text-slate-400 dark:text-slate-500">No items available</li>}
           </ul>
         </div>
       )}
@@ -398,6 +400,8 @@ interface WorkItemFormConfig {
   icon: React.ReactNode
   iconBg: string
   iconBorder: string
+  iconBgDark: string
+  iconBorderDark: string
   heading: string
   titlePlaceholder: string
   descPlaceholder: string
@@ -410,8 +414,9 @@ interface WorkItemFormConfig {
 
 const configs: Record<WorkItemType, WorkItemFormConfig> = {
   task: {
-    icon: <CheckSquare className="h-5 w-5 text-sky-700" />,
+    icon: <CheckSquare className="h-5 w-5 text-sky-700 dark:text-sky-400" />,
     iconBg: "bg-sky-50", iconBorder: "border-sky-200",
+    iconBgDark: "dark:bg-sky-950/50", iconBorderDark: "dark:border-sky-800",
     heading: "Task",
     titlePlaceholder: "What needs to be done?",
     descPlaceholder: "Provide context, steps, or any relevant details…",
@@ -422,8 +427,9 @@ const configs: Record<WorkItemType, WorkItemFormConfig> = {
     showChildren: false,
   },
   bug: {
-    icon: <Bug className="h-5 w-5 text-rose-700" />,
+    icon: <Bug className="h-5 w-5 text-rose-700 dark:text-rose-400" />,
     iconBg: "bg-rose-50", iconBorder: "border-rose-200",
+    iconBgDark: "dark:bg-rose-950/50", iconBorderDark: "dark:border-rose-800",
     heading: "Bug Report",
     titlePlaceholder: "Short, descriptive title of the bug…",
     descPlaceholder: "Describe the bug, steps to reproduce, expected vs. actual behaviour…",
@@ -434,8 +440,9 @@ const configs: Record<WorkItemType, WorkItemFormConfig> = {
     showChildren: false,
   },
   "user-story": {
-    icon: <BookOpen className="h-5 w-5 text-emerald-700" />,
+    icon: <BookOpen className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />,
     iconBg: "bg-emerald-50", iconBorder: "border-emerald-200",
+    iconBgDark: "dark:bg-emerald-950/50", iconBorderDark: "dark:border-emerald-800",
     heading: "User Story",
     titlePlaceholder: "Add a title",
     descPlaceholder: "Describe the feature from the user's perspective…",
@@ -446,8 +453,9 @@ const configs: Record<WorkItemType, WorkItemFormConfig> = {
     showChildren: true,
   },
   epic: {
-    icon: <Zap className="h-5 w-5 text-violet-700" />,
+    icon: <Zap className="h-5 w-5 text-violet-700 dark:text-violet-400" />,
     iconBg: "bg-violet-50", iconBorder: "border-violet-200",
+    iconBgDark: "dark:bg-violet-950/50", iconBorderDark: "dark:border-violet-800",
     heading: "Epic",
     titlePlaceholder: "Name of the epic…",
     descPlaceholder: "Describe the scope and goals of this epic…",
@@ -571,7 +579,6 @@ export default function WorkItemForm({
         }
         await updateWorkItem(initialData!.id, payload)
 
-        // Sync parent
         const originalParent = baseline.parent
         if (parent !== originalParent) {
           if (parent) {
@@ -581,7 +588,6 @@ export default function WorkItemForm({
           }
         }
 
-        // Sync children
         const originalChildren = JSON.parse(baseline.children) as string[]
         const added   = children.filter((id) => !originalChildren.includes(id))
         const removed = originalChildren.filter((id) => !children.includes(id))
@@ -658,29 +664,28 @@ export default function WorkItemForm({
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="inline-flex w-fit items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition"
+          className="inline-flex w-fit items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition"
         >
           <ArrowLeft className="h-4 w-4" /> Back to Work Items
         </button>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${cfg.iconBg} ${cfg.iconBorder}`}>
+            <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${cfg.iconBg} ${cfg.iconBorder} ${cfg.iconBgDark} ${cfg.iconBorderDark}`}>
               {cfg.icon}
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{modeLabel}</p>
-              <h1 className="text-2xl font-semibold text-slate-900">{cfg.heading}</h1>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">{modeLabel}</p>
+              <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{cfg.heading}</h1>
             </div>
           </div>
 
-          {/* View mode: Edit + Delete buttons in header */}
           {isView && initialData && (
             <div className="flex items-center gap-2">
               {canEdit && (
                 <button
                   type="button"
                   onClick={() => navigate(`/project/work-items/${initialData.id}/edit`)}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-slate-300"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-600 hover:border-slate-300 dark:hover:border-slate-500"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                   Edit
@@ -690,7 +695,7 @@ export default function WorkItemForm({
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 px-4 py-2.5 text-sm font-semibold text-rose-700 dark:text-rose-400 transition hover:bg-rose-100 dark:hover:bg-rose-950/60"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   Delete
@@ -704,15 +709,15 @@ export default function WorkItemForm({
       {/* Delete confirmation modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-xl space-y-4">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-xl space-y-4">
             <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 flex-none items-center justify-center rounded-2xl bg-rose-50 border border-rose-200">
-                <Trash2 className="h-4 w-4 text-rose-600" />
+              <div className="flex h-9 w-9 flex-none items-center justify-center rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800">
+                <Trash2 className="h-4 w-4 text-rose-600 dark:text-rose-400" />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-slate-900">Delete work item?</h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  This will permanently delete <span className="font-semibold text-slate-700">#{initialData?.id} — {initialData?.title}</span>. This action cannot be undone.
+                <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Delete work item?</h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  This will permanently delete <span className="font-semibold text-slate-700 dark:text-slate-300">#{initialData?.id} — {initialData?.title}</span>. This action cannot be undone.
                 </p>
               </div>
             </div>
@@ -721,7 +726,7 @@ export default function WorkItemForm({
                 type="button"
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={deleting}
-                className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
+                className="flex-1 rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-40"
               >
                 Cancel
               </button>
@@ -729,7 +734,7 @@ export default function WorkItemForm({
                 type="button"
                 onClick={handleDelete}
                 disabled={deleting}
-                className="flex-1 rounded-2xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-40"
+                className="flex-1 rounded-2xl bg-rose-600 dark:bg-rose-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 dark:hover:bg-rose-600 disabled:opacity-40"
               >
                 {deleting ? "Deleting…" : "Delete"}
               </button>
@@ -741,24 +746,24 @@ export default function WorkItemForm({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
         {/* Left column */}
         <div className="space-y-5">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
+          <div className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm space-y-5">
 
             {/* Title */}
             <div>
               <FieldLabel required={!isView} satisfied={titleOk}>Title</FieldLabel>
               {isView ? (
-                <p className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900">
-                  {title || <span className="text-slate-400 italic">No title</span>}
+                <p className="rounded-2xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100">
+                  {title || <span className="text-slate-400 dark:text-slate-500 italic">No title</span>}
                 </p>
               ) : (
                 <input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder={cfg.titlePlaceholder}
-                  className={`w-full rounded-2xl border bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 ${
+                  className={`w-full rounded-2xl border bg-slate-50 dark:bg-slate-700/50 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 ${
                     !titleOk
-                      ? "border-rose-400 hover:border-rose-400 focus:border-rose-400 focus:ring-rose-100"
-                      : "border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-slate-200"
+                      ? "border-rose-400 dark:border-rose-600 hover:border-rose-400 focus:border-rose-400 focus:ring-rose-100 dark:focus:ring-rose-900/30"
+                      : "border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 focus:border-slate-400 dark:focus:border-slate-400 focus:ring-slate-200 dark:focus:ring-slate-700"
                   }`}
                 />
               )}
@@ -768,8 +773,8 @@ export default function WorkItemForm({
             <div>
               <FieldLabel required={!isView} satisfied={descOk}>Description</FieldLabel>
               {isView ? (
-                <p className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700 whitespace-pre-wrap min-h-24">
-                  {description || <span className="text-slate-400 italic">No description provided.</span>}
+                <p className="rounded-2xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 px-4 py-3 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap min-h-24">
+                  {description || <span className="text-slate-400 dark:text-slate-500 italic">No description provided.</span>}
                 </p>
               ) : (
                 <textarea
@@ -777,33 +782,33 @@ export default function WorkItemForm({
                   onChange={(e) => setDesc(e.target.value)}
                   placeholder={cfg.descPlaceholder}
                   rows={6}
-                  className={`w-full resize-none rounded-2xl border bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 ${
+                  className={`w-full resize-none rounded-2xl border bg-slate-50 dark:bg-slate-700/50 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 ${
                     !descOk
-                      ? "border-rose-400 hover:border-rose-400 focus:border-rose-400 focus:ring-rose-100"
-                      : "border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-slate-200"
+                      ? "border-rose-400 dark:border-rose-600 hover:border-rose-400 focus:border-rose-400 focus:ring-rose-100 dark:focus:ring-rose-900/30"
+                      : "border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 focus:border-slate-400 dark:focus:border-slate-400 focus:ring-slate-200 dark:focus:ring-slate-700"
                   }`}
                 />
               )}
             </div>
 
             {!isView && (!titleOk || !descOk || !severityOk) && (
-              <div className="flex items-center gap-2 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-700">
+              <div className="flex items-center gap-2 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
                 <AlertCircle className="h-4 w-4 flex-none" />
                 <span>Title, description, and severity are required to save.</span>
               </div>
             )}
 
             {saveError && (
-              <div className="flex items-center gap-2 rounded-2xl bg-rose-50 border border-rose-200 px-4 py-3 text-xs text-rose-700">
+              <div className="flex items-center gap-2 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 px-4 py-3 text-xs text-rose-700 dark:text-rose-400">
                 <AlertCircle className="h-4 w-4 flex-none" />
                 <span>{saveError}</span>
               </div>
             )}
           </div>
 
-          {/* Comments*/}
+          {/* Comments */}
           {isView && (
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
               <CommentSection currentUser={currentUser} workItemId={initialData!.id} reporterId={initialData?.reporter?.id}/>
             </div>
           )}
@@ -811,7 +816,7 @@ export default function WorkItemForm({
 
         {/* Right column */}
         <div className="space-y-5">
-          <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm space-y-3.5">
+          <div className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm space-y-3.5">
 
             {/* Status */}
             <div>
@@ -819,7 +824,7 @@ export default function WorkItemForm({
               {isView ? (
                 <ReadOnlyField>
                   <span className={`h-2 w-2 rounded-full flex-none ${statusMeta[backendStatusMap[status] ?? "ToDo"]?.dotClass ?? "bg-sky-500"}`} />
-                  <span className="text-sm text-slate-600">{statusMeta[backendStatusMap[status] ?? "ToDo"]?.label ?? status}</span>
+                  <span className="text-sm text-slate-600 dark:text-slate-400">{statusMeta[backendStatusMap[status] ?? "ToDo"]?.label ?? status}</span>
                 </ReadOnlyField>
               ) : (
                 <SelectDropdown
@@ -860,7 +865,7 @@ export default function WorkItemForm({
                       {severity}
                     </span>
                   ) : (
-                    <span className="text-sm text-slate-400 italic">Not set</span>
+                    <span className="text-sm text-slate-400 dark:text-slate-500 italic">Not set</span>
                   )}
                 </ReadOnlyField>
               ) : (
@@ -890,13 +895,13 @@ export default function WorkItemForm({
               <ReadOnlyField>
                 {reporter ? (
                   <>
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-900 text-[10px] font-semibold flex-none">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[10px] font-semibold flex-none">
                       {initials(reporter.username)}
                     </div>
-                    <span className="text-sm text-slate-600">{reporter.username}</span>
+                    <span className="text-sm text-slate-600 dark:text-slate-400">{reporter.username}</span>
                   </>
                 ) : (
-                  <span className="text-sm text-slate-400">Loading…</span>
+                  <span className="text-sm text-slate-400 dark:text-slate-500">Loading…</span>
                 )}
               </ReadOnlyField>
             </div>
@@ -905,8 +910,8 @@ export default function WorkItemForm({
             <div>
               <FieldLabel>Created Date</FieldLabel>
               <ReadOnlyField>
-                <Calendar className="h-3.5 w-3.5 flex-none text-slate-400" />
-                <span className="text-sm text-slate-600">{createdDate}</span>
+                <Calendar className="h-3.5 w-3.5 flex-none text-slate-400 dark:text-slate-500" />
+                <span className="text-sm text-slate-600 dark:text-slate-400">{createdDate}</span>
               </ReadOnlyField>
             </div>
 
@@ -915,22 +920,22 @@ export default function WorkItemForm({
               <FieldLabel>Deadline</FieldLabel>
               {isView ? (
                 <ReadOnlyField>
-                  <Calendar className="h-3.5 w-3.5 flex-none text-slate-400" />
-                  <span className="text-sm text-slate-600">
+                  <Calendar className="h-3.5 w-3.5 flex-none text-slate-400 dark:text-slate-500" />
+                  <span className="text-sm text-slate-600 dark:text-slate-400">
                     {deadline
                       ? new Date(deadline).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" })
-                      : <span className="text-slate-400 italic">Not set</span>
+                      : <span className="text-slate-400 dark:text-slate-500 italic">Not set</span>
                     }
                   </span>
                 </ReadOnlyField>
               ) : (
                 <div className="relative">
-                  <Calendar className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                  <Calendar className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
                   <input
                     type="date"
                     value={deadline}
                     onChange={(e) => setDeadline(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-2 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 pl-9 pr-3 py-2 text-sm text-slate-700 dark:text-slate-300 outline-none transition hover:border-slate-300 dark:hover:border-slate-500 focus:border-slate-400 dark:focus:border-slate-400 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700 scheme-light dark:scheme-dark"
                   />
                 </div>
               )}
@@ -943,16 +948,16 @@ export default function WorkItemForm({
                 <div className="space-y-1.5">
                   {assignedUsers.length === 0 ? (
                     <ReadOnlyField>
-                      <UserCircle className="h-4 w-4 text-slate-400" />
-                      <span className="text-sm text-slate-400 italic">Unassigned</span>
+                      <UserCircle className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                      <span className="text-sm text-slate-400 dark:text-slate-500 italic">Unassigned</span>
                     </ReadOnlyField>
                   ) : (
                     assignedUsers.map((user) => (
                       <ReadOnlyField key={user.id}>
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-900 text-[10px] font-semibold flex-none">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-900 dark:border-blue-700 text-[10px] font-semibold flex-none">
                           {initials(user.username)}
                         </div>
-                        <span className="text-sm text-slate-700">{user.username}</span>
+                        <span className="text-sm text-slate-700 dark:text-slate-300">{user.username}</span>
                       </ReadOnlyField>
                     ))
                   )}
@@ -968,16 +973,16 @@ export default function WorkItemForm({
                 <FieldLabel>{cfg.parentLabel}</FieldLabel>
                 {isView ? (
                   <ReadOnlyField>
-                    <Link2 className="h-3.5 w-3.5 flex-none text-slate-400" />
+                    <Link2 className="h-3.5 w-3.5 flex-none text-slate-400 dark:text-slate-500" />
                     {parent ? (
                       (() => {
                         const p = projectWorkItems.find((w) => String(w.id) === parent)
                         return p
-                          ? <span className="text-sm text-slate-700"><span className="font-semibold text-slate-400 mr-1">#{p.id}</span>{p.title}</span>
-                          : <span className="text-sm text-slate-700">#{parent}</span>
+                          ? <span className="text-sm text-slate-700 dark:text-slate-300"><span className="font-semibold text-slate-400 dark:text-slate-500 mr-1">#{p.id}</span>{p.title}</span>
+                          : <span className="text-sm text-slate-700 dark:text-slate-300">#{parent}</span>
                       })()
                     ) : (
-                      <span className="text-sm text-slate-400 italic">None</span>
+                      <span className="text-sm text-slate-400 dark:text-slate-500 italic">None</span>
                     )}
                   </ReadOnlyField>
                 ) : (
@@ -1002,16 +1007,16 @@ export default function WorkItemForm({
                   <div className="space-y-1.5">
                     {children.length === 0 ? (
                       <ReadOnlyField>
-                        <span className="text-sm text-slate-400 italic">No child items</span>
+                        <span className="text-sm text-slate-400 dark:text-slate-500 italic">No child items</span>
                       </ReadOnlyField>
                     ) : (
                       children.map((childId) => {
                         const child = projectWorkItems.find((w) => String(w.id) === childId)
                         return (
                           <ReadOnlyField key={childId}>
-                            <span className="font-semibold text-slate-400 text-xs flex-none">#{childId}</span>
-                            <span className="text-sm text-slate-700 truncate">{child?.title ?? "—"}</span>
-                            {child && <span className="ml-auto text-xs text-slate-400 flex-none">{child.itemType}</span>}
+                            <span className="font-semibold text-slate-400 dark:text-slate-500 text-xs flex-none">#{childId}</span>
+                            <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{child?.title ?? "—"}</span>
+                            {child && <span className="ml-auto text-xs text-slate-400 dark:text-slate-500 flex-none">{child.itemType}</span>}
                           </ReadOnlyField>
                         )
                       })
@@ -1039,14 +1044,14 @@ export default function WorkItemForm({
                 type="button"
                 disabled={!canSave || saving}
                 onClick={handleSave}
-                className="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full rounded-2xl bg-slate-900 dark:bg-slate-100 px-5 py-3 text-sm font-semibold text-white dark:text-slate-900 transition hover:bg-slate-800 dark:hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {saving ? "Saving…" : isEdit ? "Save Changes" : cfg.saveLabel}
               </button>
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="w-full rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-5 py-3 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-600"
               >
                 Cancel
               </button>

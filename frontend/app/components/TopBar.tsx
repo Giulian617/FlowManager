@@ -35,19 +35,19 @@ function NotificationsPopup({ onClose, notifications, setNotifications }: {
   }
 
   return (
-    <div className="absolute right-0 top-full mt-2 z-50 w-80 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+    <div className="absolute right-0 top-full mt-2 z-50 w-80 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-slate-900">Notifications</span>
+          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">Notifications</span>
           {unreadCount > 0 && (
             <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-semibold text-white">{unreadCount}</span>
           )}
         </div>
         <div className="flex items-center gap-2">
           {unreadCount > 0 && (
-            <button onClick={markAllRead} className="text-xs text-slate-400 hover:text-slate-600 transition">Mark all read</button>
+            <button onClick={markAllRead} className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition">Mark all read</button>
           )}
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition">
+          <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -63,22 +63,22 @@ function NotificationsPopup({ onClose, notifications, setNotifications }: {
                 onClose()
               }
             }}
-            className={`flex items-start gap-3 px-4 py-3 border-b border-slate-50 transition hover:bg-slate-50 cursor-pointer ${!n.read ? "bg-sky-50/40" : ""}`}
+            className={`flex items-start gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-700/50 transition hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer ${!n.read ? "bg-sky-50/40 dark:bg-sky-900/10" : ""}`}
           >
-            <div className="flex h-7 w-7 flex-none items-center justify-center rounded-xl bg-slate-100 mt-0.5">
+            <div className="flex h-7 w-7 flex-none items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700 mt-0.5">
               {iconMap[n.type]}
             </div>
             <div className="flex-1 min-w-0">
-              <p className={`text-sm ${!n.read ? "font-semibold text-slate-900" : "font-medium text-slate-700"}`}>{n.title}</p>
-              <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{n.desc}</p>
-              <p className="text-[10px] text-slate-300 mt-1">{n.time}</p>
+              <p className={`text-sm ${!n.read ? "font-semibold text-slate-900 dark:text-slate-100" : "font-medium text-slate-700 dark:text-slate-300"}`}>{n.title}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 leading-relaxed">{n.desc}</p>
+              <p className="text-[10px] text-slate-300 dark:text-slate-600 mt-1">{n.time}</p>
             </div>
             {!n.read && <div className="h-2 w-2 rounded-full bg-sky-500 flex-none mt-1.5" />}
           </div>
         ))}
       </div>
-      <div className="px-4 py-2.5 border-t border-slate-100">
-        <button className="text-xs text-slate-400 hover:text-slate-600 transition w-full text-center">View all notifications</button>
+      <div className="px-4 py-2.5 border-t border-slate-100 dark:border-slate-700">
+        <button className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition w-full text-center">View all notifications</button>
       </div>
     </div>
   )
@@ -91,22 +91,24 @@ function SettingsPopup({ onClose }: { onClose: () => void }) {
   const { theme, setTheme } = useTheme()
 
   return (
-    <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-        <span className="text-sm font-semibold text-slate-900">Settings</span>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition">
+    <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+        <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">Settings</span>
+        <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition">
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div className="px-4 py-3 border-b border-slate-100">
-        <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-2">Appearance</p>
+      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+        <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">Appearance</p>
         <div className="flex gap-2">
           {([["light", Sun, "Light"], ["dark", Moon, "Dark"], ["system", Monitor, "System"]] as const).map(([val, Icon, label]) => (
             <button
               key={val}
               onClick={() => setTheme(val)}
               className={`flex flex-1 flex-col items-center gap-1 rounded-xl border py-2.5 text-xs font-medium transition ${
-                theme === val ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                theme === val
+                  ? "border-slate-900 dark:border-slate-100 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900"
+                  : "border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -120,13 +122,13 @@ function SettingsPopup({ onClose }: { onClose: () => void }) {
           navigate(`${routePrefix}/notification-settings`)
           onClose()
         }}
-        className="flex w-full items-center justify-between px-4 py-3 hover:bg-slate-50 transition"
+        className="flex w-full items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
       >
         <div className="flex items-center gap-2.5">
-          <Bell className="h-4 w-4 text-slate-400" />
-          <span className="text-sm text-slate-700">Notification settings</span>
+          <Bell className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+          <span className="text-sm text-slate-700 dark:text-slate-300">Notification settings</span>
         </div>
-        <ChevronRight className="h-4 w-4 text-slate-400" />
+        <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
       </button>
     </div>
   )
@@ -152,21 +154,21 @@ export default function TopBar() {
   }, [])
 
   useEffect(() => {
-      const h = (e: MouseEvent) => {
-        if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false)
-        if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setSettingsOpen(false)
-        if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileMenuOpen(false)
-      }
-      document.addEventListener("mousedown", h)
-      return () => document.removeEventListener("mousedown", h)
-    }, [])
+    const h = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false)
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setSettingsOpen(false)
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileMenuOpen(false)
+    }
+    document.addEventListener("mousedown", h)
+    return () => document.removeEventListener("mousedown", h)
+  }, [])
 
   const userName = currentUser?.username ?? ""
   const initials = getInitials(userName)
   const unreadCount = notifications.filter((n) => !n.read).length
 
   return (
-    <div className="mb-6 rounded-3xl border border-slate-200 bg-slate-50 p-3 shadow-sm">
+    <div className="mb-6 rounded-3xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3 shadow-sm">
       <div className="flex items-center gap-3">
 
         {/* Notifications */}
@@ -174,7 +176,7 @@ export default function TopBar() {
           <div ref={notifRef} className="relative ml-auto">
             <button
               onClick={() => { setNotifOpen((o) => !o); setSettingsOpen(false); setProfileMenuOpen(false) }}
-              className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm transition hover:bg-slate-100"
+              className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-600"
             >
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-semibold text-white">{unreadCount}</span>
@@ -189,7 +191,7 @@ export default function TopBar() {
         <div ref={settingsRef} className={`relative ${routePrefix !== "/project" ? "ml-auto" : ""}`}>
           <button
             onClick={() => { setSettingsOpen((o) => !o); setNotifOpen(false); setProfileMenuOpen(false) }}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm transition hover:bg-slate-100"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-600"
           >
             <Settings className="h-5 w-5" />
           </button>
@@ -200,34 +202,34 @@ export default function TopBar() {
         <div ref={profileRef} className="relative">
           <button
             onClick={() => { setProfileMenuOpen((o) => !o); setNotifOpen(false); setSettingsOpen(false) }}
-            className="inline-flex items-center gap-2 rounded-3xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
+            className="inline-flex items-center gap-2 rounded-3xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-600"
           >
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-100 text-blue-900 border border-blue-200 text-xs font-semibold">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold">
               {initials}
             </span>
-            <span className="truncate max-w-25 text-left text-sm text-slate-900">{userName}</span>
+            <span className="truncate max-w-25 text-left text-sm text-slate-900 dark:text-slate-100">{userName}</span>
           </button>
           {profileMenuOpen && (
-            <div className="absolute right-0 z-20 mt-2 w-48 rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100">
-                <p className="text-sm font-semibold text-slate-900 truncate">{userName}</p>
-                <p className="text-xs text-slate-400 truncate">{currentUser?.email ?? ""}</p>
+            <div className="absolute right-0 z-20 mt-2 w-48 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{userName}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{currentUser?.email ?? ""}</p>
               </div>
               <button
                 onClick={() => { setProfileMenuOpen(false); navigate(`${routePrefix}/profile`) }}
-                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"
+                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
               >
-                <User className="h-4 w-4 text-slate-400" />
+                <User className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                 View profile
               </button>
               <button
                 onClick={() => { setProfileMenuOpen(false); navigate(`${routePrefix}/profile`) }}
-                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"
+                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
               >
-                <Shield className="h-4 w-4 text-slate-400" />
+                <Shield className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                 Security
               </button>
-              <div className="border-t border-slate-100">
+              <div className="border-t border-slate-100 dark:border-slate-700">
                 <button
                   onClick={async () => {
                     setProfileMenuOpen(false)
@@ -243,7 +245,7 @@ export default function TopBar() {
                       window.location.href = "/"
                     }
                   }}
-                  className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition"
+                  className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
                 >
                   <LogOut className="h-4 w-4" />
                   Log out

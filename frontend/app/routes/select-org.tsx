@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router"
-import { Building2, ChevronRight, Search, X, AlertCircle, ChevronDown, User, RollerCoaster } from "lucide-react"
+import { Building2, ChevronRight, Search, X, AlertCircle, ChevronDown, User } from "lucide-react"
 import { useEffect, useRef, useState} from "react"
 import {
   getCurrentUser,
@@ -44,38 +44,38 @@ function ManagerPicker({
   return (
     <div ref={ref} className="relative">
       <button type="button" onClick={() => { setOpen((o) => !o); setSearch("") }}
-        className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition hover:border-slate-400">
+        className="flex w-full items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm outline-none transition hover:border-slate-400 dark:hover:border-slate-500">
         {selected ? (
           <>
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-[10px] font-semibold flex-none">
+            <div className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold">
               {selected.username.slice(0, 2).toUpperCase()}
             </div>
-            <span className="text-slate-700 flex-1 text-left">{selected.username}</span>
+            <span className="text-slate-700 dark:text-slate-200 flex-1 text-left">{selected.username}</span>
           </>
         ) : (
           <>
-            <User className="h-4 w-4 text-slate-400" />
-            <span className="text-slate-400 flex-1 text-left">Select manager…</span>
+            <User className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <span className="text-slate-400 dark:text-slate-500 flex-1 text-left">Select manager…</span>
           </>
         )}
-        <ChevronDown className="h-4 w-4 text-slate-400 flex-none" />
+        <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-none" />
       </button>
       {open && (
-        <div className="absolute left-0 z-30 mt-1.5 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100">
-            <Search className="h-3.5 w-3.5 text-slate-400 flex-none" />
+        <div className="absolute left-0 z-30 mt-1.5 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg overflow-hidden">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100 dark:border-slate-700">
+            <Search className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 flex-none" />
             <input autoFocus value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search…" className="w-full bg-transparent text-sm text-slate-700 outline-none" />
+              placeholder="Search…" className="w-full bg-transparent text-sm text-slate-700 dark:text-slate-200 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500" />
           </div>
           <ul className="max-h-44 overflow-y-auto">
             {filtered.map((u) => (
               <li key={u.id}
-                className={`flex items-center gap-2.5 px-3 py-2.5 text-sm cursor-pointer transition ${u.id === value ? "bg-slate-200" : "hover:bg-slate-100"}`}
+                className={`flex items-center gap-2.5 px-3 py-2.5 text-sm cursor-pointer transition ${u.id === value ? "bg-slate-200 dark:bg-slate-600" : "hover:bg-slate-100 dark:hover:bg-slate-700"}`}
                 onMouseDown={(e) => { e.preventDefault(); onChange(u.id); setOpen(false) }}>
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-[10px] font-semibold flex-none">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[10px] font-semibold flex-none">
                   {u.username.slice(0, 2).toUpperCase()}
                 </div>
-                <span>{u.username}</span>
+                <span className="text-slate-700 dark:text-slate-200">{u.username}</span>
               </li>
             ))}
           </ul>
@@ -108,7 +108,6 @@ function CreateOrgModal({ onClose, onCreate }: {
         console.error(err)
       }
     }
-
     loadManagers()
   }, [])
 
@@ -125,24 +124,17 @@ function CreateOrgModal({ onClose, onCreate }: {
   const canSave = nameOk && descOk && industryOk && managerOk
 
   const inputCls = (valid: boolean) =>
-    `w-full rounded-xl border bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 ${
-      valid ? "border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-slate-200"
-            : "border-rose-300 focus:border-rose-400 focus:ring-rose-100"
+    `w-full rounded-xl border bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 ${
+      valid
+        ? "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 focus:border-slate-400 dark:focus:border-slate-500 focus:ring-slate-200 dark:focus:ring-slate-700"
+        : "border-rose-300 dark:border-rose-700 focus:border-rose-400 dark:focus:border-rose-600 focus:ring-rose-100 dark:focus:ring-rose-900"
     }`
 
   const handleSave = async () => {
     if (!canSave) return
-
     try {
       setSaving(true)
-
-      const newOrg = await createOrganization({
-        name,
-        description,
-        industry,
-        managerId,
-      })
-
+      const newOrg = await createOrganization({ name, description, industry, managerId })
       onCreate(newOrg)
       onClose()
     } catch (err) {
@@ -154,30 +146,30 @@ function CreateOrgModal({ onClose, onCreate }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg rounded-3xl border border-slate-200 bg-white shadow-2xl flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100">
+      <div className="absolute inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-700">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Create Organization</h2>
-            <p className="text-sm text-slate-500 mt-0.5">Fill in the details to create a new organization.</p>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Create Organization</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Fill in the details to create a new organization.</p>
           </div>
-          <button onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-100 transition">
+          <button onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="overflow-y-auto px-6 py-5 space-y-4">
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Name <span className={nameOk ? "text-slate-300" : "text-rose-500"}>*</span>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              Name <span className={nameOk ? "text-slate-300 dark:text-slate-600" : "text-rose-500"}>*</span>
             </label>
             <input value={name} onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Acme Corporation…" className={inputCls(nameOk)} />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Description <span className={descOk ? "text-slate-300" : "text-rose-500"}>*</span>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              Description <span className={descOk ? "text-slate-300 dark:text-slate-600" : "text-rose-500"}>*</span>
             </label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
               placeholder="What does this organization do?"
@@ -185,66 +177,61 @@ function CreateOrgModal({ onClose, onCreate }: {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Industry <span className={industryOk ? "text-slate-300" : "text-rose-500"}>*</span>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              Industry <span className={industryOk ? "text-slate-300 dark:text-slate-600" : "text-rose-500"}>*</span>
             </label>
             <div ref={industryRef} className="relative">
-            <button type="button" onClick={() => { setIndustryOpen((o) => !o); setIndustrySearch("") }}
-                className={`flex w-full items-center justify-between rounded-xl border bg-white px-3 py-2.5 text-sm outline-none transition hover:border-slate-400 ${!industryOk ? "border-rose-300" : "border-slate-200"}`}>
-                <span className={industry ? "text-slate-700" : "text-slate-400"}>{industry || "Select industry…"}</span>
-                <ChevronDown className="h-4 w-4 text-slate-400 flex-none" />
-            </button>
-            {industryOpen && (
-                <div className="absolute left-0 z-30 mt-1.5 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
-                <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100">
-                    <Search className="h-3.5 w-3.5 text-slate-400 flex-none" />
+              <button type="button" onClick={() => { setIndustryOpen((o) => !o); setIndustrySearch("") }}
+                className={`flex w-full items-center justify-between rounded-xl border bg-white dark:bg-slate-800 px-3 py-2.5 text-sm outline-none transition hover:border-slate-400 dark:hover:border-slate-500 ${!industryOk ? "border-rose-300 dark:border-rose-700" : "border-slate-200 dark:border-slate-700"}`}>
+                <span className={industry ? "text-slate-700 dark:text-slate-200" : "text-slate-400 dark:text-slate-500"}>{industry || "Select industry…"}</span>
+                <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-none" />
+              </button>
+              {industryOpen && (
+                <div className="absolute left-0 z-30 mt-1.5 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg overflow-hidden">
+                  <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100 dark:border-slate-700">
+                    <Search className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 flex-none" />
                     <input autoFocus value={industrySearch} onChange={(e) => setIndustrySearch(e.target.value)}
-                    placeholder="Search…" className="w-full bg-transparent text-sm text-slate-700 outline-none" />
-                </div>
-                <ul className="max-h-44 overflow-y-auto">
+                      placeholder="Search…" className="w-full bg-transparent text-sm text-slate-700 dark:text-slate-200 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500" />
+                  </div>
+                  <ul className="max-h-44 overflow-y-auto">
                     {INDUSTRY_OPTIONS.filter((o) => o.toLowerCase().includes(industrySearch.toLowerCase())).map((opt) => (
-                    <li key={opt}
-                        className={`px-3 py-2.5 text-sm cursor-pointer transition ${opt === industry ? "bg-slate-200 text-slate-900" : "hover:bg-slate-100 text-slate-700"}`}
+                      <li key={opt}
+                        className={`px-3 py-2.5 text-sm cursor-pointer transition ${opt === industry ? "bg-slate-200 dark:bg-slate-600 text-slate-900 dark:text-slate-100" : "hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"}`}
                         onMouseDown={(e) => { e.preventDefault(); setIndustry(opt); setIndustryOpen(false) }}>
                         {opt}
-                    </li>
+                      </li>
                     ))}
                     {INDUSTRY_OPTIONS.filter((o) => o.toLowerCase().includes(industrySearch.toLowerCase())).length === 0 && (
-                    <li className="px-3 py-3 text-xs text-slate-400">No results</li>
+                      <li className="px-3 py-3 text-xs text-slate-400 dark:text-slate-500">No results</li>
                     )}
-                </ul>
+                  </ul>
                 </div>
-            )}
+              )}
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Manager <span className={managerOk ? "text-slate-300" : "text-rose-500"}>*</span>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              Manager <span className={managerOk ? "text-slate-300 dark:text-slate-600" : "text-rose-500"}>*</span>
             </label>
-
-            <ManagerPicker
-              users={users}
-              value={managerId}
-              onChange={setManagerId}
-            />
+            <ManagerPicker users={users} value={managerId} onChange={setManagerId} />
           </div>
 
           {(!nameOk || !descOk || !industryOk || !managerOk) && (
-            <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-700">
+            <div className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
               <AlertCircle className="h-4 w-4 flex-none" />
               All fields are required.
             </div>
           )}
         </div>
 
-        <div className="flex gap-2 px-6 pb-6 pt-4 border-t border-slate-100">
+        <div className="flex gap-2 px-6 pb-6 pt-4 border-t border-slate-100 dark:border-slate-700">
           <button onClick={onClose}
-            className="flex-1 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+            className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700">
             Cancel
           </button>
           <button onClick={handleSave} disabled={!canSave || saving}
-            className="flex-1 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed">
+            className="flex-1 rounded-xl bg-slate-900 dark:bg-slate-100 px-5 py-2.5 text-sm font-semibold text-white dark:text-slate-900 transition hover:bg-slate-800 dark:hover:bg-slate-300 disabled:opacity-40 disabled:cursor-not-allowed">
             {saving ? "Creating..." : "Create Organization"}
           </button>
         </div>
@@ -262,7 +249,6 @@ export default function SelectOrg() {
   const [showCreate, setShowCreate] = useState(false)
 
   useEffect(() => {
-    
     async function loadOrgs() {
       try {
         const currentUser = await getCurrentUser()
@@ -286,33 +272,33 @@ export default function SelectOrg() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-slate-500">Loading organizations...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <p className="text-slate-500 dark:text-slate-400">Loading organizations...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-slate-50">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-slate-50 dark:bg-slate-900">
       <div className="mb-10 flex items-center gap-3">
-        <div className="grid h-12 w-12 place-items-center rounded-xl bg-slate-900 text-lg font-bold text-white flex-none">FM</div>
+        <div className="grid h-12 w-12 place-items-center rounded-xl bg-blue-100 dark:bg-blue-950 text-lg font-bold text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex-none">FM</div>
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">FlowManager</p>
-          <p className="text-xs text-slate-400">Project workspace</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500 dark:text-slate-400">FlowManager</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Project workspace</p>
         </div>
       </div>
 
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-semibold text-slate-900">Select organization</h1>
-          <p className="mt-1 text-sm text-slate-500">Choose the organization you want to work in</p>
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Select organization</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Choose the organization you want to work in</p>
         </div>
 
-        <div className="mb-4 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-          <Search className="h-4 w-4 flex-none text-slate-400" />
+        <div className="mb-4 flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 px-4 py-3 shadow-sm">
+          <Search className="h-4 w-4 flex-none text-slate-400 dark:text-slate-500" />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="Search organizations..."
-            className="w-full bg-transparent text-sm text-slate-700 outline-none" />
+            className="w-full bg-transparent text-sm text-slate-700 dark:text-slate-200 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500" />
         </div>
 
         <div className="flex flex-col gap-2">
@@ -326,27 +312,27 @@ export default function SelectOrg() {
                   navigate("/org/dashboard")
                 }
               }}
-              className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:border-slate-300 hover:shadow-md"
+              className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 px-4 py-4 text-left shadow-sm transition hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-md"
             >
-              <div className="flex h-10 w-10 flex-none items-center justify-center rounded-2xl bg-slate-900 text-sm font-bold text-white">
+              <div className="flex h-10 w-10 flex-none items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-950 text-sm font-bold text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                 {getAvatar(org.name)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-slate-900">{org.name}</p>
-                <p className="text-xs text-slate-400 truncate">{org.description}</p>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">{org.name}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{org.description}</p>
               </div>
-              <ChevronRight className="h-4 w-4 flex-none text-slate-400" />
+              <ChevronRight className="h-4 w-4 flex-none text-slate-400 dark:text-slate-500" />
             </button>
           ))}
           {filtered.length === 0 && (
-            <p className="py-8 text-center text-sm text-slate-400">No organizations found.</p>
+            <p className="py-8 text-center text-sm text-slate-400 dark:text-slate-500">No organizations found.</p>
           )}
         </div>
 
         {user?.role === "ADMIN" && (
           <button
             onClick={() => setShowCreate(true)}
-            className="mt-4 w-full flex items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4 text-sm font-medium text-slate-500 transition hover:border-slate-400 hover:text-slate-700"
+            className="mt-4 w-full flex items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800/50 px-4 py-4 text-sm font-medium text-slate-500 dark:text-slate-400 transition hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-700 dark:hover:text-slate-200"
           >
             <Building2 className="h-4 w-4" />
             Create new organization

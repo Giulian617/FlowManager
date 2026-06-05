@@ -36,34 +36,34 @@ export default function Login() {
   }
 
   const inputCls = (valid: boolean, touched: boolean) =>
-    `w-full rounded-2xl border px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 ${
+    `w-full rounded-2xl border px-4 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 ${
       touched && !valid
-        ? "border-rose-300 bg-rose-50/30 focus:border-rose-400 focus:ring-rose-100"
-        : "border-slate-200 bg-white focus:border-slate-400 focus:ring-slate-200"
+        ? "border-rose-300 dark:border-rose-700 bg-rose-50/30 dark:bg-rose-950/20 focus:border-rose-400 dark:focus:border-rose-600 focus:ring-rose-100 dark:focus:ring-rose-900/30"
+        : "border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 focus:border-slate-400 dark:focus:border-slate-400 focus:ring-slate-200 dark:focus:ring-slate-700"
     }`
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-slate-50">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-slate-50 dark:bg-slate-900">
 
       {/* Logo */}
       <div className="mb-10 flex items-center gap-3">
-        <div className="grid h-12 w-12 place-items-center rounded-xl bg-slate-900 text-lg font-bold text-white flex-none">FM</div>
+        <div className="grid h-12 w-12 place-items-center rounded-xl bg-blue-100 dark:bg-blue-950 text-lg font-bold text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex-none">FM</div>
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">FlowManager</p>
-          <p className="text-xs text-slate-400">Project workspace</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500 dark:text-slate-400">FlowManager</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Project workspace</p>
         </div>
       </div>
 
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold text-slate-900">Welcome back</h1>
-          <p className="mt-1.5 text-sm text-slate-500">Sign in to your account to continue</p>
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Welcome back</h1>
+          <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">Sign in to your account to continue</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+        <form onSubmit={handleSubmit} className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm space-y-4">
           {/* Username */}
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Username</label>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Username</label>
             <input
               type="text"
               value={username}
@@ -74,13 +74,13 @@ export default function Login() {
               className={inputCls(usernameOk, usernameTouched)}
             />
             {usernameTouched && !usernameOk && (
-              <p className="mt-1 text-xs text-rose-500">Username is required.</p>
+              <p className="mt-1 text-xs text-rose-500 dark:text-rose-400">Username is required.</p>
             )}
           </div>
 
           {/* Password */}
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Password</label>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Password</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -94,14 +94,14 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-700"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 transition hover:text-slate-700 dark:hover:text-slate-300"
                 tabIndex={-1}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
             {passwordTouched && !passwordOk && (
-              <p className="mt-1 text-xs text-rose-500">Password is required.</p>
+              <p className="mt-1 text-xs text-rose-500 dark:text-rose-400">Password is required.</p>
             )}
           </div>
 
@@ -110,7 +110,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => window.location.href = "http://localhost:8080/realms/flowmanager/login-actions/reset-credentials"}
-              className="text-xs text-slate-400 transition hover:text-slate-700"
+              className="text-xs text-slate-400 dark:text-slate-500 transition hover:text-slate-700 dark:hover:text-slate-300"
             >
               Forgot password?
             </button>
@@ -118,7 +118,7 @@ export default function Login() {
 
           {/* Error */}
           {error && (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700">
+            <div className="rounded-2xl border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 px-4 py-3 text-xs text-rose-700 dark:text-rose-400">
               {error}
             </div>
           )}
@@ -127,7 +127,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={!canSubmit}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 dark:bg-slate-100 px-5 py-3 text-sm font-semibold text-white dark:text-slate-900 transition hover:bg-slate-800 dark:hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {loading ? (
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -140,9 +140,9 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-slate-400">
+        <p className="mt-6 text-center text-xs text-slate-400 dark:text-slate-500">
           Don't have an account?{" "}
-          <button className="font-medium text-slate-700 transition hover:text-slate-900">
+          <button className="font-medium text-slate-700 dark:text-slate-300 transition hover:text-slate-900 dark:hover:text-slate-100">
             Contact your manager
           </button>
         </p>
