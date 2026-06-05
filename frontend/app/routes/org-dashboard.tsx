@@ -173,7 +173,7 @@ export default function OrgDashboard() {
             </span>
           </div>
           <div className="mt-4 text-4xl font-semibold text-slate-900 dark:text-slate-100">{org.projectCount}</div>
-          <div className="mt-3 flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
+          <div className="mt-3 flex justify-end items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
             <span>View yours</span>
             <ChevronRight className="h-3.5 w-3.5" />
           </div>
@@ -190,7 +190,7 @@ export default function OrgDashboard() {
             </span>
           </div>
           <div className="mt-4 text-4xl font-semibold text-slate-900 dark:text-slate-100">{org.teamCount}</div>
-          <div className="mt-3 flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
+          <div className="mt-3 flex justify-end items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
             <span>View yours</span>
             <ChevronRight className="h-3.5 w-3.5" />
           </div>

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react"
 import {
   Bug, CheckSquare, Zap, BookOpen, ArrowLeft, ChevronDown, Search, UserCircle,
-  AlertCircle, Send, Calendar, Link2, Lock, X, Plus, Pencil, Trash2
+  AlertCircle, Calendar, Link2, X, Plus, Pencil, Trash2
 } from "lucide-react"
 import { useNavigate } from "react-router"
 import { severityMeta } from "../utils/status"
@@ -9,6 +9,7 @@ import { getCurrentUser } from "../api/user"
 import {
   getWorkItemsByProjectId,
   getMembersByProjectId,
+  getProjects,
 } from "../api/project"
 import {
   getWorkItemComments,
@@ -28,6 +29,7 @@ import type { UserSummaryDto } from "../types/user"
 import type { ItemType, Severity, Status } from "../types/enums"
 import { statusMeta } from "../utils/status"
 import CommentSection from "./CommentSection"
+import SelectDropdown from "./SelectDropdown"
 
 const severityOptions = ["Low", "Medium", "High", "Critical", "Blocker"]
 const statusOptions: { value: Status; label: string }[] = [
@@ -67,73 +69,10 @@ function FieldLabel({ children, required, satisfied }: {
   )
 }
 
-function LockedField({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-2.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 px-3 py-2">
-      {children}
-      <Lock className="ml-auto h-3 w-3 flex-none text-slate-300 dark:text-slate-600" />
-    </div>
-  )
-}
-
 function ReadOnlyField({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 px-3 py-2">
       {children}
-    </div>
-  )
-}
-
-function SelectDropdown({ value, options, onChange, placeholder, renderOption, renderSelected, error }: {
-  value: string
-  options: string[]
-  onChange: (v: string) => void
-  placeholder?: string
-  renderOption?: (v: string) => React.ReactNode
-  renderSelected?: (v: string) => React.ReactNode
-  error?: boolean
-}) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
-    document.addEventListener("mousedown", h)
-    return () => document.removeEventListener("mousedown", h)
-  }, [])
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className={`flex w-full items-center justify-between rounded-xl border bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-700 dark:text-slate-300 outline-none transition focus:ring-2 ${
-          error
-            ? "border-rose-400 dark:border-rose-600 focus:border-rose-400 focus:ring-rose-100 dark:focus:ring-rose-900/30"
-            : "border-slate-200 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500 focus:ring-slate-100 dark:focus:ring-slate-700"
-        }`}
-      >
-        <span className="text-sm">
-          {value
-            ? (renderSelected ? renderSelected(value) : value)
-            : <span className="text-slate-400 dark:text-slate-500">{placeholder ?? "Select…"}</span>
-          }
-        </span>
-        <ChevronDown className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 flex-none ml-2" />
-      </button>
-      {open && (
-        <ul className="absolute left-0 z-20 mt-1.5 w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg overflow-hidden">
-          {options.map((opt) => (
-            <li
-              key={opt}
-              className={`flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-700 ${opt === value ? "font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-700" : "text-slate-700 dark:text-slate-300"}`}
-              onMouseDown={(e) => { e.preventDefault(); onChange(opt); setOpen(false) }}
-            >
-              {renderOption ? renderOption(opt) : opt}
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   )
 }
@@ -467,6 +406,11 @@ const configs: Record<WorkItemType, WorkItemFormConfig> = {
   },
 }
 
+interface ProjectSummary {
+  id: number
+  name: string
+}
+
 export default function WorkItemForm({
     type,
     mode = "new",
@@ -480,6 +424,7 @@ export default function WorkItemForm({
   const cfg = configs[type]
   const isView = mode === "view"
   const isEdit = mode === "edit"
+  const isNew = mode === "new"
 
   const [currentUser, setCurrentUser] = useState<UserSummaryDto | null>(null)
   const [projectMembers, setProjectMembers] = useState<UserSummaryDto[]>([])
@@ -488,46 +433,89 @@ export default function WorkItemForm({
   const [saveError, setSaveError] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-  const [title, setTitle]           = useState(initialData?.title ?? "")
-  const [description, setDesc]      = useState(initialData?.description ?? "")
-  const [status, setStatus] = useState<string>(initialData?.status ?? "To_do")
-  const [severity, setSeverity]     = useState<string>(initialData?.severity ?? "")
-  const [assignees, setAssignees]   = useState<string[]>(initialData?.assignees?.map((a) => String(a.id)) ?? [])
-  const [deadline, setDeadline]     = useState(initialData?.dueDate ?? "")
-  const [parent, setParent]         = useState(initialData?.parent ? String(initialData.parent.id) : "")
-  const [children, setChildren]     = useState<string[]>(initialData?.children?.map((c) => String(c.id)) ?? [])
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [projects, setProjects] = useState<ProjectSummary[]>([])
+  const [selectedProjectId, setSelectedProjectId] = useState<number>()
+  const projectOk = !!selectedProjectId
+
+  const [title, setTitle]       = useState(initialData?.title ?? "")
+  const [description, setDesc]  = useState(initialData?.description ?? "")
+  const [status, setStatus]     = useState<string>(initialData?.status ?? "To_do")
+  const [severity, setSeverity] = useState<string>(initialData?.severity ?? "")
+  const [assignees, setAssignees] = useState<string[]>(initialData?.assignees?.map((a) => String(a.id)) ?? [])
+  const [deadline, setDeadline] = useState(initialData?.dueDate ?? "")
+  const [parent, setParent]     = useState(initialData?.parent ? String(initialData.parent.id) : "")
+  const [children, setChildren] = useState<string[]>(initialData?.children?.map((c) => String(c.id)) ?? [])
 
   const [baseline, setBaseline] = useState({
-    title:              initialData?.title ?? "",
-    description:        initialData?.description ?? "",
-    status:             initialData?.status ?? "To_do" as Status,
-    severity:           initialData?.severity ?? "",
-    deadline:           initialData?.dueDate ?? "",
-    parent:             initialData?.parent ? String(initialData.parent.id) : "",
-    assignees:          JSON.stringify(initialData?.assignees?.map((a) => String(a.id)) ?? []),
-    children:           JSON.stringify(initialData?.children?.map((c) => String(c.id)) ?? []),
+    title:       initialData?.title ?? "",
+    description: initialData?.description ?? "",
+    status:      initialData?.status ?? "To_do" as Status,
+    severity:    initialData?.severity ?? "",
+    deadline:    initialData?.dueDate ?? "",
+    parent:      initialData?.parent ? String(initialData.parent.id) : "",
+    assignees:   JSON.stringify(initialData?.assignees?.map((a) => String(a.id)) ?? []),
+    children:    JSON.stringify(initialData?.children?.map((c) => String(c.id)) ?? []),
   })
 
   useEffect(() => {
-    const projectId = Number(localStorage.getItem("selectedProject"))
-
     async function load() {
       try {
-        const [user, members, workItems] = await Promise.all([
-          getCurrentUser(),
+        const user = await getCurrentUser()
+        setCurrentUser(user)
+        const adminMode = user.role === "ADMIN"
+        setIsAdmin(adminMode)
+
+        const storedProjectId =
+          typeof window !== "undefined"
+            ? Number(localStorage.getItem("selectedProject")) || 0
+            : 0
+        setSelectedProjectId(storedProjectId)
+
+        if (adminMode && isNew && !Number(localStorage.getItem("selectedProject"))) {
+          const allProjects = await getProjects()
+          setProjects(allProjects)
+        }
+
+        const projectId = adminMode && isNew
+          ? storedProjectId
+          : storedProjectId
+        if (!projectId) return
+
+        const [members, workItems] = await Promise.all([
           getMembersByProjectId(projectId),
           getWorkItemsByProjectId(projectId),
         ])
-        setCurrentUser(user)
         setProjectMembers(members)
         setProjectWorkItems(workItems.filter((w: WorkItemSummaryDto) => w.id !== initialData?.id))
       } catch (e) {
         console.error("Failed to load form data", e)
+      } finally {
+        setLoading(false)
       }
     }
     load()
-  }, [])
+  }, [selectedProjectId])
+
+    if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <p className="text-slate-500 dark:text-slate-400">Loading...</p>
+      </div>
+    )
+  }
+
+  const handleProjectChange = (id: number) => {
+    setSelectedProjectId(id)
+    if (id !== 0) localStorage.setItem("selectedProject", String(id))
+    setParent("")
+    setChildren([])
+    setAssignees([])
+    setProjectMembers([])
+    setProjectWorkItems([])
+  }
 
   const createdDate = initialData?.createdAt
     ? new Date(initialData.createdAt).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" })
@@ -547,7 +535,8 @@ export default function WorkItemForm({
   const titleOk    = title.trim() !== ""
   const descOk     = description.trim() !== ""
   const severityOk = severity !== ""
-  const canSave    = titleOk && descOk && severityOk && (!isEdit || isDirty)
+  const showProjectPicker = isNew && isAdmin && selectedProjectId === 0
+  const canSave = titleOk && descOk && severityOk && (!isEdit || isDirty) && (!showProjectPicker || projectOk)
 
   const canEdit = currentUser && initialData && (
     currentUser.role === "ADMIN" ||
@@ -566,7 +555,10 @@ export default function WorkItemForm({
     setSaveError(null)
 
     try {
-      const projectId = Number(localStorage.getItem("selectedProject"))
+      const projectId =
+        isNew && isAdmin
+          ? selectedProjectId ?? 0
+          : Number(localStorage.getItem("selectedProject"))
 
       if (isEdit) {
         const payload: WorkItemUpdateDto = {
@@ -598,12 +590,8 @@ export default function WorkItemForm({
         ])
 
         setBaseline({
-          title,
-          description,
-          status: status as Status,
-          severity,
-          deadline,
-          parent,
+          title, description, status: status as Status, severity,
+          deadline, parent,
           assignees: JSON.stringify(assignees),
           children:  JSON.stringify(children),
         })
@@ -628,11 +616,7 @@ export default function WorkItemForm({
         navigate("/project/work-items")
       }
     } catch (e) {
-      if (e instanceof Error) {
-        setSaveError(e.message)
-      } else {
-        setSaveError("Failed to save. Please try again.")
-      }
+      setSaveError(e instanceof Error ? e.message : "Failed to save. Please try again.")
     } finally {
       setSaving(false)
     }
@@ -791,10 +775,14 @@ export default function WorkItemForm({
               )}
             </div>
 
-            {!isView && (!titleOk || !descOk || !severityOk) && (
+            {!isView && (!titleOk || !descOk || !severityOk || (showProjectPicker && !projectOk)) && (
               <div className="flex items-center gap-2 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
                 <AlertCircle className="h-4 w-4 flex-none" />
-                <span>Title, description, and severity are required to save.</span>
+                <span>
+                  {showProjectPicker && !projectOk
+                    ? "Please select a project before saving."
+                    : "Title, description, and severity are required to save."}
+                </span>
               </div>
             )}
 
@@ -817,6 +805,28 @@ export default function WorkItemForm({
         {/* Right column */}
         <div className="space-y-5">
           <div className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm space-y-3.5">
+
+            {/* Project picker — admin new mode only */}
+            {showProjectPicker && (
+              <div>
+                <FieldLabel required satisfied={projectOk}>Project</FieldLabel>
+                <SelectDropdown
+                  value={selectedProjectId !== 0 ? String(selectedProjectId) : ""}
+                  options={projects.map((p) => String(p.id))}
+                  onChange={(v) => handleProjectChange(Number(v))}
+                  placeholder="Select project…"
+                  error={!projectOk}
+                  renderOption={(v) => {
+                    const p = projects.find((p) => String(p.id) === v)
+                    return <span>{p?.name ?? v}</span>
+                  }}
+                  renderSelected={(v) => {
+                    const p = projects.find((p) => String(p.id) === v)
+                    return <span>{p?.name ?? v}</span>
+                  }}
+                />
+              </div>
+            )}
 
             {/* Status */}
             <div>
@@ -1037,14 +1047,14 @@ export default function WorkItemForm({
             )}
           </div>
 
-          {/* Action buttons — only for new/edit */}
+          {/* Action buttons */}
           {!isView && (
             <div className="flex flex-col gap-2">
               <button
                 type="button"
                 disabled={!canSave || saving}
                 onClick={handleSave}
-                className="w-full rounded-2xl bg-slate-900 dark:bg-slate-100 px-5 py-3 text-sm font-semibold text-white dark:text-slate-900 transition hover:bg-slate-800 dark:hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex-1 rounded-xl bg-slate-900 dark:bg-blue-950 px-5 py-2.5 text-sm font-semibold text-white dark:text-blue-300 transition hover:bg-slate-800 dark:hover:bg-blue-900 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {saving ? "Saving…" : isEdit ? "Save Changes" : cfg.saveLabel}
               </button>

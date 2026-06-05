@@ -170,14 +170,14 @@ export default function CommentSection({
                     <button
                       type="button"
                       onClick={() => setEditingId(null)}
-                      className="rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                      className="w-16 rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
                     >
                       Cancel
                     </button>
                     <button
                       type="button"
                       onClick={() => submitEdit(c.id)}
-                      className="rounded-xl bg-slate-900 dark:bg-slate-100 px-3 py-1.5 text-xs font-semibold text-white dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-300 transition"
+                      className="w-16 rounded-xl bg-slate-900 dark:bg-blue-950 px-3 py-1.5 text-xs font-semibold text-white dark:text-blue-300 transition hover:bg-slate-800 dark:hover:bg-blue-900 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Save
                     </button>
@@ -212,7 +212,7 @@ export default function CommentSection({
               type="button"
               onClick={submit}
               disabled={!draft.trim() || submitting}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 dark:bg-slate-100 px-3 py-1.5 text-xs font-semibold text-white dark:text-slate-900 transition hover:bg-slate-700 dark:hover:bg-slate-300 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 dark:bg-blue-950 px-3 py-1.5 text-xs font-semibold text-white dark:text-blue-300 transition hover:bg-slate-800 dark:hover:bg-blue-900 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Send className="h-3 w-3" /> {submitting ? "Sending…" : "Send"}
             </button>

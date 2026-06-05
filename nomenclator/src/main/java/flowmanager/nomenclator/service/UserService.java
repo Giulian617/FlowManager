@@ -46,7 +46,7 @@ public class UserService {
         );
     }
 
-    public List<UserSummaryDto> findAllUsers(Role role) {
+    public List<UserResponseDto> findAllUsers(Role role) {
         Specification<User> specs = Specification.allOf();
 
         if (role != null) {
@@ -56,7 +56,7 @@ public class UserService {
         return userRepository
                 .findAll(specs)
                 .stream()
-                .map(userMapper::toSummaryDto)
+                .map(userMapper::toResponseDto)
                 .toList();
     }
 

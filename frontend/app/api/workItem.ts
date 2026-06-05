@@ -8,7 +8,7 @@ import type {
 import type { CommentResponseWorkItemDto } from "../types/comment"
 import type { ItemType, Severity, Status } from "../types/enums"
 
-export async function getAllWorkItems(filters?: {
+export async function getWorkItems(filters?: {
   itemType?: ItemType
   status?: Status
   severity?: Severity

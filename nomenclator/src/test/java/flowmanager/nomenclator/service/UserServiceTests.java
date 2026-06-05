@@ -84,48 +84,48 @@ public class UserServiceTests {
     @Test
     void testFindAllUsers_NoRoleFilter() {
         List<User> users = BuildInstances.buildUsers();
-        List<UserSummaryDto> usersDto = users.stream()
-                .map(BuildDtos::buildUserSummaryDto)
+        List<UserResponseDto> usersDto = users.stream()
+                .map(BuildDtos::buildUserResponseDto)
                 .toList();
 
         when(userRepository.findAll(ArgumentMatchers.<Specification<User>>any())).thenReturn(users);
-        when(userMapper.toSummaryDto(users.get(0))).thenReturn(usersDto.get(0));
-        when(userMapper.toSummaryDto(users.get(1))).thenReturn(usersDto.get(1));
+        when(userMapper.toResponseDto(users.get(0))).thenReturn(usersDto.get(0));
+        when(userMapper.toResponseDto(users.get(1))).thenReturn(usersDto.get(1));
 
-        List<UserSummaryDto> result = userService.findAllUsers(null);
+        List<UserResponseDto> result = userService.findAllUsers(null);
 
         assertEquals(2, result.size());
         assertEquals(usersDto.get(0), result.get(0));
         assertEquals(usersDto.get(1), result.get(1));
         verify(userRepository, times(1)).findAll(ArgumentMatchers.<Specification<User>>any());
-        verify(userMapper, times(1)).toSummaryDto(users.get(0));
-        verify(userMapper, times(1)).toSummaryDto(users.get(1));
+        verify(userMapper, times(1)).toResponseDto(users.get(0));
+        verify(userMapper, times(1)).toResponseDto(users.get(1));
     }
 
     @Test
     void testFindAllUsers_WithRoleFilter() {
         List<User> users = BuildInstances.buildUsers();
-        List<UserSummaryDto> usersDto = users.stream()
-                .map(BuildDtos::buildUserSummaryDto)
+        List<UserResponseDto> usersDto = users.stream()
+                .map(BuildDtos::buildUserResponseDto)
                 .toList();
 
         when(userRepository.findAll(ArgumentMatchers.<Specification<User>>any())).thenReturn(List.of(users.getFirst()));
-        when(userMapper.toSummaryDto(users.getFirst())).thenReturn(usersDto.getFirst());
+        when(userMapper.toResponseDto(users.getFirst())).thenReturn(usersDto.getFirst());
 
-        List<UserSummaryDto> result = userService.findAllUsers(Role.MANAGER);
+        List<UserResponseDto> result = userService.findAllUsers(Role.MANAGER);
 
         assertEquals(1, result.size());
         assertEquals(usersDto.getFirst(), result.getFirst());
         verify(userRepository, times(1)).findAll(ArgumentMatchers.<Specification<User>>any());
-        verify(userMapper, times(1)).toSummaryDto(users.get(0));
-        verify(userMapper, never()).toSummaryDto(users.get(1));
+        verify(userMapper, times(1)).toResponseDto(users.get(0));
+        verify(userMapper, never()).toResponseDto(users.get(1));
     }
 
     @Test
     void testFindAllUsers_EmptyList() {
         when(userRepository.findAll(ArgumentMatchers.<Specification<User>>any())).thenReturn(List.of());
 
-        List<UserSummaryDto> result = userService.findAllUsers(null);
+        List<UserResponseDto> result = userService.findAllUsers(null);
 
         assertEquals(0, result.size());
         verify(userRepository, times(1)).findAll(ArgumentMatchers.<Specification<User>>any());
@@ -149,7 +149,7 @@ public class UserServiceTests {
 
         assertEquals(responseDto, result);
         verify(userRepository, times(1)).findByKeycloakId(user.getKeycloakId());
-        verify(userMapper, times(1)).toSummaryDto(user);
+        verify(userMapper, times(1)).toResponseDto(user);
     }
 
     @Test

@@ -61,33 +61,33 @@ public class OrganizationServiceTests {
     @Test
     void testFindAllOrganization_Valid() {
         List<Organization> organizations = BuildInstances.buildOrganizations();
-        List<OrganizationSummaryDto> organizationsDto = organizations.stream()
-                .map(BuildDtos::buildOrganizationSummaryDto)
+        List<OrganizationResponseDto> organizationsDto = organizations.stream()
+                .map(BuildDtos::buildOrganizationResponseDto)
                 .toList();
 
         when(organizationRepository.findAll()).thenReturn(organizations);
-        when(organizationMapper.toSummaryDto(organizations.get(0))).thenReturn(organizationsDto.get(0));
-        when(organizationMapper.toSummaryDto(organizations.get(1))).thenReturn(organizationsDto.get(1));
+        when(organizationMapper.toResponseDto(organizations.get(0))).thenReturn(organizationsDto.get(0));
+        when(organizationMapper.toResponseDto(organizations.get(1))).thenReturn(organizationsDto.get(1));
 
-        List<OrganizationSummaryDto> result = organizationService.findAllOrganizations();
+        List<OrganizationResponseDto> result = organizationService.findAllOrganizations();
 
         assertEquals(2, result.size());
         assertEquals(organizationsDto.get(0), result.get(0));
         assertEquals(organizationsDto.get(1), result.get(1));
         verify(organizationRepository, times(1)).findAll();
-        verify(organizationMapper, times(1)).toSummaryDto(organizations.get(0));
-        verify(organizationMapper, times(1)).toSummaryDto(organizations.get(1));
+        verify(organizationMapper, times(1)).toResponseDto(organizations.get(0));
+        verify(organizationMapper, times(1)).toResponseDto(organizations.get(1));
     }
 
     @Test
     void testFindAllOrganizations_EmptyList() {
         when(organizationRepository.findAll()).thenReturn(List.of());
 
-        List<OrganizationSummaryDto> result = organizationService.findAllOrganizations();
+        List<OrganizationResponseDto> result = organizationService.findAllOrganizations();
 
         assertEquals(0, result.size());
         verify(organizationRepository, times(1)).findAll();
-        verify(organizationMapper, never()).toSummaryDto(any());
+        verify(organizationMapper, never()).toResponseDto(any());
     }
 
     @Test

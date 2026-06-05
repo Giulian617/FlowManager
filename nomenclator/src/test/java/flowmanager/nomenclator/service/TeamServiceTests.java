@@ -60,29 +60,29 @@ public class TeamServiceTests {
     @Test
     void testFindAllTeams_Valid() {
         List<Team> teams = BuildInstances.buildTeams();
-        List<TeamSummaryDto> teamsDto = teams.stream()
-                .map(BuildDtos::buildTeamSummaryDto)
+        List<TeamResponseDto> teamsDto = teams.stream()
+                .map(BuildDtos::buildTeamResponseDto)
                 .toList();
 
         when(teamRepository.findAll()).thenReturn(teams);
-        when(teamMapper.toSummaryDto(teams.get(0))).thenReturn(teamsDto.get(0));
-        when(teamMapper.toSummaryDto(teams.get(1))).thenReturn(teamsDto.get(1));
+        when(teamMapper.toResponseDto(teams.get(0))).thenReturn(teamsDto.get(0));
+        when(teamMapper.toResponseDto(teams.get(1))).thenReturn(teamsDto.get(1));
 
-        List<TeamSummaryDto> result = teamService.findAllTeams();
+        List<TeamResponseDto> result = teamService.findAllTeams();
 
         assertEquals(2, result.size());
         assertEquals(teamsDto.get(0), result.get(0));
         assertEquals(teamsDto.get(1), result.get(1));
         verify(teamRepository, times(1)).findAll();
-        verify(teamMapper, times(1)).toSummaryDto(teams.get(0));
-        verify(teamMapper, times(1)).toSummaryDto(teams.get(1));
+        verify(teamMapper, times(1)).toResponseDto(teams.get(0));
+        verify(teamMapper, times(1)).toResponseDto(teams.get(1));
     }
 
     @Test
     void testFindAllTeams_EmptyList() {
         when(teamRepository.findAll()).thenReturn(List.of());
 
-        List<TeamSummaryDto> result = teamService.findAllTeams();
+        List<TeamResponseDto> result = teamService.findAllTeams();
 
         assertEquals(0, result.size());
         verify(teamRepository, times(1)).findAll();

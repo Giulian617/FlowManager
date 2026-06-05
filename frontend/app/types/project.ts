@@ -38,6 +38,7 @@ export interface ProjectResponseDto {
   description: string
   startDate: string
   endDate: string
+  organization: OrganizationSummaryDto
   manager: UserSummaryDto
   workItems: WorkItemSummaryDto[]
   teams: TeamSummaryDto[]

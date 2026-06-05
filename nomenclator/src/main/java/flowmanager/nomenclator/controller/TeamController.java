@@ -21,7 +21,7 @@ public class TeamController {
 
     @GetMapping("")
     @ResponseBody
-    public ResponseEntity<List<TeamSummaryDto>> getAllTeams() {
+    public ResponseEntity<List<TeamResponseDto>> getAllTeams() {
         return ResponseEntity.ok(teamService.findAllTeams());
     }
 

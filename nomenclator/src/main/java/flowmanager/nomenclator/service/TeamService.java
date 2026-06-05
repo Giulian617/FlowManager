@@ -36,11 +36,11 @@ public class TeamService {
         );
     }
 
-    public List<TeamSummaryDto> findAllTeams() {
+    public List<TeamResponseDto> findAllTeams() {
         return teamRepository
                 .findAll()
                 .stream()
-                .map(teamMapper::toSummaryDto)
+                .map(teamMapper::toResponseDto)
                 .toList();
     }
 

@@ -34,10 +34,10 @@ public class OrganizationService {
         );
     }
 
-    public List<OrganizationSummaryDto> findAllOrganizations() {
+    public List<OrganizationResponseDto> findAllOrganizations() {
         return organizationRepository.findAll()
                 .stream()
-                .map(organizationMapper::toSummaryDto)
+                .map(organizationMapper::toResponseDto)
                 .toList();
     }
 

@@ -4,6 +4,12 @@ import type {
   ProjectUpdateDto
 } from "../types/project"
 
+export async function getProjects() {
+  const response = await apiFetch("/projects")
+  if (!response.ok) throw new Error("Failed to fetch projects")
+  return response.json()
+}
+
 export async function getWorkItemsByProjectId(projectId: number) {
   const response = await apiFetch(`/projects/${projectId}/work-items`)
   if (!response.ok) throw new Error("Failed to fetch work items")

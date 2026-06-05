@@ -20,10 +20,13 @@ export default function ProjectLayout() {
 
   useEffect(() => {
     const projectId = localStorage.getItem("selectedProject")
-    if (!projectId) {
+    const isAdminRoute = window.location.pathname.startsWith("/admin")
+    if (!projectId && !isAdminRoute) {
       navigate("/org");
       return
     }
+
+    if (!projectId) return
 
     getProjectById(Number(projectId))
       .then((project) => {

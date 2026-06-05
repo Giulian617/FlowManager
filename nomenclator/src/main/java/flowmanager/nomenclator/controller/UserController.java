@@ -21,7 +21,7 @@ public class UserController {
 
     @GetMapping("")
     @ResponseBody
-    public ResponseEntity<List<UserSummaryDto>> getAllUsers(
+    public ResponseEntity<List<UserResponseDto>> getAllUsers(
             @RequestParam(required = false) Role role
     ) {
         return ResponseEntity.ok(userService.findAllUsers(role));

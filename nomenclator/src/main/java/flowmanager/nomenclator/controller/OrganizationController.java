@@ -19,7 +19,7 @@ public class OrganizationController {
     private final OrganizationService organizationService;
 
     @GetMapping("")
-    public ResponseEntity<List<OrganizationSummaryDto>> getAllOrganizations() {
+    public ResponseEntity<List<OrganizationResponseDto>> getAllOrganizations() {
         return ResponseEntity.ok(organizationService.findAllOrganizations());
     }
 

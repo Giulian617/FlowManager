@@ -2,6 +2,7 @@ import React, { useState } from "react"
 import { useNavigate } from "react-router"
 import { Eye, EyeOff, LogIn } from "lucide-react"
 import { login } from "../api/auth"
+import { getCurrentUser } from "../api/user"
 
 export default function Login() {
   const navigate = useNavigate()
@@ -27,7 +28,13 @@ export default function Login() {
       localStorage.setItem("accessToken", data.accessToken)
       localStorage.setItem("refreshToken", data.refreshToken)
       localStorage.setItem("tokenExpiry", String(Date.now() + data.expiresIn * 1000))
-      navigate("/select-org", { replace: true })
+
+      const user = await getCurrentUser()
+      if (user.role === "ADMIN") {
+        navigate("/admin-menu", { replace: true })
+      } else {
+        navigate("/select-org", { replace: true })
+      }
     } catch {
       setError("Invalid username or password.")
     } finally {
