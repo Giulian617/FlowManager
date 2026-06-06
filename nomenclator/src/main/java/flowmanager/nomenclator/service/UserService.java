@@ -68,14 +68,6 @@ public class UserService {
         return userMapper.toResponseDto(user);
     }
 
-    public List<CommentResponseUserDto> findAllCommentsByUserId(Integer userId) {
-        return getUser(userId)
-                .getComments()
-                .stream()
-                .map(commentMapper::toResponseUserDto)
-                .toList();
-    }
-
     public List<ProjectResponseDto> findAllManagedProjectsByUserId(Integer userId) {
         return getUser(userId)
                 .getProjects()

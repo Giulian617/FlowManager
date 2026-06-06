@@ -172,39 +172,6 @@ public class UserServiceTests {
     }
 
     @Test
-    void findAllCommentsByUserId_Valid() {
-        User user = BuildInstances.buildUser();
-        List<Comment> comments = BuildInstances.buildComments();
-        List<CommentResponseUserDto> commentsDto = comments.stream()
-                .map(BuildDtos::buildCommentResponseUserDto)
-                .toList();
-        user.setComments(comments);
-
-        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(commentMapper.toResponseUserDto(comments.get(0))).thenReturn(commentsDto.get(0));
-        when(commentMapper.toResponseUserDto(comments.get(1))).thenReturn(commentsDto.get(1));
-
-        List<CommentResponseUserDto> result = userService.findAllCommentsByUserId(1);
-
-        assertEquals(2, result.size());
-        assertEquals(commentsDto.get(0), result.get(0));
-        assertEquals(commentsDto.get(1), result.get(1));
-        verify(userRepository, times(1)).findById(user.getId());
-        verify(commentMapper, times(1)).toResponseUserDto(comments.get(0));
-        verify(commentMapper, times(1)).toResponseUserDto(comments.get(1));
-    }
-
-    @Test
-    void testFindAllCommentsByUserId_UserNotFound() {
-        when(userRepository.findById(1)).thenReturn(Optional.empty());
-
-        NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> userService.findAllCommentsByUserId(1));
-
-        assertEquals("User with id 1 not found", exception.getMessage());
-    }
-
-    @Test
     void findAllManagedProjectsByUserId_Valid() {
         User user = BuildInstances.buildUser();
         List<Project> projects = BuildInstances.buildProjects();

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Search, X, AlertCircle, ChevronDown } from "lucide-react"
 import OrgManagerPicker from "./OrgManagerPicker"
-import { getManagers } from "../api/user"
+import { getUsers } from "../api/user"
 import { createOrganization, updateOrganization } from "../api/organization"
 import type { UserSummaryDto } from "../types/user"
 import type {
@@ -29,7 +29,7 @@ export default function OrgFormModal({ initial, onClose, onSave }: {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    getManagers().then(setManagers).catch(console.error)
+    getUsers("MANAGER").then(setManagers).catch(console.error)
   }, [])
 
   useEffect(() => {

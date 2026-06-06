@@ -171,12 +171,6 @@ public class KeycloakAdminService {
         kcUser.putAll(overrides);
 
         headers.setContentType(MediaType.APPLICATION_JSON);
-//        restTemplate.exchange(
-//                keycloakUrl + "/admin/realms/" + realm + "/users/" + keycloakId,
-//                HttpMethod.PUT,
-//                new HttpEntity<>(kcUser, headers),
-//                Void.class
-//        );
         try {
             restTemplate.exchange(
                     keycloakUrl + "/admin/realms/" + realm + "/users/" + keycloakId,
@@ -185,10 +179,11 @@ public class KeycloakAdminService {
                     Void.class
             );
         } catch (HttpClientErrorException e) {
-        System.out.println("Keycloak error: " + e.getStatusCode());
-        System.out.println("Keycloak body: " + e.getResponseBodyAsString());
-        throw new RuntimeException("Keycloak update failed: " + e.getResponseBodyAsString(), e);
-    }
+            throw new RuntimeException(
+                    "Keycloak update failed with status %s: %s".formatted(e.getStatusCode(), e.getResponseBodyAsString()),
+                    e
+            );
+        }
     }
 
     public void updateUser(User user, UserUpdateDto dto) {

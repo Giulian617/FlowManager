@@ -164,7 +164,7 @@ export default function Kanban() {
             </button>
           )}
           
-          <div className="hidden h-6 w-px bg-slate-200 dark:bg-slate-700 md:block" />
+          <div className="hidden h-6 w-px bg-slate-200 dark:bg-slate-700 md:block mx-2" />
 
           <ArrowUpDown className="h-4 w-4 flex-none text-slate-500 dark:text-slate-400" />
           <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Sort by:</span>
@@ -177,21 +177,27 @@ export default function Kanban() {
           </select>
 
           {hasSort && (
-            <div className="relative group">
+            <>
               <button
-                onClick={() => {
-                  setSortBy("Default")
-                  setSortDir("asc")
-                }}
-                className="relative group inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200"
+                onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+                className="flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700"
               >
-                <X className="h-3.5 w-3.5" />
-
-                <span className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 -translate-y-full mb-2 hidden rounded-full bg-slate-800 dark:bg-slate-700 px-3 py-1 text-xs text-white shadow-sm group-hover:block whitespace-nowrap">
-                  Reset sorting
-                </span>
+                {sortDir === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                {sortDir === "asc" ? "Asc" : "Desc"}
               </button>
-            </div>
+
+              <div className="relative group">
+                <button
+                  onClick={() => { setSortBy("Default"); setSortDir("asc") }}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  <span className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 -translate-y-full mb-2 hidden rounded-full bg-slate-800 dark:bg-slate-700 px-3 py-1 text-xs text-white shadow-sm group-hover:block whitespace-nowrap">
+                    Reset sorting
+                  </span>
+                </button>
+              </div>
+            </>
           )}
         </div>
       </header>

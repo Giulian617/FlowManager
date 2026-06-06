@@ -1,8 +1,22 @@
 import React, { useState } from "react"
-import { useNavigate } from "react-router"
+import { useNavigate, redirect } from "react-router"
 import { Eye, EyeOff, LogIn } from "lucide-react"
 import { login } from "../api/auth"
 import { getCurrentUser } from "../api/user"
+
+export async function clientLoader() {
+  const isLoggedIn = localStorage.getItem("accessToken") !== null
+  const role = localStorage.getItem("userRole")
+  const orgId = localStorage.getItem("selectedOrg")
+  const projectId = localStorage.getItem("selectedProject")
+
+  if (!isLoggedIn) return null
+
+  if (orgId && projectId) return redirect("/project/dashboard")
+  if (orgId) return redirect("/org/dashboard")
+  if (role === "ADMIN") return redirect("/admin-menu")
+  return redirect("/select-org")
+}
 
 export default function Login() {
   const navigate = useNavigate()
@@ -30,6 +44,8 @@ export default function Login() {
       localStorage.setItem("tokenExpiry", String(Date.now() + data.expiresIn * 1000))
 
       const user = await getCurrentUser()
+      localStorage.setItem("userRole", user.role)
+
       if (user.role === "ADMIN") {
         navigate("/admin-menu", { replace: true })
       } else {

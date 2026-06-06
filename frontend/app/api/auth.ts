@@ -1,6 +1,6 @@
 import apiFetch from "./utils"
 
-export async function login(username: String, password: String) {
+export async function login(username: string, password: string) {
   const response = await apiFetch(`/auth/login`, {
       method: "POST",
       body: JSON.stringify({ username, password }),

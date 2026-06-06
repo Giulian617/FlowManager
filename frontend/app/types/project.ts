@@ -29,7 +29,7 @@ export interface ProjectSummaryDto {
   itemCount: number
   teamCount: number
   memberCount: number
-  Organization: OrganizationSummaryDto
+  organization: OrganizationSummaryDto
 }
 
 export interface ProjectResponseDto {

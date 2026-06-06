@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { NavLink, Outlet, useNavigate } from "react-router"
 import { LayoutDashboard, FolderKanban, Users, LogOut, UserCircle, Pencil, Trash2, X, AlertTriangle, AlertCircle } from "lucide-react"
 import TopBar from "../components/TopBar"
-import { getCurrentUser, getManagers } from "../api/user"
+import { getCurrentUser, getUsers } from "../api/user"
 import { getOrganizationById, updateOrganization, deleteOrganization } from "../api/organization"
 import type { UserSummaryDto } from "../types/user"
 import type { OrganizationUpdateDto } from "../types/organization"
@@ -213,7 +213,7 @@ export default function OrgLayout() {
         const [currentUser, orgData, managersData] = await Promise.all([
           getCurrentUser(),
           getOrganizationById(Number(orgId)),
-          getManagers(),
+          getUsers("MANAGER"),
         ])
         setIsAdmin(currentUser.role === "ADMIN")
         setEditOrgName(orgData.name)

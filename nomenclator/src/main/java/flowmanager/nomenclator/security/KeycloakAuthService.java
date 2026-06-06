@@ -96,8 +96,16 @@ public class KeycloakAuthService {
                 Void.class
         );
 
-        long expiresIn = Objects.requireNonNull(jwtDecoder.decode(accessToken).getExpiresAt())
-                .getEpochSecond() - Instant.now().getEpochSecond();
-        tokenBlacklistService.blacklist(accessToken, expiresIn);
+        blacklistAccessToken(accessToken);
+    }
+
+    private void blacklistAccessToken(String accessToken) {
+        Instant expiresAt = jwtDecoder.decode(accessToken).getExpiresAt();
+        if (expiresAt == null)  return;
+
+        long ttlSeconds = expiresAt.getEpochSecond() - Instant.now().getEpochSecond();
+        if (ttlSeconds <= 0) return;
+
+        tokenBlacklistService.blacklist(accessToken, ttlSeconds);
     }
 }

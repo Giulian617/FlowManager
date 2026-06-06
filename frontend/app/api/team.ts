@@ -5,7 +5,7 @@ import type {
   TeamResponseDto,
 } from "../types/team"
 
-export async function getTeams(): Promise<TeamResponseDto> {
+export async function getTeams(): Promise<TeamResponseDto[]> {
   const response = await apiFetch("/teams")
   if (!response.ok) throw new Error("Failed to fetch teams")
   return response.json()

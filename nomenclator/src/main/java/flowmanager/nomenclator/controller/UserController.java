@@ -35,15 +35,6 @@ public class UserController {
     }
 
     @PreAuthorize("@userSecurity.canView(authentication, #userId)")
-    @GetMapping("/{userId}/comments")
-    @ResponseBody
-    public ResponseEntity<List<CommentResponseUserDto>> getAllCommentsByUserId(
-            @PathVariable Integer userId
-    ) {
-        return ResponseEntity.ok(userService.findAllCommentsByUserId(userId));
-    }
-
-    @PreAuthorize("@userSecurity.canView(authentication, #userId)")
     @GetMapping("/{userId}/projects/manager")
     @ResponseBody
     public ResponseEntity<List<ProjectResponseDto>> getAllManagedProjectsByUserId(
