@@ -1,6 +1,5 @@
 package flowmanager.nomenclator.dto;
 
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import flowmanager.nomenclator.model.Severity;
 import flowmanager.nomenclator.model.Status;
 import lombok.AllArgsConstructor;
@@ -15,14 +14,6 @@ import java.util.List;
 @SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
-@JsonPropertyOrder({
-        "title",
-        "description",
-        "status",
-        "severity",
-        "dueDate",
-        "assigneesIds"
-})
 public class WorkItemUpdateDto {
     private String title;
     private String description;

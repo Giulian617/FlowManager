@@ -3,7 +3,9 @@ package flowmanager.nomenclator.utils;
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.model.*;
 
+import java.util.ArrayList;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public final class BuildDtos {
     private BuildDtos() {}
@@ -40,9 +42,17 @@ public final class BuildDtos {
         return WorkItemSummaryDto.builder()
                 .id(workItem.getId())
                 .title(workItem.getTitle())
+                .description(workItem.getDescription())
                 .itemType(workItem.getItemType())
                 .status(workItem.getStatus())
                 .severity(workItem.getSeverity())
+                .createdAt(workItem.getCreatedAt())
+                .dueDate(workItem.getDueDate())
+                .projectId(workItem.getProject() != null ? workItem.getProject().getId() : null)
+                .reporter(workItem.getReporter() != null ? buildUserSummaryDto(workItem.getReporter()) : null)
+                .assignees(workItem.getAssignees() != null
+                        ? workItem.getAssignees().stream().map(BuildDtos::buildUserSummaryDto).toList()
+                        : new ArrayList<>())
                 .build();
     }
 
@@ -113,6 +123,20 @@ public final class BuildDtos {
                 .id(project.getId())
                 .name(project.getName())
                 .description(project.getDescription())
+                .endDate(project.getEndDate())
+                .itemCount(project.getWorkItems().size())
+                .teamCount(project.getTeams().size())
+                .memberCount((int) Stream.concat(
+                                Stream.concat(
+                                        project.getTeams().stream().flatMap(team -> team.getMembers().stream()),
+                                        project.getTeams().stream().map(Team::getManager)
+                                ),
+                                Stream.of(project.getManager())
+                        )
+                        .map(User::getId)
+                        .distinct()
+                        .count())
+                .organization(buildOrganizationSummaryDto(project.getOrganization()))
                 .build();
     }
 
@@ -151,10 +175,9 @@ public final class BuildDtos {
                 .industry(organization.getIndustry())
                 .createdAt(organization.getCreatedAt())
                 .manager(buildUserSummaryDto(organization.getManager()))
-                .teams(organization.getTeams().stream()
-                        .map(BuildDtos::buildTeamSummaryOrganizationDto)
-                        .toList()
-                )
+                .teamCount(organization.getTeams() == null ? 0 : organization.getTeams().size())
+                .projectCount(organization.getProjects() == null ? 0 : organization.getProjects().size())
+                .memberCount(organization.getMembers() == null ? 0 : organization.getMembers().size())
                 .build();
     }
 
@@ -184,14 +207,6 @@ public final class BuildDtos {
                         .map(BuildDtos::buildUserSummaryDto)
                         .toList()
                 )
-                .build();
-    }
-
-    public static TeamSummaryUserDto buildTeamSummaryUserDto(Team team) {
-        return TeamSummaryUserDto.builder()
-                .id(team.getId())
-                .name(team.getName())
-                .organization(buildOrganizationSummaryDto(team.getOrganization()))
                 .build();
     }
 

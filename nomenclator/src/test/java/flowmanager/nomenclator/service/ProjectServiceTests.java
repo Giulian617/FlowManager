@@ -3,11 +3,11 @@ package flowmanager.nomenclator.service;
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.ProjectMapper;
+import flowmanager.nomenclator.mapper.TeamMapper;
+import flowmanager.nomenclator.mapper.UserMapper;
 import flowmanager.nomenclator.mapper.WorkItemMapper;
-import flowmanager.nomenclator.model.Project;
-import flowmanager.nomenclator.model.Team;
-import flowmanager.nomenclator.model.User;
-import flowmanager.nomenclator.model.WorkItem;
+import flowmanager.nomenclator.model.*;
+import flowmanager.nomenclator.repository.OrganizationRepository;
 import flowmanager.nomenclator.repository.ProjectRepository;
 import flowmanager.nomenclator.repository.TeamRepository;
 import flowmanager.nomenclator.repository.UserRepository;
@@ -38,10 +38,19 @@ public class ProjectServiceTests {
     private TeamRepository teamRepository;
 
     @Mock
+    private OrganizationRepository organizationRepository;
+
+    @Mock
     private ProjectMapper projectMapper;
 
     @Mock
     private WorkItemMapper workItemMapper;
+
+    @Mock
+    private TeamMapper teamMapper;
+
+    @Mock
+    private UserMapper userMapper;
 
     @Mock
     private WorkItemService workItemService;
@@ -57,56 +66,56 @@ public class ProjectServiceTests {
     @Test
     void testFindAllProjects_Valid() {
         List<Project> projects = BuildInstances.buildProjects();
-        List<ProjectSummaryDto> projectsDto = projects.stream()
-                .map(BuildDtos::buildProjectSummaryDto)
+        List<ProjectResponseDto> projectsDto = projects.stream()
+                .map(BuildDtos::buildProjectResponseDto)
                 .toList();
 
         when(projectRepository.findAll()).thenReturn(projects);
-        when(projectMapper.toSummaryDto(projects.get(0))).thenReturn(projectsDto.get(0));
-        when(projectMapper.toSummaryDto(projects.get(1))).thenReturn(projectsDto.get(1));
+        when(projectMapper.toResponseDto(projects.get(0))).thenReturn(projectsDto.get(0));
+        when(projectMapper.toResponseDto(projects.get(1))).thenReturn(projectsDto.get(1));
 
-        List<ProjectSummaryDto> result = projectService.findAllProjects();
+        List<ProjectResponseDto> result = projectService.findAllProjects();
 
         assertEquals(2, result.size());
         assertEquals(projectsDto.get(0), result.get(0));
         assertEquals(projectsDto.get(1), result.get(1));
         verify(projectRepository, times(1)).findAll();
-        verify(projectMapper, times(1)).toSummaryDto(projects.get(0));
-        verify(projectMapper, times(1)).toSummaryDto(projects.get(1));
+        verify(projectMapper, times(1)).toResponseDto(projects.get(0));
+        verify(projectMapper, times(1)).toResponseDto(projects.get(1));
     }
 
     @Test
     void testFindAllProjects_EmptyList() {
         when(projectRepository.findAll()).thenReturn(List.of());
 
-        List<ProjectSummaryDto> result = projectService.findAllProjects();
+        List<ProjectResponseDto> result = projectService.findAllProjects();
 
         assertEquals(0, result.size());
         verify(projectRepository, times(1)).findAll();
-        verify(projectMapper, never()).toSummaryDto(any());
+        verify(projectMapper, never()).toResponseDto(any());
     }
 
     @Test
     void testFindAllWorkItemsByProjectId_Valid() {
         Project project = BuildInstances.buildProject();
         List<WorkItem> workItems = BuildInstances.buildWorkItems();
-        List<WorkItemSummaryDto> workItemsDto = workItems.stream()
-                .map(BuildDtos::buildWorkItemSummaryDto)
+        List<WorkItemResponseDto> workItemsDto = workItems.stream()
+                .map(BuildDtos::buildWorkItemResponseDto)
                 .toList();
         project.setWorkItems(workItems);
 
         when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
-        when(workItemMapper.toSummaryDto(workItems.get(0))).thenReturn(workItemsDto.get(0));
-        when(workItemMapper.toSummaryDto(workItems.get(1))).thenReturn(workItemsDto.get(1));
+        when(workItemMapper.toResponseDto(workItems.get(0))).thenReturn(workItemsDto.get(0));
+        when(workItemMapper.toResponseDto(workItems.get(1))).thenReturn(workItemsDto.get(1));
 
-        List<WorkItemSummaryDto> result = projectService.findAllWorkItemsByProjectId(project.getId());
+        List<WorkItemResponseDto> result = projectService.findAllWorkItemsByProjectId(project.getId());
 
         assertEquals(2, result.size());
         assertEquals(workItemsDto.get(0), result.get(0));
         assertEquals(workItemsDto.get(1), result.get(1));
         verify(projectRepository, times(1)).findById(project.getId());
-        verify(workItemMapper, times(1)).toSummaryDto(workItems.get(0));
-        verify(workItemMapper, times(1)).toSummaryDto(workItems.get(1));
+        verify(workItemMapper, times(1)).toResponseDto(workItems.get(0));
+        verify(workItemMapper, times(1)).toResponseDto(workItems.get(1));
     }
 
     @Test
@@ -116,11 +125,11 @@ public class ProjectServiceTests {
 
         when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
 
-        List<WorkItemSummaryDto> result = projectService.findAllWorkItemsByProjectId(project.getId());
+        List<WorkItemResponseDto> result = projectService.findAllWorkItemsByProjectId(project.getId());
 
         assertEquals(0, result.size());
         verify(projectRepository, times(1)).findById(project.getId());
-        verify(workItemMapper, never()).toSummaryDto(any());
+        verify(workItemMapper, never()).toResponseDto(any());
     }
 
     @Test
@@ -134,18 +143,118 @@ public class ProjectServiceTests {
     }
 
     @Test
-    void testFindProjectById_Valid() {
+    void testFindAllTeamsByProjectId_Valid() {
         Project project = BuildInstances.buildProject();
-        ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(project);
+        List<Team> teams = BuildInstances.buildTeams();
+        List<TeamSummaryOrganizationDto> teamsDto = teams.stream()
+                .map(BuildDtos::buildTeamSummaryOrganizationDto)
+                .toList();
+        project.setTeams(teams);
 
         when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
-        when(projectMapper.toResponseDto(project)).thenReturn(responseDto);
+        when(teamMapper.toSummaryOrganizationDto(teams.get(0))).thenReturn(teamsDto.get(0));
+        when(teamMapper.toSummaryOrganizationDto(teams.get(1))).thenReturn(teamsDto.get(1));
 
-        ProjectResponseDto result = projectService.findProjectById(project.getId());
+        List<TeamSummaryOrganizationDto> result = projectService.findAllTeamsByProjectId(project.getId());
 
-        assertEquals(responseDto, result);
+        assertEquals(2, result.size());
+        assertEquals(teamsDto.get(0), result.get(0));
+        assertEquals(teamsDto.get(1), result.get(1));
         verify(projectRepository, times(1)).findById(project.getId());
-        verify(projectMapper, times(1)).toResponseDto(project);
+        verify(teamMapper, times(1)).toSummaryOrganizationDto(teams.get(0));
+        verify(teamMapper, times(1)).toSummaryOrganizationDto(teams.get(1));
+    }
+
+    @Test
+    void testFindAllTeamsByProjectId_Empty() {
+        Project project = BuildInstances.buildProject();
+        project.setTeams(List.of());
+
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+
+        List<TeamSummaryOrganizationDto> result = projectService.findAllTeamsByProjectId(project.getId());
+
+        assertEquals(0, result.size());
+        verify(projectRepository, times(1)).findById(project.getId());
+        verify(teamMapper, never()).toSummaryOrganizationDto(any());
+    }
+
+    @Test
+    void testFindAllTeamsByProjectId_NotFound() {
+        when(projectRepository.findById(1)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> projectService.findAllWorkItemsByProjectId(1));
+
+        assertEquals("Project with id 1 not found", exception.getMessage());
+    }
+
+    @Test
+    void testFindAllMembersByProjectId_Valid() {
+        Project project = BuildInstances.buildProject();
+        List<Team> teams = BuildInstances.buildTeams();
+        User manager = BuildInstances.buildUser();
+        List<User> members = BuildInstances.buildUsers();
+
+        teams.get(0).setMembers(List.of(members.get(0)));
+        teams.get(1).setMembers(List.of(members.get(1)));
+        project.setTeams(teams);
+
+        UserSummaryDto managerDto = BuildDtos.buildUserSummaryDto(manager);
+        UserSummaryDto member0Dto = BuildDtos.buildUserSummaryDto(members.get(0));
+        UserSummaryDto member1Dto = BuildDtos.buildUserSummaryDto(members.get(1));
+
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+        when(userMapper.toSummaryDto(members.get(0))).thenReturn(member0Dto);
+        when(userMapper.toSummaryDto(members.get(1))).thenReturn(member1Dto);
+        when(userMapper.toSummaryDto(manager)).thenReturn(managerDto);
+
+        List<UserSummaryDto> result = projectService.findAllMembersByProjectId(project.getId());
+
+        assertNotNull(result);
+        assertTrue(result.contains(member0Dto));
+        assertTrue(result.contains(member1Dto));
+        assertTrue(result.contains(managerDto));
+        verify(projectRepository, times(1)).findById(project.getId());
+    }
+
+    @Test
+    void testFindAllMembersByProjectId_Empty() {
+        Project project = BuildInstances.buildProject();
+        project.setTeams(List.of());
+
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+
+        List<UserSummaryDto> result = projectService.findAllMembersByProjectId(project.getId());
+
+        assertEquals(0, result.size());
+        verify(projectRepository, times(1)).findById(project.getId());
+        verify(userMapper, never()).toSummaryDto(any());
+    }
+
+    @Test
+    void testFindAllMembersByProjectId_NotFound() {
+        when(projectRepository.findById(1)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> projectService.findAllMembersByProjectId(1));
+
+        assertEquals("Project with id 1 not found", exception.getMessage());
+    }
+
+    @Test
+    void testFindProjectById_Valid() {
+        Project project = BuildInstances.buildProject();
+        ProjectSummaryDto summaryDto = BuildDtos.buildProjectSummaryDto(project);
+
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+        when(projectMapper.toSummaryDto(project)).thenReturn(summaryDto);
+
+        ProjectSummaryDto result = projectService.findProjectById(project.getId());
+
+        assertEquals(summaryDto, result);
+        verify(projectRepository, times(1)).findById(project.getId());
+        verify(projectMapper, times(1)).toSummaryDto(project);
     }
 
     @Test
@@ -160,6 +269,7 @@ public class ProjectServiceTests {
 
     @Test
     void testCreateProject_Valid_WithTeams() {
+        Organization organization = BuildInstances.buildOrganization();
         User manager = BuildInstances.buildUser();
         List<Team> teams = BuildInstances.buildTeams();
         List<Integer> teamsIds = List.of(teams.get(0).getId(), teams.get(1).getId());
@@ -179,21 +289,82 @@ public class ProjectServiceTests {
                 "Descriere 1",
                 LocalDate.of(2026, 1, 1),
                 LocalDate.of(2026, 12, 31),
+                1,
                 teamsIds
         );
         ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(savedProject);
 
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
         when(userRepository.findByKeycloakId(manager.getKeycloakId())).thenReturn(Optional.of(manager));
-        when(projectMapper.toEntity(createDto, manager)).thenReturn(project);
+        when(projectMapper.toEntity(createDto, organization, manager)).thenReturn(project);
         when(teamRepository.findAllById(teamsIds)).thenReturn(teams);
+        teams.forEach(t -> when(teamRepository.save(t)).thenReturn(t));
         when(projectRepository.save(project)).thenReturn(savedProject);
         when(projectMapper.toResponseDto(savedProject)).thenReturn(responseDto);
 
         ProjectResponseDto result = projectService.createProject(createDto, manager.getKeycloakId());
 
         assertEquals(responseDto, result);
+        teams.forEach(t -> assertTrue(t.getProjects().contains(project)));
+        teams.forEach(t -> verify(teamRepository, times(1)).save(t));
+        assertEquals(teams, project.getTeams());
+        verify(organizationRepository, times(1)).findById(organization.getId());
         verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
-        verify(projectMapper, times(1)).toEntity(createDto, manager);
+        verify(projectMapper, times(1)).toEntity(createDto, organization, manager);
+        verify(teamRepository, times(1)).findAllById(teamsIds);
+        verify(projectRepository, times(1)).save(project);
+        verify(projectMapper, times(1)).toResponseDto(savedProject);
+    }
+
+    @Test
+    void testCreateProject_Valid_TeamAlreadyAssigned() {
+        Organization organization = BuildInstances.buildOrganization();
+        User manager = BuildInstances.buildUser();
+        List<Team> teams = BuildInstances.buildTeams();
+        List<Integer> teamsIds = List.of(teams.get(0).getId(), teams.get(1).getId());
+
+        Project project = Project.builder()
+                .name("Proiectul 1")
+                .description("Descriere 1")
+                .startDate(LocalDate.of(2026, 7, 1))
+                .endDate(LocalDate.of(2026, 12, 31))
+                .manager(manager)
+                .teams(new ArrayList<>())
+                .workItems(new ArrayList<>())
+                .build();
+
+        teams.get(0).getProjects().add(project);
+
+        Project savedProject = BuildInstances.buildProject();
+        ProjectCreateDto createDto = new ProjectCreateDto(
+                "Proiectul 1",
+                "Descriere 1",
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 12, 31),
+                1,
+                teamsIds
+        );
+        ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(savedProject);
+
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        when(userRepository.findByKeycloakId(manager.getKeycloakId())).thenReturn(Optional.of(manager));
+        when(projectMapper.toEntity(createDto, organization, manager)).thenReturn(project);
+        when(teamRepository.findAllById(teamsIds)).thenReturn(teams);
+        teams.forEach(t -> when(teamRepository.save(t)).thenReturn(t));
+        when(projectRepository.save(project)).thenReturn(savedProject);
+        when(projectMapper.toResponseDto(savedProject)).thenReturn(responseDto);
+
+        ProjectResponseDto result = projectService.createProject(createDto, manager.getKeycloakId());
+
+        assertEquals(responseDto, result);
+        assertEquals(1, teams.get(0).getProjects().stream()
+                .filter(p -> p.equals(project)).count());
+        assertTrue(teams.get(1).getProjects().contains(project));
+        assertEquals(teams, project.getTeams());
+        teams.forEach(t -> verify(teamRepository, times(1)).save(t));
+        verify(organizationRepository, times(1)).findById(organization.getId());
+        verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
+        verify(projectMapper, times(1)).toEntity(createDto, organization, manager);
         verify(teamRepository, times(1)).findAllById(teamsIds);
         verify(projectRepository, times(1)).save(project);
         verify(projectMapper, times(1)).toResponseDto(savedProject);
@@ -201,6 +372,7 @@ public class ProjectServiceTests {
 
     @Test
     void testCreateProject_Valid_NoTeams() {
+        Organization organization = BuildInstances.buildOrganization();
         User manager = BuildInstances.buildUser();
 
         Project project = Project.builder()
@@ -218,27 +390,32 @@ public class ProjectServiceTests {
                 "Descriere 1",
                 LocalDate.of(2026, 1, 1),
                 LocalDate.of(2026, 12, 31),
+                1,
                 null
         );
         ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(savedProject);
 
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
         when(userRepository.findByKeycloakId(manager.getKeycloakId())).thenReturn(Optional.of(manager));
-        when(projectMapper.toEntity(createDto, manager)).thenReturn(project);
+        when(projectMapper.toEntity(createDto, organization, manager)).thenReturn(project);
         when(projectRepository.save(project)).thenReturn(savedProject);
         when(projectMapper.toResponseDto(savedProject)).thenReturn(responseDto);
 
         ProjectResponseDto result = projectService.createProject(createDto,manager.getKeycloakId());
 
         assertEquals(responseDto, result);
+        verify(organizationRepository, times(1)).findById(organization.getId());
         verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
-        verify(projectMapper, times(1)).toEntity(createDto, manager);
+        verify(projectMapper, times(1)).toEntity(createDto, organization, manager);
         verify(teamRepository, never()).findAllById(any());
         verify(projectRepository, times(1)).save(project);
+        verify(teamRepository, never()).save(any());
         verify(projectMapper, times(1)).toResponseDto(savedProject);
     }
 
     @Test
     void testCreateProject_Valid_EmptyTeams() {
+        Organization organization = BuildInstances.buildOrganization();
         User manager = BuildInstances.buildUser();
 
         Project project = Project.builder()
@@ -256,36 +433,103 @@ public class ProjectServiceTests {
                 "Descriere 1",
                 LocalDate.of(2026, 1, 1),
                 LocalDate.of(2026, 12, 31),
+                1,
                 List.of()
         );
         ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(savedProject);
 
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
         when(userRepository.findByKeycloakId(manager.getKeycloakId())).thenReturn(Optional.of(manager));
-        when(projectMapper.toEntity(createDto, manager)).thenReturn(project);
+        when(projectMapper.toEntity(createDto, organization, manager)).thenReturn(project);
         when(projectRepository.save(project)).thenReturn(savedProject);
         when(projectMapper.toResponseDto(savedProject)).thenReturn(responseDto);
 
         ProjectResponseDto result = projectService.createProject(createDto, manager.getKeycloakId());
 
         assertEquals(responseDto, result);
+        verify(organizationRepository, times(1)).findById(organization.getId());
         verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
-        verify(projectMapper, times(1)).toEntity(createDto, manager);
+        verify(projectMapper, times(1)).toEntity(createDto, organization, manager);
         verify(teamRepository, never()).findAllById(any());
         verify(projectRepository, times(1)).save(project);
+        verify(teamRepository, never()).save(any());
         verify(projectMapper, times(1)).toResponseDto(savedProject);
     }
 
     @Test
-    void testCreateProject_UserNotFound() {
+    void testCreateProject_OrganizationNotFound() {
         String keycloakId = "keycloak-uuid-1";
         ProjectCreateDto createDto = new ProjectCreateDto(
                 "Proiectul 1",
                 "Descriere 1",
                 LocalDate.of(2026, 1, 1),
                 LocalDate.of(2026, 12, 31),
+                1,
                 null
         );
 
+        when(organizationRepository.findById(1)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> projectService.createProject(createDto, keycloakId));
+
+        assertEquals("Organization with id 1 not found", exception.getMessage());
+    }
+
+    @Test
+    void testCreateProject_TeamsNotFound() {
+        Organization organization = BuildInstances.buildOrganization();
+        User manager = BuildInstances.buildUser();
+        List<Integer> teamsIds = List.of(1, 2);
+
+        Project project = Project.builder()
+                .name("Proiectul 1")
+                .description("Descriere 1")
+                .startDate(LocalDate.of(2026, 7, 1))
+                .endDate(LocalDate.of(2026, 12, 31))
+                .manager(manager)
+                .teams(new ArrayList<>())
+                .workItems(new ArrayList<>())
+                .build();
+        ProjectCreateDto createDto = new ProjectCreateDto(
+                "Proiectul 1",
+                "Descriere 1",
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 12, 31),
+                1,
+                teamsIds
+        );
+
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        when(userRepository.findByKeycloakId(manager.getKeycloakId())).thenReturn(Optional.of(manager));
+        when(projectMapper.toEntity(createDto, organization, manager)).thenReturn(project);
+        when(teamRepository.findAllById(teamsIds)).thenReturn(List.of(BuildInstances.buildTeam()));
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> projectService.createProject(createDto, manager.getKeycloakId()));
+
+        assertEquals("One or more teams were not found", exception.getMessage());
+        verify(organizationRepository, times(1)).findById(organization.getId());
+        verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
+        verify(projectMapper, times(1)).toEntity(createDto, organization, manager);
+        verify(teamRepository, times(1)).findAllById(teamsIds);
+        verify(projectRepository, never()).save(any());
+    }
+
+    @Test
+    void testCreateProject_UserNotFound() {
+        Organization organization = BuildInstances.buildOrganization();
+        String keycloakId = "keycloak-uuid-1";
+        ProjectCreateDto createDto = new ProjectCreateDto(
+                "Proiectul 1",
+                "Descriere 1",
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 12, 31),
+                1,
+                null
+        );
+
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
         when(userRepository.findByKeycloakId(keycloakId)).thenReturn(Optional.empty());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
@@ -338,6 +582,9 @@ public class ProjectServiceTests {
         when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
         when(userRepository.findById(manager.getId())).thenReturn(Optional.of(manager));
         when(teamRepository.findAllById(newTeamIds)).thenReturn(List.of(retainedTeam, addedTeam));
+        when(teamRepository.save(retainedTeam)).thenReturn(retainedTeam);
+        when(teamRepository.save(removedTeam)).thenReturn(removedTeam);
+        when(teamRepository.save(addedTeam)).thenReturn(addedTeam);
         doNothing().when(projectMapper).updateEntityFromDto(updateDto, project, manager);
         when(projectRepository.save(project)).thenReturn(updatedProject);
         when(projectMapper.toResponseDto(updatedProject)).thenReturn(responseDto);
@@ -354,6 +601,9 @@ public class ProjectServiceTests {
         verify(projectRepository, times(1)).findById(project.getId());
         verify(userRepository, times(1)).findById(manager.getId());
         verify(teamRepository, times(1)).findAllById(newTeamIds);
+        verify(teamRepository, times(2)).save(retainedTeam);
+        verify(teamRepository, times(1)).save(removedTeam);
+        verify(teamRepository, times(1)).save(addedTeam);
         verify(projectMapper, times(1)).updateEntityFromDto(updateDto, project, manager);
         verify(projectRepository, times(1)).save(project);
         verify(projectMapper, times(1)).toResponseDto(updatedProject);
@@ -402,6 +652,9 @@ public class ProjectServiceTests {
 
         when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
         when(teamRepository.findAllById(newTeamIds)).thenReturn(List.of(retainedTeam, addedTeam));
+        when(teamRepository.save(retainedTeam)).thenReturn(retainedTeam);
+        when(teamRepository.save(removedTeam)).thenReturn(removedTeam);
+        when(teamRepository.save(addedTeam)).thenReturn(addedTeam);
         doNothing().when(projectMapper).updateEntityFromDto(updateDto, project, existingManager);
         when(projectRepository.save(project)).thenReturn(updatedProject);
         when(projectMapper.toResponseDto(updatedProject)).thenReturn(responseDto);
@@ -418,6 +671,9 @@ public class ProjectServiceTests {
         verify(projectRepository, times(1)).findById(project.getId());
         verify(userRepository, never()).findById(any());
         verify(teamRepository, times(1)).findAllById(newTeamIds);
+        verify(teamRepository, times(2)).save(retainedTeam);
+        verify(teamRepository, times(1)).save(removedTeam);
+        verify(teamRepository, times(1)).save(addedTeam);
         verify(projectMapper).updateEntityFromDto(updateDto, project, project.getManager());
         verify(projectRepository, times(1)).save(project);
         verify(projectMapper, times(1)).toResponseDto(updatedProject);
@@ -460,6 +716,7 @@ public class ProjectServiceTests {
         verify(projectRepository, times(1)).findById(project.getId());
         verify(userRepository, times(1)).findById(manager.getId());
         verify(teamRepository, never()).findAllById(any());
+        verify(teamRepository, never()).save(any());
         verify(projectRepository, times(1)).save(project);
         verify(projectMapper, times(1)).toResponseDto(updatedProject);
     }
@@ -502,6 +759,7 @@ public class ProjectServiceTests {
         verify(projectRepository, times(1)).findById(project.getId());
         verify(userRepository, times(1)).findById(manager.getId());
         verify(teamRepository, times(1)).findAllById(List.of());
+        verify(teamRepository, never()).save(any());
         verify(projectRepository, times(1)).save(project);
         verify(projectMapper, times(1)).toResponseDto(updatedProject);
     }

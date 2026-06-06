@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -21,4 +23,6 @@ public class OrganizationCreateDto {
 
     @NotNull(message = "managerId is required and cannot be null")
     private Integer managerId;
+
+    private List<Integer> membersIds;
 }

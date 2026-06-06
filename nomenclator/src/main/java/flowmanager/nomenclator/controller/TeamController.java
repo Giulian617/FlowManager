@@ -1,6 +1,8 @@
 package flowmanager.nomenclator.controller;
 
-import flowmanager.nomenclator.dto.*;
+import flowmanager.nomenclator.dto.TeamCreateDto;
+import flowmanager.nomenclator.dto.TeamResponseDto;
+import flowmanager.nomenclator.dto.TeamUpdateDto;
 import flowmanager.nomenclator.service.TeamService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,41 +23,8 @@ public class TeamController {
 
     @GetMapping("")
     @ResponseBody
-    public ResponseEntity<List<TeamSummaryDto>> getAllTeams() {
+    public ResponseEntity<List<TeamResponseDto>> getAllTeams() {
         return ResponseEntity.ok(teamService.findAllTeams());
-    }
-
-    @PreAuthorize("@teamSecurity.canView(authentication, #teamId)")
-    @GetMapping("/{teamId}/members")
-    public ResponseEntity<List<UserSummaryDto>> getAllMembersByTeamId(
-            @PathVariable Integer teamId
-    ) {
-        return ResponseEntity.ok(teamService.findAllMembersByTeamId(teamId));
-    }
-
-    @PreAuthorize("@teamSecurity.canView(authentication, #teamId)")
-    @GetMapping("/{teamId}/projects")
-    public ResponseEntity<List<ProjectSummaryDto>> getAllProjectsByTeamId(
-            @PathVariable Integer teamId
-    ) {
-        return ResponseEntity.ok(teamService.findAllProjectsByTeamId(teamId));
-    }
-
-    @PreAuthorize("@teamSecurity.canView(authentication, #teamId)")
-    @GetMapping("/{teamId}/work-items")
-    public ResponseEntity<List<WorkItemSummaryDto>> getAllWorkItemsByTeamId(
-            @PathVariable Integer teamId
-    ) {
-        return ResponseEntity.ok(teamService.findAllWorkItemsByTeamId(teamId));
-    }
-
-    @PreAuthorize("@teamSecurity.canView(authentication, #teamId)")
-    @GetMapping("/{teamId}")
-    @ResponseBody
-    public ResponseEntity<TeamResponseDto> getTeamById(
-            @PathVariable Integer teamId
-    ) {
-        return ResponseEntity.ok(teamService.findTeamById(teamId));
     }
 
     @PostMapping("")

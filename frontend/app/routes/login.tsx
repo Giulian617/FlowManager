@@ -1,0 +1,175 @@
+import React, { useState } from "react"
+import { useNavigate, redirect } from "react-router"
+import { Eye, EyeOff, LogIn } from "lucide-react"
+import { login } from "../api/auth"
+import { getCurrentUser } from "../api/user"
+
+export async function clientLoader() {
+  const isLoggedIn = localStorage.getItem("accessToken") !== null
+  const role = localStorage.getItem("userRole")
+  const orgId = localStorage.getItem("selectedOrg")
+  const projectId = localStorage.getItem("selectedProject")
+
+  if (!isLoggedIn) return null
+
+  if (orgId && projectId) return redirect("/project/dashboard")
+  if (orgId) return redirect("/org/dashboard")
+  if (role === "ADMIN") return redirect("/admin-menu")
+  return redirect("/select-org")
+}
+
+export default function Login() {
+  const navigate = useNavigate()
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [usernameTouched, setUsernameTouched] = useState(false)
+  const [passwordTouched, setPasswordTouched] = useState(false)
+
+  const usernameOk = username.trim() !== ""
+  const passwordOk = password.length >= 3
+  const canSubmit = usernameOk && passwordOk && !loading
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!canSubmit) return
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await login(username, password)
+      localStorage.setItem("accessToken", data.accessToken)
+      localStorage.setItem("refreshToken", data.refreshToken)
+      localStorage.setItem("tokenExpiry", String(Date.now() + data.expiresIn * 1000))
+
+      const user = await getCurrentUser()
+      localStorage.setItem("userRole", user.role)
+
+      if (user.role === "ADMIN") {
+        navigate("/admin-menu", { replace: true })
+      } else {
+        navigate("/select-org", { replace: true })
+      }
+    } catch {
+      setError("Invalid username or password.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const inputCls = (valid: boolean, touched: boolean) =>
+    `w-full rounded-2xl border px-4 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 ${
+      touched && !valid
+        ? "border-rose-300 dark:border-rose-700 bg-rose-50/30 dark:bg-rose-950/20 focus:border-rose-400 dark:focus:border-rose-600 focus:ring-rose-100 dark:focus:ring-rose-900/30"
+        : "border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 focus:border-slate-400 dark:focus:border-slate-400 focus:ring-slate-200 dark:focus:ring-slate-700"
+    }`
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-slate-50 dark:bg-slate-900">
+
+      {/* Logo */}
+      <div className="mb-10 flex items-center gap-3">
+        <div className="grid h-12 w-12 place-items-center rounded-xl bg-blue-100 dark:bg-blue-950 text-lg font-bold text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex-none">FM</div>
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500 dark:text-slate-400">FlowManager</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Project workspace</p>
+        </div>
+      </div>
+
+      <div className="w-full max-w-sm">
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Welcome back</h1>
+          <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">Sign in to your account to continue</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm space-y-4">
+          {/* Username */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Username</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              onBlur={() => setUsernameTouched(true)}
+              placeholder="your username"
+              autoComplete="username"
+              className={inputCls(usernameOk, usernameTouched)}
+            />
+            {usernameTouched && !usernameOk && (
+              <p className="mt-1 text-xs text-rose-500 dark:text-rose-400">Username is required.</p>
+            )}
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onBlur={() => setPasswordTouched(true)}
+                placeholder="••••••••"
+                autoComplete="current-password"
+                className={inputCls(passwordOk, passwordTouched) + " pr-11"}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 transition hover:text-slate-700 dark:hover:text-slate-300"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {passwordTouched && !passwordOk && (
+              <p className="mt-1 text-xs text-rose-500 dark:text-rose-400">Password is required.</p>
+            )}
+          </div>
+
+          {/* Forgot password */}
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => window.location.href = "http://localhost:8080/realms/flowmanager/login-actions/reset-credentials"}
+              className="text-xs text-slate-400 dark:text-slate-500 transition hover:text-slate-700 dark:hover:text-slate-300"
+            >
+              Forgot password?
+            </button>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="rounded-2xl border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 px-4 py-3 text-xs text-rose-700 dark:text-rose-400">
+              {error}
+            </div>
+          )}
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 dark:bg-slate-100 px-5 py-3 text-sm font-semibold text-white dark:text-slate-900 transition hover:bg-slate-800 dark:hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83" />
+              </svg>
+            ) : (
+              <LogIn className="h-4 w-4" />
+            )}
+            {loading ? "Signing in…" : "Sign in"}
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-xs text-slate-400 dark:text-slate-500">
+          Don't have an account?{" "}
+          <button className="font-medium text-slate-700 dark:text-slate-300 transition hover:text-slate-900 dark:hover:text-slate-100">
+            Contact your manager
+          </button>
+        </p>
+      </div>
+    </div>
+  )
+}

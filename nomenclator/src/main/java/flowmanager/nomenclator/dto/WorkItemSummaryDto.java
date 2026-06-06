@@ -9,20 +9,36 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.time.LocalDate;
+import java.util.List;
+
 @Data
 @SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonPropertyOrder({
         "id",
-        "itemType",
         "title",
-        "status"
+        "description",
+        "itemType",
+        "status",
+        "severity",
+        "createdAt",
+        "dueDate",
+        "projectId",
+        "reporter",
+        "assignees"
 })
 public class WorkItemSummaryDto {
     private Integer id;
-    private ItemType itemType;
     private String title;
+    private String description;
+    private ItemType itemType;
     private Status status;
     private Severity severity;
+    private LocalDate createdAt;
+    private LocalDate dueDate;
+    private Integer projectId;
+    private UserSummaryDto reporter;
+    private List<UserSummaryDto> assignees;
 }

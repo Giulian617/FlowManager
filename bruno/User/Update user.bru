@@ -1,7 +1,7 @@
 meta {
   name: Update user
   type: http
-  seq: 11
+  seq: 13
 }
 
 put {
@@ -16,7 +16,9 @@ auth:bearer {
 
 body:json {
   {
-    "firstName": "Test",
+    "email": "admin@gmail.com",
+    "username": "admin",
+    "firstName": "Admin",
     "lastName": "Example",
     "role": "ADMIN"
   }

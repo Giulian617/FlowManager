@@ -3,9 +3,12 @@ package flowmanager.nomenclator.dto;
 import flowmanager.nomenclator.model.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -30,5 +33,8 @@ public class UserCreateDto {
     @NotBlank(message = "phoneNumber is required and cannot be blank")
     private String phoneNumber;
 
+    @NotNull(message = "role is required and cannot be null")
     private Role role;
+
+    private List<Integer> organizationIds;
 }

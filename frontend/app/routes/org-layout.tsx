@@ -1,0 +1,354 @@
+import { useEffect, useState } from "react"
+import { NavLink, Outlet, useNavigate } from "react-router"
+import { LayoutDashboard, FolderKanban, Users, LogOut, UserCircle, Pencil, Trash2, X, AlertTriangle, AlertCircle } from "lucide-react"
+import TopBar from "../components/TopBar"
+import { getCurrentUser, getUsers } from "../api/user"
+import { getOrganizationById, updateOrganization, deleteOrganization } from "../api/organization"
+import type { UserSummaryDto } from "../types/user"
+import type { OrganizationUpdateDto } from "../types/organization"
+
+const INDUSTRY_OPTIONS = ["Software", "Cloud", "Mobile", "Finance", "Healthcare", "Education", "Retail", "Other"]
+
+function EditOrgModal({
+  open, onClose, onSave,
+  initialName, initialDescription, initialIndustry, initialManagerId,
+  managers,
+}: {
+  open: boolean
+  onClose: () => void
+  onSave: (data: { name: string; description: string; industry: string; managerId: number }) => Promise<void>
+  initialName: string
+  initialDescription: string
+  initialIndustry: string
+  initialManagerId: number | null
+  managers: UserSummaryDto[]
+}) {
+  const [name, setName] = useState(initialName)
+  const [description, setDescription] = useState(initialDescription)
+  const [industry, setIndustry] = useState(initialIndustry)
+  const [managerId, setManagerId] = useState<number | null>(initialManagerId)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    setName(initialName)
+    setDescription(initialDescription)
+    setIndustry(initialIndustry)
+    setManagerId(initialManagerId)
+  }, [initialName, initialDescription, initialIndustry, initialManagerId])
+
+  if (!open) return null
+
+  const nameOk = name.trim() !== ""
+  const descOk = description.trim() !== ""
+  const canSave = nameOk && descOk && !!managerId
+
+  const inputCls = (valid: boolean) =>
+    `w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 ${
+      valid
+        ? "border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-slate-100 hover:border-slate-300 dark:hover:border-slate-500 focus:border-slate-400 dark:focus:border-slate-400 focus:ring-slate-200 dark:focus:ring-slate-700"
+        : "border-rose-300 dark:border-rose-700 bg-rose-50/30 dark:bg-rose-950/20 text-slate-900 dark:text-slate-100 focus:border-rose-400 dark:focus:border-rose-600 focus:ring-rose-100 dark:focus:ring-rose-900/30"
+    }`
+
+  async function handleSave() {
+    if (!canSave || !managerId) return
+    setLoading(true)
+    try {
+      await onSave({ name, description, industry, managerId })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm" onClick={() => !loading && onClose()} />
+      <div className="relative z-10 w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-700">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Edit Organization</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Update your organization's details.</p>
+          </div>
+          <button onClick={onClose} disabled={loading} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto px-6 py-5 space-y-4">
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              Name <span className={nameOk ? "text-slate-300 dark:text-slate-600" : "text-rose-500 dark:text-rose-400"}>*</span>
+            </label>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder={initialName} className={inputCls(nameOk)} />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              Description <span className={descOk ? "text-slate-300 dark:text-slate-600" : "text-rose-500 dark:text-rose-400"}>*</span>
+            </label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder={initialDescription} className={inputCls(descOk) + " resize-none"} />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Industry</label>
+            <select value={industry} onChange={(e) => setIndustry(e.target.value)} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none transition hover:border-slate-300 dark:hover:border-slate-500 focus:border-slate-400 dark:focus:border-slate-400 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700">
+              {INDUSTRY_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Manager</label>
+            <select value={managerId ?? ""} onChange={(e) => setManagerId(e.target.value ? Number(e.target.value) : null)} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none transition hover:border-slate-300 dark:hover:border-slate-500 focus:border-slate-400 dark:focus:border-slate-400 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700">
+              <option value="" disabled>Select manager…</option>
+              {managers.map((m) => <option key={m.id} value={m.id}>{m.username}</option>)}
+            </select>
+          </div>
+
+          {!canSave && (
+            <div className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-4 py-3 text-xs text-amber-700 dark:text-amber-300">
+              <AlertCircle className="h-4 w-4 flex-none" />
+              Name, description, and manager are required.
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-2 px-6 pb-6 pt-4 border-t border-slate-100 dark:border-slate-700">
+          <button onClick={onClose} disabled={loading} className="flex-1 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-700">
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={!canSave || loading} className="flex-1 rounded-xl bg-slate-900 dark:bg-slate-100 px-5 py-2.5 text-sm font-semibold text-white dark:text-slate-900 transition hover:bg-slate-800 dark:hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed">
+            {loading ? "Saving…" : "Save Changes"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DeleteOrgModal({ open, onClose, onConfirm, orgName, deleting }: {
+  open: boolean
+  onClose: () => void
+  onConfirm: () => void
+  orgName: string
+  deleting: boolean
+}) {
+  const [input, setInput] = useState("")
+
+  useEffect(() => {
+    if (!open) setInput("")
+  }, [open])
+
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm" onClick={() => !deleting && onClose()} />
+      <div className="relative z-10 w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-700">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Delete Organization</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">This action is irreversible.</p>
+          </div>
+          <button onClick={onClose} disabled={deleting} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto px-6 py-5 space-y-4">
+          <div className="flex items-start gap-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 px-4 py-3">
+            <AlertTriangle className="h-4 w-4 text-rose-600 dark:text-rose-400 flex-none mt-0.5" />
+            <p className="text-xs text-rose-700 dark:text-rose-300 leading-relaxed">
+              This will permanently delete <span className="font-semibold">{orgName}</span> and <span className="font-semibold">all</span> its projects, teams, and work items.
+            </p>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              Type <span className="font-semibold text-slate-700 dark:text-slate-300 normal-case tracking-normal">{orgName}</span> to confirm
+            </label>
+            <input value={input} onChange={(e) => setInput(e.target.value)} placeholder={orgName} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-slate-500 focus:border-rose-400 dark:focus:border-rose-600 focus:ring-2 focus:ring-rose-100 dark:focus:ring-rose-900/30" />
+          </div>
+        </div>
+
+        <div className="flex gap-2 px-6 pb-6 pt-4 border-t border-slate-100 dark:border-slate-700">
+          <button onClick={onClose} disabled={deleting} className="flex-1 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50">
+            Cancel
+          </button>
+          <button onClick={onConfirm} disabled={input !== orgName || deleting} className="flex-1 rounded-xl bg-rose-600 dark:bg-rose-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 dark:hover:bg-rose-600 disabled:opacity-40 disabled:cursor-not-allowed">
+            {deleting ? "Deleting…" : "Delete Organization"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const clearOrgStorage = () => {
+  localStorage.removeItem("selectedOrg")
+  localStorage.removeItem("selectedOrgName")
+  localStorage.removeItem("selectedProject")
+  localStorage.removeItem("selectedProjectName")
+}
+
+export default function OrgLayout() {
+  const navigate = useNavigate()
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null)
+  const [selectedOrgName, setSelectedOrgName] = useState("")
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [editOrgName, setEditOrgName] = useState("")
+  const [editOrgDescription, setEditOrgDescription] = useState("")
+  const [editOrgIndustry, setEditOrgIndustry] = useState("")
+  const [editOrgManagerId, setEditOrgManagerId] = useState<number | null>(null)
+  const [managers, setManagers] = useState<UserSummaryDto[]>([])
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+
+  useEffect(() => {
+    const orgId = localStorage.getItem("selectedOrg")
+    if (!orgId) { navigate("/select-org"); return }
+    setSelectedOrgId(orgId)
+    setSelectedOrgName(localStorage.getItem("selectedOrgName") ?? "")
+
+    async function load() {
+      try {
+        const [currentUser, orgData, managersData] = await Promise.all([
+          getCurrentUser(),
+          getOrganizationById(Number(orgId)),
+          getUsers("MANAGER"),
+        ])
+        setIsAdmin(currentUser.role === "ADMIN")
+        setEditOrgName(orgData.name)
+        setEditOrgDescription(orgData.description)
+        setEditOrgIndustry(orgData.industry)
+        setEditOrgManagerId(orgData.manager.id)
+        setManagers(managersData)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    load()
+  }, [])
+
+  const navItems = [
+    { to: "/org/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { to: "/org/users",     icon: UserCircle,      label: "Users"     },
+    { to: "/org/projects",  icon: FolderKanban,    label: "Projects"  },
+    { to: "/org/teams",     icon: Users,           label: "Teams"     },
+  ]
+
+  async function handleEditOrg(data: OrganizationUpdateDto) {
+    if (!selectedOrgId) return
+    try {
+      await updateOrganization(Number(selectedOrgId), data)
+      localStorage.setItem("selectedOrgName", data.name)
+      setSelectedOrgName(data.name)
+      setEditOrgName(data.name)
+      setEditOrgDescription(data.description)
+      setEditOrgIndustry(data.industry)
+      setEditOrgManagerId(data.managerId)
+      setEditModalOpen(false)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  async function handleDeleteOrg() {
+    if (!selectedOrgId) return
+    setDeleteLoading(true)
+    try {
+      await deleteOrganization(Number(selectedOrgId))
+      clearOrgStorage()
+      navigate("/select-org", { replace: true })
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setDeleteLoading(false)
+      setDeleteModalOpen(false)
+    }
+  }
+
+  return (
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden">
+      <aside className="flex w-60 flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 px-4 py-4">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-blue-100 dark:bg-blue-950 text-sm font-bold text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex-none">FM</div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-900 dark:text-slate-100">FlowManager</p>
+              <p className="truncate text-[11px] text-slate-400 dark:text-slate-500 max-w-32.5">
+                {selectedOrgName || "Organization workspace"}
+              </p>
+            </div>
+          </div>
+          {isAdmin && (
+            <div className="-mr-1 flex items-center gap-1">
+              <button onClick={() => setEditModalOpen(true)} title="Edit organization" className="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-300 transition">
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+              <button onClick={() => setDeleteModalOpen(true)} title="Delete organization" className="flex h-6 w-6 items-center justify-center rounded-lg text-red-400 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-500 dark:hover:text-red-400 transition">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        <nav className="flex-1 px-3 py-4 space-y-0.5">
+          {navItems.map(({ to, icon: Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                  isActive
+                    ? "bg-slate-900 dark:bg-slate-700 text-white"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100"
+                }`
+              }
+            >
+              <Icon className="h-4 w-4 flex-none" />
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="border-t border-slate-100 dark:border-slate-700 px-3 py-3">
+          <button
+            onClick={() => { clearOrgStorage(); navigate("/select-org", { replace: true }) }}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200"
+          >
+            <LogOut className="h-4 w-4" />
+            Switch organization
+          </button>
+        </div>
+      </aside>
+
+      <main className="flex-1 overflow-y-auto">
+        <div className="px-8 py-8">
+          <div className="mx-auto max-w-6xl">
+            <TopBar />
+          </div>
+          <div className="mx-auto max-w-6xl">
+            <Outlet />
+          </div>
+        </div>
+      </main>
+
+      <EditOrgModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        onSave={handleEditOrg}
+        initialName={editOrgName}
+        initialDescription={editOrgDescription}
+        initialIndustry={editOrgIndustry}
+        initialManagerId={editOrgManagerId}
+        managers={managers}
+      />
+      <DeleteOrgModal
+        open={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDeleteOrg}
+        orgName={selectedOrgName}
+        deleting={deleteLoading}
+      />
+    </div>
+  )
+}

@@ -4,6 +4,7 @@ import flowmanager.nomenclator.model.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 public final class BuildInstances {
@@ -19,7 +20,8 @@ public final class BuildInstances {
                     .firstName("Example")
                     .lastName("User")
                     .phoneNumber("+407777777777")
-                    .active(false)
+                    .active(true)
+                    .role(Role.MANAGER)
                     .createdAt(LocalDateTime.of(2025, 6, 13, 10, 35, 30))
                     .build(),
                 User.builder()
@@ -30,7 +32,8 @@ public final class BuildInstances {
                     .firstName("Example2")
                     .lastName("User")
                     .phoneNumber("+408888888888")
-                    .active(false)
+                    .active(true)
+                    .role(Role.USER)
                     .createdAt(LocalDateTime.of(2025, 9, 22, 19, 41, 3))
                     .build()
         );
@@ -52,7 +55,7 @@ public final class BuildInstances {
                     .itemType(ItemType.Task)
                     .status(Status.To_do)
                     .severity(Severity.Low)
-                    .createdAt(LocalDateTime.of(2026, 3, 20, 18, 33, 30))
+                    .createdAt(LocalDate.of(2026, 3, 20))
                     .project(project)
                     .reporter(reporter)
                     .build(),
@@ -63,7 +66,7 @@ public final class BuildInstances {
                     .itemType(ItemType.Task)
                     .status(Status.In_Progress)
                     .severity(Severity.High)
-                    .createdAt(LocalDateTime.of(2026, 5, 15, 13, 27, 51))
+                    .createdAt(LocalDate.of(2026, 5, 15))
                     .project(project)
                     .reporter(reporter)
                     .build()
@@ -103,6 +106,7 @@ public final class BuildInstances {
 
     public static List<Project> buildProjects() {
         User manager = buildUser();
+        Organization organization = buildOrganization();
 
         return List.of(
                 Project.builder()
@@ -112,6 +116,9 @@ public final class BuildInstances {
                     .startDate(LocalDate.of(2026, 1, 1))
                     .endDate(LocalDate.of(2026,12,31))
                     .manager(manager)
+                    .organization(organization)
+                    .workItems(new ArrayList<>())
+                    .teams(new ArrayList<>())
                     .build(),
                 Project.builder()
                     .id(2)
@@ -120,6 +127,9 @@ public final class BuildInstances {
                     .startDate(LocalDate.of(2026, 1, 20))
                     .endDate(LocalDate.of(2026,7,20))
                     .manager(manager)
+                    .organization(organization)
+                    .workItems(new ArrayList<>())
+                    .teams(new ArrayList<>())
                     .build()
         );
     }

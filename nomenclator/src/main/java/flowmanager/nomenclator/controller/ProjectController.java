@@ -21,22 +21,38 @@ public class ProjectController {
 
     @GetMapping("")
     @ResponseBody
-    public ResponseEntity<List<ProjectSummaryDto>> getAllProjects() {
+    public ResponseEntity<List<ProjectResponseDto>> getAllProjects() {
         return ResponseEntity.ok(projectService.findAllProjects());
     }
 
     @PreAuthorize("@projectSecurity.canView(authentication, #projectId)")
     @GetMapping("/{projectId}/work-items")
-    public ResponseEntity<List<WorkItemSummaryDto>> getAllWorkItemsByProjectId(
+    public ResponseEntity<List<WorkItemResponseDto>> getAllWorkItemsByProjectId(
             @PathVariable Integer projectId
     ) {
         return ResponseEntity.ok(projectService.findAllWorkItemsByProjectId(projectId));
     }
 
     @PreAuthorize("@projectSecurity.canView(authentication, #projectId)")
+    @GetMapping("/{projectId}/teams")
+    public ResponseEntity<List<TeamSummaryOrganizationDto>> getAllTeamsByProjectId(
+            @PathVariable Integer projectId
+    ) {
+        return ResponseEntity.ok(projectService.findAllTeamsByProjectId(projectId));
+    }
+
+    @PreAuthorize("@projectSecurity.canView(authentication, #projectId)")
+    @GetMapping("/{projectId}/members")
+    public ResponseEntity<List<UserSummaryDto>> getAllMembersByProjectId(
+            @PathVariable Integer projectId
+    ) {
+        return ResponseEntity.ok(projectService.findAllMembersByProjectId(projectId));
+    }
+
+    @PreAuthorize("@projectSecurity.canView(authentication, #projectId)")
     @GetMapping("/{projectId}")
     @ResponseBody
-    public ResponseEntity<ProjectResponseDto> getProjectById(
+    public ResponseEntity<ProjectSummaryDto> getProjectById(
             @PathVariable Integer projectId
     ) {
         return ResponseEntity.ok(projectService.findProjectById(projectId));

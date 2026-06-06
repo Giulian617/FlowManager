@@ -8,7 +8,7 @@ import flowmanager.nomenclator.model.WorkItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -25,7 +25,7 @@ public class WorkItemMapper {
                 .itemType(dto.getItemType())
                 .status(Status.To_do)
                 .severity(dto.getSeverity())
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDate.now())
                 .dueDate(dto.getDueDate())
                 .project(project)
                 .reporter(reporter)
@@ -40,16 +40,6 @@ public class WorkItemMapper {
         Optional.ofNullable(dto.getDueDate()).ifPresent(workItem::setDueDate);
     }
 
-    public WorkItemSummaryDto toSummaryDto(WorkItem workItem) {
-        return WorkItemSummaryDto.builder()
-                .id(workItem.getId())
-                .itemType(workItem.getItemType())
-                .title(workItem.getTitle())
-                .status(workItem.getStatus())
-                .severity(workItem.getSeverity())
-                .build();
-    }
-
     private List<UserSummaryDto> mapAssignees(List<User> assignedUsers) {
         if (assignedUsers == null) return new ArrayList<>();
 
@@ -60,6 +50,29 @@ public class WorkItemMapper {
                         assignedUser.getRole()
                 ))
                 .toList();
+    }
+
+    public WorkItemSummaryDto toSummaryDto(WorkItem workItem) {
+        User reporter = workItem.getReporter();
+        UserSummaryDto reporterDto = new UserSummaryDto(
+                reporter.getId(),
+                reporter.getUsername(),
+                reporter.getRole()
+        );
+
+        return WorkItemSummaryDto.builder()
+                .id(workItem.getId())
+                .itemType(workItem.getItemType())
+                .description(workItem.getDescription())
+                .title(workItem.getTitle())
+                .status(workItem.getStatus())
+                .severity(workItem.getSeverity())
+                .createdAt(workItem.getCreatedAt())
+                .dueDate(workItem.getDueDate())
+                .projectId(workItem.getProject().getId())
+                .reporter(reporterDto)
+                .assignees(mapAssignees(workItem.getAssignees()))
+                .build();
     }
 
     public WorkItemResponseDto toResponseDto(WorkItem workItem) {

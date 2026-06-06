@@ -4,22 +4,30 @@ import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.DuplicateAttributeException;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.*;
+import flowmanager.nomenclator.model.Organization;
 import flowmanager.nomenclator.model.Role;
 import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.CommentRepository;
+import flowmanager.nomenclator.repository.OrganizationRepository;
 import flowmanager.nomenclator.repository.UserRepository;
 import flowmanager.nomenclator.security.KeycloakAdminService;
+import flowmanager.nomenclator.security.Utils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
+    private final OrganizationRepository organizationRepository;
     private final UserMapper userMapper;
     private final CommentMapper commentMapper;
     private final ProjectMapper projectMapper;
@@ -38,31 +46,45 @@ public class UserService {
         );
     }
 
-    public List<UserSummaryDto> findAllUsers() {
+    public List<UserResponseDto> findAllUsers(Role role) {
+        Specification<User> specs = Specification.allOf();
+
+        if (role != null) {
+            specs = specs.and((root, query, cb) -> cb.equal(root.get("role"), role));
+        }
+
         return userRepository
-                .findAll()
+                .findAll(specs)
                 .stream()
-                .map(userMapper::toSummaryDto)
+                .map(userMapper::toResponseDto)
                 .toList();
     }
 
-    public List<CommentResponseUserDto> findAllCommentsByUserId(Integer userId) {
-        return getUser(userId)
-                .getComments()
-                .stream()
-                .map(commentMapper::toResponseUserDto)
-                .toList();
+    public UserResponseDto getCurrentUser(Authentication auth) {
+        String keycloakId = Utils.getCurrentUserId(auth);
+        User user = userRepository.findByKeycloakId(keycloakId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        return userMapper.toResponseDto(user);
     }
 
-    public List<ProjectSummaryDto> findAllProjectsByUserId(Integer userId) {
+    public List<ProjectResponseDto> findAllManagedProjectsByUserId(Integer userId) {
         return getUser(userId)
                 .getProjects()
                 .stream()
-                .map(projectMapper::toSummaryDto)
+                .map(projectMapper::toResponseDto)
                 .toList();
     }
 
-    public List<OrganizationSummaryDto> findAllOrganizationsByUserId(Integer userId) {
+    public List<ProjectResponseDto> findAllAssignedProjectsByUserId(Integer userId) {
+        return getUser(userId).getAssignedTeams()
+                .stream()
+                .flatMap(team -> team.getProjects().stream())
+                .map(projectMapper::toResponseDto)
+                .toList();
+    }
+
+    public List<OrganizationSummaryDto> findAllManagedOrganizationsByUserId(Integer userId) {
         return getUser(userId)
                 .getOrganizations()
                 .stream()
@@ -70,19 +92,30 @@ public class UserService {
                 .toList();
     }
 
-    public List<TeamSummaryUserDto> findAllManagedTeamsByUserId(Integer userId) {
-        return getUser(userId)
-                .getManagedTeams()
-                .stream()
-                .map(teamMapper::toSummaryUserDto)
+    public List<OrganizationSummaryDto> findAllMemberOrganizationsByUserId(Integer userId) {
+        User user = getUser(userId);
+
+        Set<Organization> organizations = new HashSet<>(user.getOrganizations());
+        organizations.addAll(user.getMemberOrganizations());
+
+        return organizations.stream()
+                .map(organizationMapper::toSummaryDto)
                 .toList();
     }
 
-    public List<TeamSummaryUserDto> findAllAssignedTeamsByUserId(Integer userId) {
+    public List<TeamResponseDto> findAllManagedTeamsByUserId(Integer userId) {
+        return getUser(userId)
+                .getManagedTeams()
+                .stream()
+                .map(teamMapper::toResponseDto)
+                .toList();
+    }
+
+    public List<TeamResponseDto> findAllAssignedTeamsByUserId(Integer userId) {
         return getUser(userId)
                 .getAssignedTeams()
                 .stream()
-                .map(teamMapper::toSummaryUserDto)
+                .map(teamMapper::toResponseDto)
                 .toList();
     }
 
@@ -102,10 +135,16 @@ public class UserService {
                 .toList();
     }
 
-    public UserResponseDto findUserById(Integer userId) {
-        return userMapper.toResponseDto(getUser(userId));
+    @Transactional
+    protected List<Organization> getOrganizations(List<Integer> organizationsIds) {
+        List<Organization> organizations = organizationRepository.findAllById(organizationsIds);
+        if(organizations.size() != organizationsIds.size()) {
+            throw new NotFoundException("One or more organizations were not found");
+        }
+        return organizations;
     }
 
+    @Transactional
     public UserResponseDto createUser(UserCreateDto userCreateDto) {
         if(userRepository.existsByEmail(userCreateDto.getEmail()))
             throw new DuplicateAttributeException(String.format("Email %s already exists", userCreateDto.getEmail()));
@@ -118,10 +157,25 @@ public class UserService {
             if (userRepository.existsByKeycloakId(keycloakId))
                 throw new DuplicateAttributeException("User already registered");
 
-            Role role = userCreateDto.getRole() != null ? userCreateDto.getRole() : Role.USER;
+            Role role = userCreateDto.getRole();
             keycloakAdminService.assignRole(keycloakId, role);
 
             User user = userMapper.toEntity(userCreateDto, keycloakId);
+
+            if (userCreateDto.getOrganizationIds() != null && !userCreateDto.getOrganizationIds().isEmpty()) {
+                List<Organization> organizations = getOrganizations(userCreateDto.getOrganizationIds());
+                organizations.forEach(organization -> {
+                    if (!user.getMemberOrganizations().contains(organization)) {
+                        user.getMemberOrganizations().add(organization);
+                    }
+
+                    if (!organization.getMembers().contains(user)) {
+                        organization.getMembers().add(user);
+                    }
+
+                    organizationRepository.save(organization);
+                });
+            }
             return userMapper.toResponseDto(userRepository.save(user));
         } catch (Exception e) {
             keycloakAdminService.deleteUser(keycloakId);
@@ -129,6 +183,7 @@ public class UserService {
         }
     }
 
+    @Transactional
     public UserResponseDto updateUser(Integer userId, UserUpdateDto userUpdateDto) {
         User user = getUser(userId);
 
@@ -141,8 +196,26 @@ public class UserService {
             throw new DuplicateAttributeException(String.format("Username %s already exists", userUpdateDto.getUsername()));
         }
 
+        keycloakAdminService.updateUser(user, userUpdateDto);
         if (userUpdateDto.getRole() != null) {
             keycloakAdminService.updateUserRole(user.getKeycloakId(), userUpdateDto.getRole());
+        }
+
+        if (userUpdateDto.getOrganizationIds() != null) {
+            user.getMemberOrganizations().forEach(org -> org.getMembers().remove(user));
+            organizationRepository.saveAll(user.getMemberOrganizations());
+            user.getMemberOrganizations().clear();
+
+            List<Organization> organizations = getOrganizations(userUpdateDto.getOrganizationIds());
+            organizations.forEach(organization -> {
+                user.getMemberOrganizations().add(organization);
+                organization.getMembers().add(user);
+            });
+            organizationRepository.saveAll(organizations);
+        }
+
+        if (userUpdateDto.getActive() != null) {
+            keycloakAdminService.setUserEnabled(user.getKeycloakId(), userUpdateDto.getActive());
         }
 
         userMapper.updateEntityFromDto(userUpdateDto, user);
@@ -168,6 +241,8 @@ public class UserService {
                 .forEach(team -> teamService.deleteTeam(team.getId()));
         user.getOrganizations()
                 .forEach(organization -> organizationService.deleteOrganization(organization.getId()));
+        user.getMemberOrganizations()
+                .forEach(organization -> organization.getMembers().remove(user));
 
         commentRepository.deleteAll(user.getComments());
         userRepository.deleteById(userId);

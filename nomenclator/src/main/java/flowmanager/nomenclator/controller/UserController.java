@@ -1,12 +1,14 @@
 package flowmanager.nomenclator.controller;
 
 import flowmanager.nomenclator.dto.*;
+import flowmanager.nomenclator.model.Role;
 import flowmanager.nomenclator.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,41 +21,59 @@ public class UserController {
 
     @GetMapping("")
     @ResponseBody
-    public ResponseEntity<List<UserSummaryDto>> getAllUsers() {
-        return ResponseEntity.ok(userService.findAllUsers());
+    public ResponseEntity<List<UserResponseDto>> getAllUsers(
+            @RequestParam(required = false) Role role
+    ) {
+        return ResponseEntity.ok(userService.findAllUsers(role));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDto> getCurrentUser(
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(userService.getCurrentUser(authentication));
     }
 
     @PreAuthorize("@userSecurity.canView(authentication, #userId)")
-    @GetMapping("/{userId}/comments")
+    @GetMapping("/{userId}/projects/manager")
     @ResponseBody
-    public ResponseEntity<List<CommentResponseUserDto>> getAllCommentsByUserId(
+    public ResponseEntity<List<ProjectResponseDto>> getAllManagedProjectsByUserId(
             @PathVariable Integer userId
     ) {
-        return ResponseEntity.ok(userService.findAllCommentsByUserId(userId));
+        return ResponseEntity.ok(userService.findAllManagedProjectsByUserId(userId));
     }
 
     @PreAuthorize("@userSecurity.canView(authentication, #userId)")
-    @GetMapping("/{userId}/projects")
+    @GetMapping("/{userId}/projects/assignee")
     @ResponseBody
-    public ResponseEntity<List<ProjectSummaryDto>> getAllProjectsByUserId(
+    public ResponseEntity<List<ProjectResponseDto>> getAllAssignedProjectsByUserId(
             @PathVariable Integer userId
     ) {
-        return ResponseEntity.ok(userService.findAllProjectsByUserId(userId));
+        return ResponseEntity.ok(userService.findAllAssignedProjectsByUserId(userId));
     }
 
     @PreAuthorize("@userSecurity.canView(authentication, #userId)")
-    @GetMapping("/{userId}/organizations")
+    @GetMapping("/{userId}/organizations/manager")
     @ResponseBody
-    public ResponseEntity<List<OrganizationSummaryDto>> getAllOrganizationsByUserId(
+    public ResponseEntity<List<OrganizationSummaryDto>> getAllManagedOrganizationsByUserId(
             @PathVariable Integer userId
     ) {
-        return ResponseEntity.ok(userService.findAllOrganizationsByUserId(userId));
+        return ResponseEntity.ok(userService.findAllManagedOrganizationsByUserId(userId));
+    }
+
+    @PreAuthorize("@userSecurity.canView(authentication, #userId)")
+    @GetMapping("/{userId}/organizations/member")
+    @ResponseBody
+    public ResponseEntity<List<OrganizationSummaryDto>> getAllMemberOrganizationsByUserId(
+            @PathVariable Integer userId
+    ) {
+        return ResponseEntity.ok(userService.findAllMemberOrganizationsByUserId(userId));
     }
 
     @PreAuthorize("@userSecurity.canView(authentication, #userId)")
     @GetMapping("/{userId}/teams/manager")
     @ResponseBody
-    public ResponseEntity<List<TeamSummaryUserDto>> getAllManagedTeamsByUserId(
+    public ResponseEntity<List<TeamResponseDto>> getAllManagedTeamsByUserId(
             @PathVariable Integer userId
     ) {
         return ResponseEntity.ok(userService.findAllManagedTeamsByUserId(userId));
@@ -62,7 +82,7 @@ public class UserController {
     @PreAuthorize("@userSecurity.canView(authentication, #userId)")
     @GetMapping("/{userId}/teams/assignee")
     @ResponseBody
-    public ResponseEntity<List<TeamSummaryUserDto>> getAllAssignedTeamsByUserId(
+    public ResponseEntity<List<TeamResponseDto>> getAllAssignedTeamsByUserId(
             @PathVariable Integer userId
     ) {
         return ResponseEntity.ok(userService.findAllAssignedTeamsByUserId(userId));
@@ -84,15 +104,6 @@ public class UserController {
             @PathVariable Integer userId
     ) {
         return ResponseEntity.ok(userService.findAllAssignedWorkItemsByUserId(userId));
-    }
-
-    @PreAuthorize("@userSecurity.canView(authentication, #userId)")
-    @GetMapping("/{userId}")
-    @ResponseBody
-    public ResponseEntity<UserResponseDto> getUserById(
-            @PathVariable Integer userId
-    ) {
-        return ResponseEntity.ok(userService.findUserById(userId));
     }
 
     @PostMapping("")

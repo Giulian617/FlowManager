@@ -11,18 +11,20 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
 public class ProjectMapper {
     private final WorkItemMapper workItemMapper;
 
-    public Project toEntity(ProjectCreateDto dto, User manager) {
+    public Project toEntity(ProjectCreateDto dto, Organization organization, User manager) {
         return Project.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())
                 .startDate(dto.getStartDate())
                 .endDate(dto.getEndDate())
+                .organization(organization)
                 .manager(manager)
                 .build();
     }
@@ -36,10 +38,31 @@ public class ProjectMapper {
     }
 
     public ProjectSummaryDto toSummaryDto(Project project) {
+        Organization organization = project.getOrganization();
+        OrganizationSummaryDto organizationSummaryDto = OrganizationSummaryDto.builder()
+                .id(organization.getId())
+                .name(organization.getName())
+                .description(organization.getDescription())
+                .build();
+
         return ProjectSummaryDto.builder()
                 .id(project.getId())
                 .name(project.getName())
                 .description(project.getDescription())
+                .endDate(project.getEndDate())
+                .itemCount(project.getWorkItems().size())
+                .teamCount(project.getTeams().size())
+                .memberCount((int) Stream.concat(
+                                Stream.concat(
+                                        project.getTeams().stream().flatMap(team -> team.getMembers().stream()),
+                                        project.getTeams().stream().map(Team::getManager)
+                                ),
+                                Stream.of(project.getManager())
+                        )
+                        .map(User::getId)
+                        .distinct()
+                        .count())
+                .organization(organizationSummaryDto)
                 .build();
     }
 
@@ -68,6 +91,13 @@ public class ProjectMapper {
     }
 
     public ProjectResponseDto toResponseDto(Project project) {
+        Organization organization = project.getOrganization();
+        OrganizationSummaryDto organizationDto = new OrganizationSummaryDto(
+                organization.getId(),
+                organization.getName(),
+                organization.getDescription()
+        );
+
         User manager = project.getManager();
         UserSummaryDto managerDto = new UserSummaryDto(
                 manager.getId(),
@@ -97,6 +127,7 @@ public class ProjectMapper {
                 .description(project.getDescription())
                 .startDate(project.getStartDate())
                 .endDate(project.getEndDate())
+                .organization(organizationDto)
                 .manager(managerDto)
                 .workItems(workItemsDto)
                 .teams(teamsDto)

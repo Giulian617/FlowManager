@@ -1,0 +1,223 @@
+import { useEffect, useState } from "react"
+import { useNavigate } from "react-router"
+import { FolderKanban, Users, ListChecks, Clock, ChevronRight, Bug, CheckSquare, Zap, BookOpen } from "lucide-react"
+import {
+  getProjectById,
+  getWorkItemsByProjectId
+} from "../api/project";
+import type { ProjectSummaryDto } from "../types/project";
+import type { WorkItemSummaryDto } from "../types/workItem";
+import type { ItemType} from "../types/enums"
+import { formatDateLongMonth } from "../utils/functions";
+
+type ActivityType = "bug" | "task" | "epic" | "user_story"
+
+const ITEM_TYPE_MAP: Record<ItemType, ActivityType> = {
+  Task: "task",
+  Bug: "bug",
+  User_Story: "user_story",
+  Epic: "epic",
+}
+
+const activityColors = {
+  task:       "bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-800",
+  bug:        "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800",
+  user_story: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
+  epic:       "bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-800",
+}
+
+const activityIcons = {
+  task:       <CheckSquare className="h-4 w-4 flex-none" />,
+  bug:        <Bug className="h-4 w-4 flex-none" />,
+  user_story: <BookOpen className="h-4 w-4 flex-none" />,
+  epic:       <Zap className="h-4 w-4 flex-none" />,
+}
+
+function daysLeft(dateStr: string) {
+  const diff = new Date(dateStr).getTime() - new Date().getTime()
+  return Math.ceil(diff / (1000 * 60 * 60 * 24))
+}
+
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
+}
+
+export default function Dashboard() {
+  const navigate = useNavigate()
+  const [project, setProject] = useState<ProjectSummaryDto | null>(null)
+  const [workItems, setWorkItems] = useState<WorkItemSummaryDto[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const projectId = Number(localStorage.getItem("selectedProject"))
+    if (!projectId) {
+      navigate("/org");
+      return
+    }
+
+    async function load() {
+      try {
+        const [projectData, workItemsData] = await Promise.all([
+          getProjectById(projectId),
+          getWorkItemsByProjectId(projectId),
+        ])
+        setProject(projectData)
+        setWorkItems(workItemsData)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-24">
+      <p className="text-slate-500 dark:text-slate-400">Loading dashboard…</p>
+    </div>
+  )
+
+  if (!project) return (
+    <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 py-24 shadow-sm text-center gap-3">
+      <FolderKanban className="h-10 w-10 text-slate-300 dark:text-slate-600" />
+      <p className="text-sm font-medium text-slate-600 dark:text-slate-300">No project selected</p>
+      <p className="text-xs text-slate-400 dark:text-slate-500">Go to Projects and select one to get started.</p>
+      <button onClick={() => navigate("/org-projects")}
+        className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-slate-900 dark:bg-slate-100 px-4 py-2 text-sm font-semibold text-white dark:text-slate-900 transition hover:bg-slate-800 dark:hover:bg-slate-300">
+        <FolderKanban className="h-4 w-4" />
+        Go to Projects
+      </button>
+    </div>
+  )
+
+  const days = daysLeft(project.endDate)
+  const isOverdue = days < 0
+  const isNear = days >= 0 && days <= 14
+  const openItems = workItems.filter((w) => w.status !== "Done" && w.status !== "Closed").length
+  const recentItems = workItems.slice(0, 4)
+
+  return (
+    <div className="mx-auto max-w-6xl space-y-6">
+      <header className="flex flex-col gap-1">
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">Dashboard</p>
+        <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100">{project.name}</h1>
+        <p className="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">{project.description}</p>
+      </header>
+
+      <div className="grid grid-cols-3 gap-4">
+        <div
+          onClick={() => navigate("/project/work-items")}
+          className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-5 shadow-sm cursor-pointer hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 hover:-translate-y-0.5 transition duration-150"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm text-slate-500 dark:text-slate-400">Open work items</span>
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-400">
+              <ListChecks className="h-4 w-4" />
+            </span>
+          </div>
+          <div className="mt-4 text-4xl font-semibold text-slate-900 dark:text-slate-100">{openItems}</div>
+          <div className="mt-3 flex justify-between items-center">
+            <p className="text-xs text-slate-400 dark:text-slate-500">{workItems.length} total</p>
+            <div className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
+              <span>View all</span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </div>
+          </div>
+        </div>
+
+        <div
+          onClick={() => navigate("/project/teams")}
+          className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-5 shadow-sm cursor-pointer hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 hover:-translate-y-0.5 transition duration-150"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm text-slate-500 dark:text-slate-400">Teams</span>
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400">
+              <Users className="h-4 w-4" />
+            </span>
+          </div>
+          <div className="mt-4 text-4xl font-semibold text-slate-900 dark:text-slate-100">{project.teamCount}</div>
+          <div className="mt-3 flex justify-end items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
+            <span>View all</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </div>
+        </div>
+
+        <div className={`rounded-3xl border p-5 shadow-sm ${
+          isOverdue
+            ? "border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40"
+            : isNear
+            ? "border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40"
+            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50"
+        }`}>
+          <div className="flex items-center justify-between gap-3">
+            <span className={`text-sm ${isOverdue ? "text-rose-600 dark:text-rose-400" : isNear ? "text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`}>
+              Deadline
+            </span>
+            <span className={`inline-flex h-8 w-8 items-center justify-center rounded-2xl ${
+              isOverdue
+                ? "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-400"
+                : isNear
+                ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400"
+                : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+            }`}>
+              <Clock className="h-4 w-4" />
+            </span>
+          </div>
+          <div className={`mt-4 text-2xl font-semibold ${isOverdue ? "text-rose-700 dark:text-rose-400" : isNear ? "text-amber-700 dark:text-amber-400" : "text-slate-900 dark:text-slate-100"}`}>
+            {isOverdue ? `${Math.abs(days)} days overdue` : `${days} days left`}
+          </div>
+          <p className={`mt-1 text-xs ${isOverdue ? "text-rose-500 dark:text-rose-500" : isNear ? "text-amber-500 dark:text-amber-500" : "text-slate-400 dark:text-slate-500"}`}>
+            {formatDateLongMonth(project.endDate)}
+          </p>
+        </div>
+      </div>
+
+      <section className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Recent activity</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Latest updates for this project</p>
+          </div>
+          <button onClick={() => navigate("/project/work-items")}
+            className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 transition hover:bg-slate-50 dark:hover:bg-slate-700">
+            View work items
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        {recentItems.length === 0 ? (
+          <p className="py-8 text-center text-sm text-slate-400 dark:text-slate-500">No work items yet.</p>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+            {recentItems.map((item) => {
+              const type: ActivityType = ITEM_TYPE_MAP[item.itemType] ?? "task"
+              return (
+                <div key={item.id}
+                  onClick={() => navigate(`/project/work-items/${item.id}/edit`)}
+                  className={`flex items-start gap-3 rounded-2xl border p-4 cursor-pointer transition hover:opacity-80 ${activityColors[type]}`}>
+                  <span className="mt-0.5">{activityIcons[type]}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold">{item.title}</p>
+                    <p className="text-xs mt-0.5 opacity-80 capitalize">
+                      {item.status?.toLowerCase().replace(/_/g, " ")}
+                      {item.severity ? ` · ${item.severity.toLowerCase()}` : ""}
+                    </p>
+                  </div>
+                  <span className="text-[10px] opacity-60 whitespace-nowrap flex-none">
+                    {item.createdAt ? timeAgo(item.createdAt) : ""}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
+    </div>
+  )
+}

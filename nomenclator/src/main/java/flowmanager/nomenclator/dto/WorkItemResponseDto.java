@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -40,7 +39,7 @@ public class WorkItemResponseDto {
     private ItemType itemType;
     private Status status;
     private Severity severity;
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
     private LocalDate dueDate;
     private ProjectSummaryDto project;
     private List<CommentResponseWorkItemDto> comments;

@@ -3,10 +3,14 @@ package flowmanager.nomenclator.service;
 import flowmanager.nomenclator.dto.*;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.ProjectMapper;
+import flowmanager.nomenclator.mapper.TeamMapper;
+import flowmanager.nomenclator.mapper.UserMapper;
 import flowmanager.nomenclator.mapper.WorkItemMapper;
+import flowmanager.nomenclator.model.Organization;
 import flowmanager.nomenclator.model.Project;
 import flowmanager.nomenclator.model.Team;
 import flowmanager.nomenclator.model.User;
+import flowmanager.nomenclator.repository.OrganizationRepository;
 import flowmanager.nomenclator.repository.ProjectRepository;
 import flowmanager.nomenclator.repository.TeamRepository;
 import flowmanager.nomenclator.repository.UserRepository;
@@ -15,15 +19,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
     private final ProjectRepository projectRepository;
+    private final OrganizationRepository organizationRepository;
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
     private final ProjectMapper projectMapper;
     private final WorkItemMapper workItemMapper;
+    private final TeamMapper teamMapper;
+    private final UserMapper userMapper;
     private final WorkItemService workItemService;
 
     private Project getProject(Integer projectId) {
@@ -32,24 +40,45 @@ public class ProjectService {
         );
     }
 
-    public List<ProjectSummaryDto> findAllProjects() {
+    public List<ProjectResponseDto> findAllProjects() {
         return projectRepository
                 .findAll()
                 .stream()
-                .map(projectMapper::toSummaryDto)
+                .map(projectMapper::toResponseDto)
                 .toList();
     }
 
-    public List<WorkItemSummaryDto> findAllWorkItemsByProjectId(Integer projectId) {
-        Project project = getProject(projectId);
-
-        return project.getWorkItems().stream()
-                .map(workItemMapper::toSummaryDto)
+    public List<WorkItemResponseDto> findAllWorkItemsByProjectId(Integer projectId) {
+        return getProject(projectId)
+                .getWorkItems()
+                .stream()
+                .map(workItemMapper::toResponseDto)
                 .toList();
     }
 
-    public ProjectResponseDto findProjectById(Integer projectId) {
-        return projectMapper.toResponseDto(getProject(projectId));
+    public List<TeamSummaryOrganizationDto> findAllTeamsByProjectId(Integer projectId) {
+        return getProject(projectId)
+                .getTeams()
+                .stream()
+                .map(teamMapper::toSummaryOrganizationDto)
+                .toList();
+    }
+
+    public List<UserSummaryDto> findAllMembersByProjectId(Integer projectId) {
+        return getProject(projectId)
+                .getTeams()
+                .stream()
+                .flatMap(team -> Stream.concat(
+                        team.getMembers().stream(),
+                        Stream.of(team.getManager())
+                ))
+                .distinct()
+                .map(userMapper::toSummaryDto)
+                .toList();
+    }
+
+    public ProjectSummaryDto findProjectById(Integer projectId) {
+        return projectMapper.toSummaryDto(getProject(projectId));
     }
 
     @Transactional
@@ -63,13 +92,22 @@ public class ProjectService {
 
     @Transactional
     public ProjectResponseDto createProject(ProjectCreateDto projectCreateDto, String keycloakId) {
+        Organization organization = organizationRepository.findById(projectCreateDto.getOrganizationId()).orElseThrow(
+                () -> new NotFoundException(String.format("Organization with id %d not found", projectCreateDto.getOrganizationId()))
+        );
         User user = userRepository.findByKeycloakId(keycloakId).orElseThrow(
                 () -> new NotFoundException("User not found")
         );
-        Project project = projectMapper.toEntity(projectCreateDto, user);
+        Project project = projectMapper.toEntity(projectCreateDto, organization, user);
 
         if (projectCreateDto.getTeamsIds() != null && !projectCreateDto.getTeamsIds().isEmpty()) {
             List<Team> teams = getTeams(projectCreateDto.getTeamsIds());
+            teams.forEach(team -> {
+                if (!team.getProjects().contains(project)) {
+                    team.getProjects().add(project);
+                }
+                teamRepository.save(team);
+            });
             project.setTeams(teams);
         }
 
@@ -95,14 +133,15 @@ public class ProjectService {
                 if (!newTeams.contains(team)) {
                     team.getProjects().remove(project);
                 }
+                teamRepository.save(team);
             });
 
             newTeams.forEach(team -> {
                 if (!team.getProjects().contains(project)) {
                     team.getProjects().add(project);
                 }
+                teamRepository.save(team);
             });
-
             project.setTeams(newTeams);
         }
 

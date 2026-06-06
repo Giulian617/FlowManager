@@ -2,6 +2,7 @@ package flowmanager.apigateway.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyAuthoritiesMapper;
@@ -55,6 +56,24 @@ public class SecurityConfig {
     }
 
     @Bean
+    @Order(1)
+    public SecurityFilterChain loginFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher(request ->
+                        List.of("/auth/login", "/auth/refresh").contains(request.getServletPath())
+                )
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .anyRequest().permitAll()
+                );
+
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthenticationConverter jwtAuthenticationConverter
@@ -65,27 +84,28 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        .requestMatchers(HttpMethod.GET, "/users/").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/users").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/users/**").hasRole("USER")
                         .requestMatchers(HttpMethod.PUT, "/users/**").hasRole("USER")
                         .requestMatchers("/users/**").hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.GET, "/organizations/").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/organizations").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/organizations/*").hasRole("USER")
+                        .requestMatchers(HttpMethod.GET, "/organizations/*/users").hasRole("USER")
                         .requestMatchers(HttpMethod.GET, "/organizations/**").hasRole("MANAGER")
-                        .requestMatchers(HttpMethod.PUT, "/organizations/**").hasRole("MANAGER")
                         .requestMatchers("/organizations/**").hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.GET, "/projects/").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/projects").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/projects/**").hasRole("USER")
                         .requestMatchers("/projects/**").hasRole("MANAGER")
 
-                        .requestMatchers(HttpMethod.GET, "/teams/").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/teams").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/teams/**").hasRole("USER")
                         .requestMatchers("/teams/**").hasRole("MANAGER")
 
-                        .requestMatchers(HttpMethod.GET, "/work-items/").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/work-items").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/work-items/**").hasRole("MANAGER")
                         .requestMatchers("/work-items/**").hasRole("USER")
 

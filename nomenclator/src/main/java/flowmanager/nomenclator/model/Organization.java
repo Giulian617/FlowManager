@@ -12,7 +12,9 @@ import java.util.List;
 @NoArgsConstructor
 @EqualsAndHashCode(exclude = {
         "manager",
-        "teams"
+        "members",
+        "teams",
+        "projects"
 })
 @Builder
 @Entity
@@ -39,6 +41,18 @@ public class Organization {
     private User manager;
 
     @Builder.Default
+    @ManyToMany
+    @JoinTable(name = "organization_user",
+            joinColumns = @JoinColumn(name = "organization_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id"))
+    private List<User> members = new ArrayList<>();
+
+    @Builder.Default
     @OneToMany(mappedBy = "organization")
     private List<Team> teams = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "organization")
+    private List<Project> projects = new ArrayList<>();
+
 }

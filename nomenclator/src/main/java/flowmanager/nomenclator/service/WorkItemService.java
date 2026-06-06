@@ -62,14 +62,6 @@ public class WorkItemService {
                 .toList();
     }
 
-    public List<WorkItemSummaryDto> findAllChildrenByWorkItemId(Integer workItemId) {
-        WorkItem workItem = getWorkItem(workItemId);
-
-        return workItem.getChildren().stream()
-                .map(workItemMapper::toSummaryDto)
-                .toList();
-    }
-
     public WorkItemResponseDto findWorkItemById(Integer workItemId) {
         return workItemMapper.toResponseDto(getWorkItem(workItemId));
     }
@@ -95,6 +87,11 @@ public class WorkItemService {
 
         if (workItemCreateDto.getAssigneesIds() != null && !workItemCreateDto.getAssigneesIds().isEmpty()) {
             List<User> assignedUsers = getAssignedUsers(workItemCreateDto.getAssigneesIds());
+            assignedUsers.forEach(assignee -> {
+                if (!assignee.getAssignedWorkItems().contains(workItem)) {
+                    assignee.getAssignedWorkItems().add(workItem);
+                }
+            });
             workItem.setAssignees(assignedUsers);
         }
         workItemRepository.save(workItem);

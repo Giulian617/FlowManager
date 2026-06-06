@@ -19,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -194,63 +195,6 @@ public class WorkItemServiceTests {
     }
 
     @Test
-    void testFindAllChildrenByWorkItemId_Valid() {
-        WorkItem workItem = WorkItem.builder()
-                .id(3)
-                .title("Work item 2")
-                .description("Description work item 2")
-                .itemType(ItemType.Task)
-                .status(Status.In_Progress)
-                .severity(Severity.High)
-                .createdAt(LocalDateTime.of(2026, 5, 15, 13, 27, 51))
-                .project(BuildInstances.buildProject())
-                .reporter(BuildInstances.buildUser())
-                .build();
-        List<WorkItem> children = BuildInstances.buildWorkItems();
-        List<WorkItemSummaryDto> childrenDto = children.stream()
-                .map(BuildDtos::buildWorkItemSummaryDto)
-                .toList();
-        workItem.setChildren(children);
-
-        when(workItemRepository.findById(workItem.getId())).thenReturn(Optional.of(workItem));
-        when(workItemMapper.toSummaryDto(children.get(0))).thenReturn(childrenDto.get(0));
-        when(workItemMapper.toSummaryDto(children.get(1))).thenReturn(childrenDto.get(1));
-
-        List<WorkItemSummaryDto> result = workItemService.findAllChildrenByWorkItemId(workItem.getId());
-
-        assertEquals(2, result.size());
-        assertEquals(childrenDto.get(0), result.get(0));
-        assertEquals(childrenDto.get(1), result.get(1));
-        verify(workItemRepository, times(1)).findById(workItem.getId());
-        verify(workItemMapper, times(1)).toSummaryDto(children.get(0));
-        verify(workItemMapper, times(1)).toSummaryDto(children.get(1));
-    }
-
-    @Test
-    void testFindAllChildrenByWorkItemId_Empty() {
-        WorkItem workItem = BuildInstances.buildWorkItem();
-        workItem.setChildren(List.of());
-
-        when(workItemRepository.findById(workItem.getId())).thenReturn(Optional.of(workItem));
-
-        List<WorkItemSummaryDto> result = workItemService.findAllChildrenByWorkItemId(workItem.getId());
-
-        assertEquals(0, result.size());
-        verify(workItemRepository, times(1)).findById(workItem.getId());
-        verify(workItemMapper, never()).toSummaryDto(any());
-    }
-
-    @Test
-    void testFindAllChildrenByWorkItemId_NotFound() {
-        when(workItemRepository.findById(1)).thenReturn(Optional.empty());
-
-        NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> workItemService.findAllChildrenByWorkItemId(1));
-
-        assertEquals("WorkItem with id 1 not found", exception.getMessage());
-    }
-
-    @Test
     void testFindWorkItemById_Valid() {
         WorkItem workItem = BuildInstances.buildWorkItem();
         WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(workItem);
@@ -286,7 +230,7 @@ public class WorkItemServiceTests {
                 .itemType(ItemType.Task)
                 .status(Status.To_do)
                 .severity(Severity.Low)
-                .createdAt(LocalDateTime.of(2026, 3, 20, 18, 33, 30))
+                .createdAt(LocalDate.of(2026, 3, 20))
                 .project(project)
                 .reporter(reporter)
                 .assignees(new ArrayList<>())
@@ -337,7 +281,7 @@ public class WorkItemServiceTests {
                 .itemType(ItemType.Task)
                 .status(Status.To_do)
                 .severity(Severity.Low)
-                .createdAt(LocalDateTime.of(2026, 3, 20, 18, 33, 30))
+                .createdAt(LocalDate.of(2026, 3, 20))
                 .project(project)
                 .reporter(reporter)
                 .assignees(new ArrayList<>())
@@ -367,6 +311,7 @@ public class WorkItemServiceTests {
         WorkItemResponseDto result = workItemService.createWorkItem(createDto, reporter.getKeycloakId());
 
         assertEquals(responseDto, result);
+        users.forEach(u -> assertTrue(u.getAssignedWorkItems().contains(workItem)));
         assertEquals(users, workItem.getAssignees());
         verify(projectRepository, times(1)).findById(project.getId());
         verify(userRepository, times(1)).findByKeycloakId(reporter.getKeycloakId());
@@ -437,6 +382,61 @@ public class WorkItemServiceTests {
         verify(workItemRepository, times(1)).findById(workItem.getId());
         verify(workItemRepository, times(1)).findById(parent.getId());
         verify(workItemMapper, times(2)).toResponseDto(workItem);
+    }
+
+    @Test
+    void testCreateWorkItem_Valid_AssigneeAlreadyAssigned() {
+        Project project = BuildInstances.buildProject();
+        User reporter = BuildInstances.buildUser();
+        List<User> users = BuildInstances.buildUsers();
+        List<Integer> assigneesIds = List.of(users.get(0).getId(), users.get(1).getId());
+
+        WorkItem workItem = WorkItem.builder()
+                .title("Work item 1")
+                .description("Description work item 1")
+                .itemType(ItemType.Task)
+                .status(Status.To_do)
+                .severity(Severity.Low)
+                .createdAt(LocalDate.of(2026, 3, 20))
+                .project(project)
+                .reporter(reporter)
+                .assignees(new ArrayList<>())
+                .comments(new ArrayList<>())
+                .children(new ArrayList<>())
+                .build();
+
+        users.get(0).getAssignedWorkItems().add(workItem);
+
+        WorkItem savedWorkItem = BuildInstances.buildWorkItem();
+        WorkItemCreateDto createDto = new WorkItemCreateDto(
+                "Work item 1",
+                "Description work item 1",
+                ItemType.Task,
+                Severity.Low,
+                1,
+                null,
+                null,
+                assigneesIds
+        );
+        WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(savedWorkItem);
+
+        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
+        when(userRepository.findByKeycloakId(reporter.getKeycloakId())).thenReturn(Optional.of(reporter));
+        when(workItemMapper.toEntity(createDto, project, reporter)).thenReturn(workItem);
+        when(userRepository.findAllById(assigneesIds)).thenReturn(users);
+        when(workItemRepository.save(workItem)).thenReturn(savedWorkItem);
+        when(workItemMapper.toResponseDto(workItem)).thenReturn(responseDto);
+
+        WorkItemResponseDto result = workItemService.createWorkItem(createDto, reporter.getKeycloakId());
+
+        assertEquals(responseDto, result);
+        assertEquals(1, users.get(0).getAssignedWorkItems().stream()
+                .filter(wi -> wi.equals(workItem)).count());
+        assertTrue(users.get(1).getAssignedWorkItems().contains(workItem));
+        assertEquals(users, workItem.getAssignees());
+        verify(userRepository, times(1)).findAllById(assigneesIds);
+        verify(workItemRepository, times(1)).save(workItem);
+        verify(workItemMapper, times(1)).toResponseDto(workItem);
     }
 
     @Test
@@ -603,7 +603,7 @@ public class WorkItemServiceTests {
                 .severity(Severity.Medium)
                 .reporter(BuildInstances.buildUser())
                 .project(BuildInstances.buildProject())
-                .createdAt(LocalDateTime.of(2026, 3, 20, 18, 33, 30))
+                .createdAt(LocalDate.of(2026, 3, 20))
                 .assignees(new ArrayList<>())
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())
@@ -652,7 +652,7 @@ public class WorkItemServiceTests {
                 .severity(Severity.Medium)
                 .reporter(BuildInstances.buildUser())
                 .project(BuildInstances.buildProject())
-                .createdAt(LocalDateTime.of(2026, 3, 20, 18, 33, 30))
+                .createdAt(LocalDate.of(2026, 3, 20))
                 .assignees(new ArrayList<>())
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())
@@ -694,7 +694,7 @@ public class WorkItemServiceTests {
                 .severity(Severity.Medium)
                 .reporter(BuildInstances.buildUser())
                 .project(BuildInstances.buildProject())
-                .createdAt(LocalDateTime.of(2026, 3, 20, 18, 33, 30))
+                .createdAt(LocalDate.of(2026, 3, 20))
                 .assignees(new ArrayList<>())
                 .comments(new ArrayList<>())
                 .children(new ArrayList<>())

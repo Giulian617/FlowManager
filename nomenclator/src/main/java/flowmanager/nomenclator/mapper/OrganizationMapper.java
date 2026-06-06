@@ -7,8 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -47,23 +45,6 @@ public class OrganizationMapper {
                 manager.getRole()
         );
 
-        List<TeamSummaryOrganizationDto> teamsDto = new ArrayList<>();
-        if(organization.getTeams() != null) {
-            teamsDto = organization.getTeams()
-                    .stream()
-                    .map(team -> new TeamSummaryOrganizationDto(
-                                    team.getId(),
-                                    team.getName(),
-                                    new UserSummaryDto(
-                                            team.getManager().getId(),
-                                            team.getManager().getUsername(),
-                                            team.getManager().getRole()
-                                    )
-                            )
-                    )
-                    .toList();
-        }
-
         return OrganizationResponseDto.builder()
                 .id(organization.getId())
                 .name(organization.getName())
@@ -71,7 +52,9 @@ public class OrganizationMapper {
                 .industry(organization.getIndustry())
                 .createdAt(organization.getCreatedAt())
                 .manager(managerDto)
-                .teams(teamsDto)
+                .teamCount(organization.getTeams() == null ? 0 : organization.getTeams().size())
+                .projectCount(organization.getProjects() == null ? 0 : organization.getProjects().size())
+                .memberCount(organization.getMembers() == null ? 0 : organization.getMembers().size())
                 .build();
     }
 }

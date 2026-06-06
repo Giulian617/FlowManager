@@ -1,6 +1,7 @@
 package flowmanager.nomenclator.controller;
 
 import flowmanager.nomenclator.dto.*;
+import flowmanager.nomenclator.model.Role;
 import flowmanager.nomenclator.service.OrganizationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,7 @@ public class OrganizationController {
     private final OrganizationService organizationService;
 
     @GetMapping("")
-    public ResponseEntity<List<OrganizationSummaryDto>> getAllOrganizations() {
+    public ResponseEntity<List<OrganizationResponseDto>> getAllOrganizations() {
         return ResponseEntity.ok(organizationService.findAllOrganizations());
     }
 
@@ -31,17 +32,18 @@ public class OrganizationController {
         return ResponseEntity.ok(organizationService.findAllTeamsByOrganizationId(organizationId));
     }
 
-    @PreAuthorize("@organizationSecurity.canView(authentication, #organizationId)")
+    @PreAuthorize("@organizationSecurity.canViewUsers(authentication, #organizationId)")
     @GetMapping("/{organizationId}/users")
-    public ResponseEntity<List<UserSummaryDto>> getAllUsersByOrganizationId(
-            @PathVariable Integer organizationId
+    public ResponseEntity<List<UserResponseDto>> getAllUsersByOrganizationId(
+            @PathVariable Integer organizationId,
+            @RequestParam(required = false) Role role
     ) {
-        return ResponseEntity.ok(organizationService.findAllUsersByOrganizationId(organizationId));
+        return ResponseEntity.ok(organizationService.findAllUsersByOrganizationId(organizationId, role));
     }
 
     @PreAuthorize("@organizationSecurity.canView(authentication, #organizationId)")
     @GetMapping("/{organizationId}/projects")
-    public ResponseEntity<List<ProjectSummaryDto>> getAllProjectsByOrganizationId(
+    public ResponseEntity<List<ProjectResponseDto>> getAllProjectsByOrganizationId(
             @PathVariable Integer organizationId
     ) {
         return ResponseEntity.ok(organizationService.findAllProjectsByOrganizationId(organizationId));
@@ -55,7 +57,7 @@ public class OrganizationController {
         return ResponseEntity.ok(organizationService.findAllWorkItemsByOrganizationId(organizationId));
     }
 
-    @PreAuthorize("@organizationSecurity.canView(authentication, #organizationId)")
+    @PreAuthorize("@organizationSecurity.canViewUsers(authentication, #organizationId)")
     @GetMapping("/{organizationId}")
     public ResponseEntity<OrganizationResponseDto> getOrganizationById(
             @PathVariable Integer organizationId
@@ -71,7 +73,6 @@ public class OrganizationController {
                 .body(organizationService.createOrganization(organizationCreateDto));
     }
 
-    @PreAuthorize("@organizationSecurity.canModify(authentication, #organizationId)")
     @PutMapping("/{organizationId}")
     public ResponseEntity<OrganizationResponseDto> updateOrganization(
             @PathVariable Integer organizationId,

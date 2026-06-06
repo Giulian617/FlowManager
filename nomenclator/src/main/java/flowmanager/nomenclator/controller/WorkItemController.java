@@ -42,14 +42,6 @@ public class WorkItemController {
     }
 
     @PreAuthorize("@workItemSecurity.canView(authentication, #workItemId)")
-    @GetMapping("/{workItemId}/children")
-    public ResponseEntity<List<WorkItemSummaryDto>> getAllChildrenByWorkItemId(
-            @PathVariable Integer workItemId
-    ) {
-        return ResponseEntity.ok(workItemService.findAllChildrenByWorkItemId(workItemId));
-    }
-
-    @PreAuthorize("@workItemSecurity.canView(authentication, #workItemId)")
     @GetMapping("/{workItemId}")
     @ResponseBody
     public ResponseEntity<WorkItemResponseDto> getWorkItemById(
