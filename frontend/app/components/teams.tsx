@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router"
-import { User, Calendar, Users, Search, X, Plus, Pencil, Trash2, ChevronDown, AlertCircle, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight  } from "lucide-react"
+import { User, Calendar, Users, Search, X, Plus, Pencil, Trash2, ChevronDown, AlertCircle, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, SlidersHorizontal, ArrowUpDown, ListFilter, ArrowUp, ArrowDown } from "lucide-react"
 import {
   getCurrentUser,
   getManagedTeamsByUserId,
@@ -411,6 +411,9 @@ function TeamFormModal({ initial, currentUser, managers, users, orgId, organizat
   )
 }
 
+type SortField = "name" | "members" | "date" | "default"
+type SizeFilter = "all" | "small" | "medium" | "large"
+
 export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
   const navigate = useNavigate()
   const [orgId, setOrgId] = useState<number>(0)
@@ -422,6 +425,10 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState("")
+  const [sortField, setSortField] = useState<SortField>("default")
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
+  const [managerFilter, setManagerFilter] = useState<string>("all")
+  const [sizeFilter, setSizeFilter] = useState<SizeFilter>("all")
   const [showCreate, setShowCreate] = useState(false)
   const [editTeam, setEditTeam] = useState<TeamResponseDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<TeamResponseDto | null>(null)
@@ -507,21 +514,68 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
     setDeleteTarget(null)
   }
 
-  const filtered = teams.filter((t) => {
-    const q = query.toLowerCase()
-    return (
-      t.name.toLowerCase().includes(q) ||
-      t.description?.toLowerCase().includes(q) ||
-      t.manager?.username?.toLowerCase().includes(q) ||
-      t.members?.some((m) => m.username.toLowerCase().includes(q))
-    )
-  })
+  const managerOptions = Array.from(
+    new Map(
+      teams
+        .filter((t) => t.manager)
+        .map((t) => [String(t.manager!.id), t.manager!.username])
+    ).entries()
+  ).sort((a, b) => a[1].localeCompare(b[1]))
+
+  const hasActiveFilters = managerFilter !== "all" || sizeFilter !== "all"
+
+  const clearFilters = () => {
+    setManagerFilter("all")
+    setSizeFilter("all")
+    setPage(1)
+  }
+
+  const filtered = teams
+    .filter((t) => {
+      const q = query.toLowerCase()
+      const matchesSearch =
+        t.name.toLowerCase().includes(q) ||
+        t.description?.toLowerCase().includes(q) ||
+        t.manager?.username?.toLowerCase().includes(q) ||
+        t.members?.some((m) => m.username.toLowerCase().includes(q))
+
+      const matchesManager =
+        managerFilter === "all" || String(t.manager?.id) === managerFilter
+
+      const memberCount = t.members?.length ?? 0
+      const matchesSize =
+        sizeFilter === "all" ||
+        (sizeFilter === "small" && memberCount >= 1 && memberCount <= 3) ||
+        (sizeFilter === "medium" && memberCount >= 4 && memberCount <= 7) ||
+        (sizeFilter === "large" && memberCount >= 8)
+
+      return matchesSearch && matchesManager && matchesSize
+    })
+    .sort((a, b) => {
+      if (sortField === "default") return 0
+
+      const dir = sortDir === "asc" ? 1 : -1
+
+      switch (sortField) {
+        case "name":
+          return a.name.localeCompare(b.name) * dir
+
+        case "members":
+          return ((a.members?.length ?? 0) - (b.members?.length ?? 0)) * dir
+
+        case "date":
+          return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * dir
+
+        default:
+          return 0
+      }
+    })
 
   const itemsPerPage = 6
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
   const paginated = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage)
 
-  useEffect(() => { setPage(1) }, [query])
+  useEffect(() => { setPage(1) }, [query, managerFilter, sizeFilter])
 
   if (loading) return (
     <div className="flex items-center justify-center py-24">
@@ -551,16 +605,148 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
         </div>
       </header>
 
-      <div className="flex w-full items-center gap-3 rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 shadow-sm">
-        <Search className="h-5 w-5 text-slate-400 dark:text-slate-500 flex-none" />
-        <input value={query} onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name, manager or member…"
-          className="w-full bg-transparent text-sm text-slate-700 dark:text-slate-300 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500" />
-        {query && (
-          <button onClick={() => setQuery("")} className="text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 transition flex-none">
-            <X className="h-4 w-4" />
-          </button>
-        )}
+      {/* Filters + Sort + Search */}
+      <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 px-4 py-3 shadow-sm">
+
+        {/* Filters + Sort*/}
+        <div className="flex flex-wrap items-center gap-4">
+
+          {/* Filters */}
+          <div className="flex items-center gap-2 flex-wrap">
+
+            <ListFilter className="h-4 w-4 flex-none text-slate-500 dark:text-slate-400" />
+
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+              Filter:
+            </span>
+
+            <select
+              value={managerFilter}
+              onChange={(e) => { setManagerFilter(e.target.value); setPage(1) }}
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-200 outline-none transition focus:border-slate-400 dark:focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700"
+            >
+              <option value="all">All managers</option>
+              {managerOptions.map(([id, name]) => (
+                <option key={id} value={id}>{name}</option>
+              ))}
+            </select>
+
+            <select
+              value={sizeFilter}
+              onChange={(e) => { setSizeFilter(e.target.value as SizeFilter); setPage(1) }}
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-200 outline-none transition focus:border-slate-400 dark:focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700"
+            >
+              <option value="all">Any size</option>
+              <option value="small">1–3 members</option>
+              <option value="medium">4–7 members</option>
+              <option value="large">8+ members</option>
+            </select>
+
+            {/* Clear filters */}
+            {(managerFilter !== "all" || sizeFilter !== "all") && (
+              <div className="relative group">
+                <button
+                  onClick={() => {
+                    setManagerFilter("all")
+                    setSizeFilter("all")
+                    setPage(1)
+                  }}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+
+                <span className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 -translate-y-full mb-2 hidden rounded-full bg-slate-800 dark:bg-slate-700 px-3 py-1 text-xs text-white shadow-sm group-hover:block whitespace-nowrap">
+                  Clear filters
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="hidden h-6 w-px bg-slate-200 dark:bg-slate-700 md:block" />
+
+          {/* Sort */}
+          <div className="flex items-center gap-2">
+
+            <ArrowUpDown className="h-4 w-4 flex-none text-slate-500 dark:text-slate-400" />
+
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+              Sort:
+            </span>
+
+            <select
+              value={sortField}
+              onChange={(e) => {
+                setSortField(e.target.value as any)
+                setPage(1)
+              }}
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-200 outline-none transition focus:border-slate-400 dark:focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700"
+            >
+              <option value="default">Default</option>
+              <option value="name">Name</option>
+              <option value="members">Members</option>
+              <option value="date">Date</option>
+            </select>
+
+            {sortField !== "default" && (
+              <button
+                onClick={() => {
+                  setSortDir((d) => (d === "asc" ? "desc" : "asc"))
+                  setPage(1)
+                }}
+                className="flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700"
+              >
+                {sortDir === "asc" ? (
+                  <ArrowUp className="h-4 w-4" />
+                ) : (
+                  <ArrowDown className="h-4 w-4" />
+                )}
+                {sortDir === "asc" ? "Asc" : "Desc"}
+              </button>
+            )}
+
+            {/* Reset sorting */}
+            {sortField !== "default" && (
+              <div className="relative group">
+                <button
+                  onClick={() => {
+                    setSortField("default")
+                    setSortDir("asc")
+                    setPage(1)
+                  }}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+
+                <span className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 -translate-y-full mb-2 hidden rounded-full bg-slate-800 dark:bg-slate-700 px-3 py-1 text-xs text-white shadow-sm group-hover:block whitespace-nowrap">
+                  Reset sorting
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="flex w-full items-center gap-3 rounded-2xl bg-slate-50 dark:bg-slate-800 px-3 py-2 border border-slate-200 dark:border-slate-700">
+          <Search className="h-4 w-4 flex-none text-slate-400 dark:text-slate-500" />
+
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name, manager or member…"
+            className="w-full bg-transparent text-sm text-slate-700 dark:text-slate-300 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
+          />
+
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              className="text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 transition flex-none"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {teams.length === 0 ? (
@@ -572,8 +758,13 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-20 shadow-sm text-center gap-2">
-          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No teams match your search.</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500">Try a different name, manager, or member.</p>
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No teams match your filters.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Try adjusting your search or filters.</p>
+          {hasActiveFilters && (
+            <button onClick={clearFilters} className="mt-1 text-xs text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-200 transition">
+              Clear filters
+            </button>
+          )}
         </div>
       ) : (
         <>

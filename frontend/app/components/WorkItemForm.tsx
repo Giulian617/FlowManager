@@ -412,7 +412,6 @@ export default function WorkItemForm({
   const cfg = configs[type]
   const isView = mode === "view"
   const isEdit = mode === "edit"
-  const isNew  = mode === "new"
 
   const [currentUser, setCurrentUser]       = useState<UserSummaryDto | null>(null)
   const [projectMembers, setProjectMembers] = useState<UserSummaryDto[]>([])

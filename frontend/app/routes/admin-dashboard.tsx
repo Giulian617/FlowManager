@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router"
-import { Users, Building2, FolderKanban, UsersRound, CheckSquare, MessageSquare, ChevronRight } from "lucide-react"
+import { Users, Building2, FolderKanban, UserCircle, CheckSquare, MessageSquare, ChevronRight } from "lucide-react"
 import { getUsers } from "../api/user"
 import { getOrganizations } from "../api/organization"
 import { getProjects } from "../api/project"
@@ -9,10 +9,10 @@ import { getWorkItems } from "../api/workItem"
 import { getComments } from "../api/comment"
 
 const statCards = [
-  { key: "users",         label: "Users",          icon: Users,        color: "bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300",    nav: "/admin/users"         },
+  { key: "users",         label: "Users",          icon: UserCircle,   color: "bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300",    nav: "/admin/users"         },
   { key: "organizations", label: "Organizations",  icon: Building2,    color: "bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300",     nav: "/admin/organizations" },
   { key: "projects",      label: "Projects",       icon: FolderKanban, color: "bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300",         nav: "/admin/projects"      },
-  { key: "teams",         label: "Teams",          icon: UsersRound,   color: "bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300", nav: "/admin/teams"     },
+  { key: "teams",         label: "Teams",          icon: Users,        color: "bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300", nav: "/admin/teams"     },
   { key: "workItems",     label: "Work Items",     icon: CheckSquare,  color: "bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300",  nav: "/admin/work-items"    },
   { key: "comments",      label: "Comments",       icon: MessageSquare,color: "bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300", nav: "/admin/comments" },
 ]

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate} from "react-router"
-import { Calendar, User, Users, Search, Plus, X, ChevronDown, AlertCircle, Pencil, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
+import { Calendar, User, Users, Search, Plus, X, ChevronDown, AlertCircle, Pencil, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, ListFilter, ArrowUp, ArrowDown } from "lucide-react"
 import {
   getCurrentUser,
   getManagedProjectsByUserId,
@@ -444,6 +444,9 @@ function ProjectFormModal({ initial, managers, currentUser, orgId, teams, organi
   )
 }
 
+type SortField = "name" | "startDate" | "endDate"
+type DeadlineFilter = "all" | "overdue" | "nearDeadline" | "onTrack"
+
 export default function Projects({ mode }: { mode: "org" | "admin" }) {
   const navigate = useNavigate()
   const [orgId, setOrgId] = useState<number>(0)
@@ -455,6 +458,10 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState("")
+  const [deadlineFilter, setDeadlineFilter] = useState<DeadlineFilter>("all")
+  const [managerFilter, setManagerFilter] = useState<string>("all")
+  const [sortField, setSortField] = useState<SortField | "default">("default")
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
   const [showCreate, setShowCreate] = useState(false)
   const [editProject, setEditProject] = useState<ProjectResponseDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ProjectResponseDto | null>(null)
@@ -542,20 +549,64 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
     navigate("/project/dashboard")
   }
 
-  const filtered = projects.filter((p) => {
-    const q = query.toLowerCase()
-    return (
-      p.name.toLowerCase().includes(q) ||
-      p.description?.toLowerCase().includes(q) ||
-      p.manager?.username?.toLowerCase().includes(q)
-    )
-  })
+  // Derived manager options from project data
+  const managerOptions = Array.from(
+    new Map(
+      projects
+        .filter((p) => p.manager)
+        .map((p) => [String(p.manager!.id), p.manager!.username])
+    ).entries()
+  ).sort((a, b) => a[1].localeCompare(b[1]))
+
+  const hasActiveFilters = deadlineFilter !== "all" || managerFilter !== "all"
+
+  const clearFilters = () => {
+    setDeadlineFilter("all")
+    setManagerFilter("all")
+    setSortField("default")
+    setSortDir("asc")
+    setPage(1)
+  }
+
+  const filtered = projects
+    .filter((p) => {
+      const q = query.toLowerCase()
+      const matchesSearch =
+        p.name.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q) ||
+        p.manager?.username?.toLowerCase().includes(q)
+
+      const matchesDeadline =
+        deadlineFilter === "all" ||
+        (deadlineFilter === "overdue" && isOverdue(p.endDate)) ||
+        (deadlineFilter === "nearDeadline" && isNearDeadline(p.endDate)) ||
+        (deadlineFilter === "onTrack" && !isOverdue(p.endDate) && !isNearDeadline(p.endDate))
+
+      const matchesManager =
+        managerFilter === "all" || String(p.manager?.id) === managerFilter
+
+      return matchesSearch && matchesDeadline && matchesManager
+    })
+    .sort((a, b) => {
+      if (sortField === "default") return 0
+      const multiplier = sortDir === "asc" ? 1 : -1
+      switch (sortField) {
+        case "name":
+          return a.name.localeCompare(b.name) * multiplier
+        case "startDate":
+          return (new Date(a.startDate).getTime() - new Date(b.startDate).getTime()) * multiplier
+        case "endDate":
+          return (new Date(a.endDate).getTime() - new Date(b.endDate).getTime()) * multiplier
+        default:
+          return 0
+      }
+    })
 
   const itemsPerPage = 6
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
   const paginated = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage)
 
-  useEffect(() => { setPage(1) }, [query])
+  useEffect(() => { setPage(1) }, [query, deadlineFilter, managerFilter])
 
   if (loading) return (
     <div className="flex items-center justify-center py-24">
@@ -587,33 +638,135 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
         </div>
       </header>
 
-      <div className="flex w-full items-center gap-3 rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 shadow-sm">
-        <Search className="h-5 w-5 text-slate-400 dark:text-slate-500 flex-none" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name, description, manager or team…"
-          className="w-full bg-transparent text-sm text-slate-700 dark:text-slate-300 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
-        />
-        {query && (
-          <button onClick={() => setQuery("")} className="text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 transition flex-none">
-            <X className="h-4 w-4" />
-          </button>
-        )}
+      {/* Filters + Sort + Search */}
+      <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 px-4 py-3 shadow-sm">
+
+        {/* Filters + Sort */}
+        <div className="flex flex-wrap items-center gap-4">
+
+          {/* Filters */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <ListFilter className="h-4 w-4 flex-none text-slate-500 dark:text-slate-400" />
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Filter:</span>
+
+            {/* Manager filter */}
+            <select
+              value={managerFilter}
+              onChange={(e) => { setManagerFilter(e.target.value); setPage(1) }}
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-200 outline-none transition focus:border-slate-400 dark:focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700"
+            >
+              <option value="all">All managers</option>
+              {managerOptions.map(([id, name]) => (
+                <option key={id} value={id}>{name}</option>
+              ))}
+            </select>
+
+            {/* Deadline/status filter */}
+            <select
+              value={deadlineFilter}
+              onChange={(e) => { setDeadlineFilter(e.target.value as DeadlineFilter); setPage(1) }}
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-200 outline-none transition focus:border-slate-400 dark:focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700"
+            >
+              <option value="all">Any status</option>
+              <option value="onTrack">On track</option>
+              <option value="nearDeadline">Due soon</option>
+              <option value="overdue">Overdue</option>
+            </select>
+
+            {/* Filter clear button */}
+            {hasActiveFilters && (
+              <div className="relative group">
+                <button
+                  onClick={() => { setDeadlineFilter("all"); setManagerFilter("all"); setPage(1) }}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+                <span className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 -translate-y-full mb-2 hidden rounded-full bg-slate-800 dark:bg-slate-700 px-3 py-1 text-xs text-white shadow-sm group-hover:block whitespace-nowrap">
+                  Clear filters
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="hidden h-6 w-px bg-slate-200 dark:bg-slate-700 md:block" />
+
+          {/* Sort */}
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="h-4 w-4 flex-none text-slate-500 dark:text-slate-400" />
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Sort:</span>
+
+            <select
+              value={sortField}
+              onChange={(e) => { setSortField(e.target.value as SortField | "default"); setPage(1) }}
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-200 outline-none transition focus:border-slate-400 dark:focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700"
+            >
+              <option value="default">Default</option>
+              <option value="name">Name</option>
+              <option value="startDate">Start date</option>
+              <option value="endDate">End date</option>
+            </select>
+
+            {sortField !== "default" && (
+              <button
+                onClick={() => { setSortDir((d) => (d === "asc" ? "desc" : "asc")); setPage(1) }}
+                className="flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700"
+              >
+                {sortDir === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                {sortDir === "asc" ? "Asc" : "Desc"}
+              </button>
+            )}
+
+            {/* Sort clear button */}
+            {sortField !== "default" && (
+              <div className="relative group">
+                <button
+                  onClick={() => { setSortField("default"); setSortDir("asc"); setPage(1) }}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+                <span className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 -translate-y-full mb-2 hidden rounded-full bg-slate-800 dark:bg-slate-700 px-3 py-1 text-xs text-white shadow-sm group-hover:block whitespace-nowrap">
+                  Reset sorting
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="flex min-w-65 flex-1 items-center gap-3 rounded-2xl bg-slate-50 dark:bg-slate-800 px-3 py-2 border border-slate-200 dark:border-slate-700">
+          <Search className="h-4 w-4 flex-none text-slate-400 dark:text-slate-500" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name, description or manager…"
+            className="w-full bg-transparent text-sm text-slate-700 dark:text-slate-300 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              className="text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 transition flex-none"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {filtered.length === 0 ? (
+      {projects.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-20 shadow-sm text-center gap-2">
-          {query ? (
-            <>
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No projects match your search.</p>
-              <p className="text-xs text-slate-400 dark:text-slate-500">Try a different name, manager, or team.</p>
-            </>
-          ) : (
-            <>
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No projects for this organization.</p>
-              <p className="text-xs text-slate-400 dark:text-slate-500">Create a new project to get started.</p>
-            </>
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No projects for this organization.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Create a new project to get started.</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-20 shadow-sm text-center gap-2">
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No projects match your filters.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Try adjusting your search or filters.</p>
+          {(hasActiveFilters || query) && (
+            <button onClick={clearFilters} className="mt-1 text-xs text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-200 transition">
+              Clear filters
+            </button>
           )}
         </div>
       ) : (

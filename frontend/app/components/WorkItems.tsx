@@ -32,79 +32,23 @@ function formatItemType(itemType: string): string {
   return itemType === "User_Story" ? "User Story" : itemType
 }
 
-function MultiSelect({ label, options, selected, onChange }: {
+function MultiSelect({
+  label,
+  options,
+  selected,
+  onChange,
+}: {
   label: string
   options: string[]
   selected: Set<string>
   onChange: (val: Set<string>) => void
 }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
-    document.addEventListener("mousedown", h)
-    return () => document.removeEventListener("mousedown", h)
-  }, [])
-
-  const toggle = (val: string) => {
-    const next = new Set(selected)
-    next.has(val) ? next.delete(val) : next.add(val)
-    onChange(next)
-  }
-
-  const labelText = selected.size === 0
-    ? `${label}: All`
-    : selected.size === 1
-    ? `${label}: ${Array.from(selected)[0]}`
-    : `${label}: ${selected.size} selected`
-
-  return (
-    <div ref={ref} className="relative flex-none">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 outline-none transition hover:border-slate-400 dark:hover:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700 whitespace-nowrap"
-      >
-        <span>{labelText}</span>
-        <ChevronDown className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
-      </button>
-      {open && (
-        <ul className="absolute left-0 z-20 mt-2 w-48 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md overflow-hidden">
-          {options.map((opt) => (
-            <li
-              key={opt}
-              className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm text-slate-700 dark:text-slate-200"
-              onMouseDown={(e) => { e.preventDefault(); toggle(opt) }}
-            >
-              <div className={`h-4 w-4 flex-none rounded border flex items-center justify-center transition-colors ${selected.has(opt) ? "bg-slate-900 dark:bg-slate-100 border-slate-900 dark:border-slate-100" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"}`}>
-                {selected.has(opt) && (
-                  <svg className="h-2.5 w-2.5 text-white dark:text-slate-900" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M2 6l3 3 5-5" />
-                  </svg>
-                )}
-              </div>
-              <span>{opt}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  )
-}
-
-function PeopleSelect({ label, options, selected, onChange }: {
-  label: string
-  options: string[]
-  selected: Set<string>
-  onChange: (val: Set<string>) => void
-}) {
-  const [open, setOpen] = useState(false)
-  const [search, setSearch] = useState("")
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setSearch("") }
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener("mousedown", h)
     return () => document.removeEventListener("mousedown", h)
@@ -116,56 +60,178 @@ function PeopleSelect({ label, options, selected, onChange }: {
     onChange(next)
   }
 
-  const filtered = options.filter((o) => o.toLowerCase().includes(search.toLowerCase()))
-
-  const labelText = selected.size === 0
-    ? `${label}: All`
-    : selected.size === 1
-    ? `${label}: ${Array.from(selected)[0]}`
-    : `${label}: ${selected.size} selected`
+  const labelText =
+    selected.size === 0
+      ? `${label}: All`
+      : selected.size === 1
+      ? `${label}: ${Array.from(selected)[0]}`
+      : `${label}: ${selected.size} selected`
 
   return (
     <div ref={ref} className="relative flex-none">
+
       <button
-        onClick={() => { setOpen((o) => !o); setSearch("") }}
-        className="flex items-center gap-1.5 rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 outline-none transition hover:border-slate-400 dark:hover:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700 whitespace-nowrap"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-200 outline-none transition focus:border-slate-400 dark:focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700"
       >
         <span>{labelText}</span>
         <ChevronDown className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
       </button>
+
       {open && (
-        <div className="absolute left-0 z-20 mt-2 w-56 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md overflow-hidden">
+        <ul className="absolute left-0 z-20 mt-2 w-48 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md overflow-hidden">
+
+          {options.map((opt) => (
+            <li
+              key={opt}
+              className="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+              onMouseDown={(e) => {
+                e.preventDefault()
+                toggle(opt)
+              }}
+            >
+              <div
+                className={`h-4 w-4 flex-none rounded border flex items-center justify-center transition-colors ${
+                  selected.has(opt)
+                    ? "bg-slate-900 dark:bg-slate-100 border-slate-900 dark:border-slate-100"
+                    : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                }`}
+              >
+                {selected.has(opt) && (
+                  <svg
+                    className="h-2.5 w-2.5 text-white dark:text-slate-900"
+                    viewBox="0 0 12 12"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M2 6l3 3 5-5" />
+                  </svg>
+                )}
+              </div>
+
+              <span>{opt}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function PeopleSelect({
+  label,
+  options,
+  selected,
+  onChange,
+}: {
+  label: string
+  options: string[]
+  selected: Set<string>
+  onChange: (val: Set<string>) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const h = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+        setSearch("")
+      }
+    }
+    document.addEventListener("mousedown", h)
+    return () => document.removeEventListener("mousedown", h)
+  }, [])
+
+  const toggle = (val: string) => {
+    const next = new Set(selected)
+    next.has(val) ? next.delete(val) : next.add(val)
+    onChange(next)
+  }
+
+  const filtered = options.filter((o) =>
+    o.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const labelText =
+    selected.size === 0
+      ? `${label}: All`
+      : selected.size === 1
+      ? `${label}: ${Array.from(selected)[0]}`
+      : `${label}: ${selected.size} selected`
+
+  return (
+    <div ref={ref} className="relative flex-none">
+      <button
+        onClick={() => {
+          setOpen((o) => !o)
+          setSearch("")
+        }}
+        className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-200 outline-none transition focus:border-slate-400 dark:focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700 whitespace-nowrap min-w-40"
+      >
+        <span className="truncate">{labelText}</span>
+        <ChevronDown className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 flex-none" />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 z-20 mt-2 w-56 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
           <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700">
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-2.5 py-1.5">
+            <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5">
               <Search className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 flex-none" />
               <input
                 autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search..."
-                className="w-full bg-transparent text-xs text-slate-700 dark:text-slate-200 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                className="w-full bg-transparent text-sm text-slate-700 dark:text-slate-200 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
           </div>
+
           <ul className="max-h-48 overflow-auto">
             {filtered.map((opt) => (
               <li
                 key={opt}
-                className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm text-slate-700 dark:text-slate-200"
-                onMouseDown={(e) => { e.preventDefault(); toggle(opt) }}
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  toggle(opt)
+                }}
+                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-700"
               >
-                <div className={`h-4 w-4 flex-none rounded border flex items-center justify-center transition-colors ${selected.has(opt) ? "bg-slate-900 dark:bg-slate-100 border-slate-900 dark:border-slate-100" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"}`}>
+                <div
+                  className={`h-4 w-4 flex-none rounded border flex items-center justify-center transition-colors ${
+                    selected.has(opt)
+                      ? "bg-slate-900 dark:bg-slate-100 border-slate-900 dark:border-slate-100"
+                      : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                  }`}
+                >
                   {selected.has(opt) && (
-                    <svg className="h-2.5 w-2.5 text-white dark:text-slate-900" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      className="h-2.5 w-2.5 text-white dark:text-slate-900"
+                      viewBox="0 0 12 12"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M2 6l3 3 5-5" />
                     </svg>
                   )}
                 </div>
-                <span>{opt}</span>
+
+                <span className="truncate">{opt}</span>
               </li>
             ))}
+
             {filtered.length === 0 && (
-              <li className="px-4 py-3 text-xs text-slate-400 dark:text-slate-500">No results</li>
+              <li className="px-4 py-3 text-sm text-slate-400 dark:text-slate-500">
+                No results
+              </li>
             )}
           </ul>
         </div>
@@ -298,7 +364,7 @@ export default function WorkItems({ mode }: { mode: "project" | "admin" }) {
 
       <div className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-6 shadow-sm">
         <div className="mb-5 flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 rounded-3xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
             <ListFilter className="h-4 w-4 text-slate-500 dark:text-slate-400" />
             Filters
           </div>
@@ -472,7 +538,7 @@ export default function WorkItems({ mode }: { mode: "project" | "admin" }) {
         </div>
       </div>
 
-      {showModal && <NewWorkItemModal onClose={() => setShowModal(false)} />}
+      {showModal && <NewWorkItemModal onClose={() => setShowModal(false)} mode={mode} />}
     </div>
   )
 }

@@ -39,7 +39,7 @@ const types = [
   },
 ]
 
-function ModalContent({ onClose }: { onClose: () => void }) {
+function ModalContent({ onClose, mode }: { onClose: () => void; mode: "project" | "admin" }) {
   const navigate = useNavigate()
   const ref = useRef<HTMLDivElement>(null)
   const [step, setStep] = useState<"type" | "project">("type")
@@ -57,6 +57,13 @@ function ModalContent({ onClose }: { onClose: () => void }) {
 
   const handleTypeSelect = async (typeId: string) => {
     setSelectedType(typeId)
+
+    if (mode === "project") {
+      onClose()
+      navigate(`/project/work-items/new/${typeId}`)
+      return
+    }
+
     setLoadingProjects(true)
     setStep("project")
     try {
@@ -67,8 +74,9 @@ function ModalContent({ onClose }: { onClose: () => void }) {
     }
   }
 
-  const handleProjectSelect = (projectId: number) => {
+  const handleProjectSelect = (projectId: number, projectName: string) => {
     localStorage.setItem("selectedProject", String(projectId))
+    localStorage.setItem("selectedProjectName", projectName)
     onClose()
     navigate(`/project/work-items/new/${selectedType}`)
   }
@@ -79,7 +87,7 @@ function ModalContent({ onClose }: { onClose: () => void }) {
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div ref={ref} className="w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-xl">
-        
+
         {step === "type" && (
           <>
             <div className="mb-5 flex items-center justify-between">
@@ -129,7 +137,7 @@ function ModalContent({ onClose }: { onClose: () => void }) {
                 {projects.map((p) => (
                   <button
                     key={p.id}
-                    onClick={() => handleProjectSelect(p.id)}
+                    onClick={() => handleProjectSelect(p.id, p.name)}
                     className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
                   >
                     {p.name}
@@ -148,9 +156,9 @@ function ModalContent({ onClose }: { onClose: () => void }) {
   )
 }
 
-export default function NewWorkItemModal({ onClose }: { onClose: () => void }) {
+export default function NewWorkItemModal({ onClose, mode }: { onClose: () => void; mode: "project" | "admin"  }) {
   return ReactDOM.createPortal(
-    <ModalContent onClose={onClose} />,
+    <ModalContent onClose={onClose} mode={mode} />,
     document.body
   )
 }

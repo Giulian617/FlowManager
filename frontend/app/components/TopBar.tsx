@@ -172,89 +172,92 @@ export default function TopBar() {
   return (
     <div className="mb-6 rounded-3xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3 shadow-sm">
       <div className="flex items-center gap-3">
-
-        {/* Notifications */}
-        {routePrefix === "/project" && (
-          <div ref={notifRef} className="relative ml-auto">
-            <button
-              onClick={() => { setNotifOpen((o) => !o); setSettingsOpen(false); setProfileMenuOpen(false) }}
-              className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-600"
-            >
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-semibold text-white">{unreadCount}</span>
-              )}
-              <Bell className="h-5 w-5" />
-            </button>
-            {notifOpen && <NotificationsPopup onClose={() => setNotifOpen(false)} notifications={notifications} setNotifications={setNotifications} />}
-          </div>
-        )}
-
-        {/* Settings */}
-        <div ref={settingsRef} className={`relative ${routePrefix !== "/project" ? "ml-auto" : ""}`}>
-          <button
-            onClick={() => { setSettingsOpen((o) => !o); setNotifOpen(false); setProfileMenuOpen(false) }}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-600"
-          >
-            <Settings className="h-5 w-5" />
-          </button>
-          {settingsOpen && <SettingsPopup onClose={() => setSettingsOpen(false)} />}
-        </div>
-
-        {/* Profile */}
-        <div ref={profileRef} className="relative">
-          <button
-            onClick={() => { setProfileMenuOpen((o) => !o); setNotifOpen(false); setSettingsOpen(false) }}
-            className="inline-flex items-center gap-2 rounded-3xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-600"
-          >
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold">
-              {getInitials(userName)}
-            </span>
-            <span className="truncate max-w-25 text-left text-sm text-slate-900 dark:text-slate-100">{userName}</span>
-          </button>
-          {profileMenuOpen && (
-            <div className="absolute right-0 z-20 mt-2 w-48 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
-                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{userName}</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{currentUser?.email ?? ""}</p>
-              </div>
+        <div className="ml-auto flex items-center gap-3">
+          
+          {/* Notifications */}
+          {routePrefix === "/project" && (
+            <div ref={notifRef} className="relative">
               <button
-                onClick={() => { setProfileMenuOpen(false); navigate(`${routePrefix}/profile`) }}
-                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
+                onClick={() => { setNotifOpen((o) => !o); setSettingsOpen(false); setProfileMenuOpen(false) }}
+                className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-600"
               >
-                <User className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-                View profile
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-semibold text-white">{unreadCount}</span>
+                )}
+                <Bell className="h-5 w-5" />
               </button>
-              <button
-                onClick={() => { setProfileMenuOpen(false); navigate(`${routePrefix}/profile`) }}
-                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
-              >
-                <Shield className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-                Security
-              </button>
-              <div className="border-t border-slate-100 dark:border-slate-700">
-                <button
-                  onClick={async () => {
-                    setProfileMenuOpen(false)
-                    try {
-                      await logout()
-                    } finally {
-                      localStorage.removeItem("accessToken")
-                      localStorage.removeItem("refreshToken")
-                      localStorage.removeItem("tokenExpiry")
-                      localStorage.removeItem("selectedOrg")
-                      localStorage.removeItem("selectedProject")
-                      localStorage.removeItem("selectedProjectName")
-                      window.location.href = "/"
-                    }
-                  }}
-                  className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Log out
-                </button>
-              </div>
+              {notifOpen && <NotificationsPopup onClose={() => setNotifOpen(false)} notifications={notifications} setNotifications={setNotifications} />}
             </div>
           )}
+          {routePrefix !== "/project" && <div className="h-11 w-11" />}
+
+          {/* Settings */}
+          <div ref={settingsRef} className="relative">
+            <button
+              onClick={() => { setSettingsOpen((o) => !o); setNotifOpen(false); setProfileMenuOpen(false) }}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-600"
+            >
+              <Settings className="h-5 w-5" />
+            </button>
+            {settingsOpen && <SettingsPopup onClose={() => setSettingsOpen(false)} />}
+          </div>
+
+          {/* Profile */}
+          <div ref={profileRef} className="relative">
+            <button
+              onClick={() => { setProfileMenuOpen((o) => !o); setNotifOpen(false); setSettingsOpen(false) }}
+              className="inline-flex items-center gap-2 rounded-3xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-600"
+            >
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold">
+                {getInitials(userName)}
+              </span>
+              <span className="truncate max-w-25 text-left text-sm text-slate-900 dark:text-slate-100">{userName}</span>
+            </button>
+            {profileMenuOpen && (
+              <div className="absolute right-0 z-20 mt-2 w-48 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{userName}</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{currentUser?.email ?? ""}</p>
+                </div>
+                <button
+                  onClick={() => { setProfileMenuOpen(false); navigate(`${routePrefix}/profile`) }}
+                  className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
+                >
+                  <User className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                  View profile
+                </button>
+                <button
+                  onClick={() => { setProfileMenuOpen(false); navigate(`${routePrefix}/profile`) }}
+                  className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
+                >
+                  <Shield className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                  Security
+                </button>
+                <div className="border-t border-slate-100 dark:border-slate-700">
+                  <button
+                    onClick={async () => {
+                      setProfileMenuOpen(false)
+                      try {
+                        await logout()
+                      } finally {
+                        localStorage.removeItem("accessToken")
+                        localStorage.removeItem("refreshToken")
+                        localStorage.removeItem("tokenExpiry")
+                        localStorage.removeItem("selectedOrg")
+                        localStorage.removeItem("selectedProject")
+                        localStorage.removeItem("selectedProjectName")
+                        window.location.href = "/"
+                      }
+                    }}
+                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Log out
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -66,9 +66,13 @@ export default function AdminLayout() {
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-8 py-8">
-          <TopBar />
-          <Outlet />
+        <div className="px-8 py-8">
+          <div className="mx-auto max-w-6xl">
+            <TopBar />
+          </div>
+          <div className="mx-auto max-w-6xl">
+            <Outlet />
+          </div>
         </div>
       </main>
     </div>

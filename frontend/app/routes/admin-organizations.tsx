@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Building2, Search, X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Users, User, FolderKanban, UsersRound, Calendar } from "lucide-react"
+import { Building2, Search, X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Users, User, FolderKanban, UsersRound, Calendar, ListFilter, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import {
   getOrganizations,
   deleteOrganization
@@ -113,6 +113,8 @@ function ConfirmDeleteModal({ org, onConfirm, onClose }: {
   )
 }
 
+type SortField = "name" | "members" | "projects" | "teams" | "date" | "default"
+
 export default function AdminOrganizations() {
   const [organizations, setOrganizations] = useState<OrganizationResponseDto[]>([])
   const [loading, setLoading] = useState(true)
@@ -123,6 +125,14 @@ export default function AdminOrganizations() {
   const [deleteTarget, setDeleteTarget] = useState<OrganizationResponseDto | null>(null)
   const [viewOrg, setViewOrg] = useState<OrganizationResponseDto | null>(null)
   const [page, setPage] = useState(1)
+
+  // Filters
+  const [industryFilter, setIndustryFilter] = useState<string>("all")
+  const [managerFilter, setManagerFilter] = useState<string>("all")
+
+  // Sort
+  const [sortField, setSortField] = useState<SortField>("default")
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
 
   useEffect(() => {
     getOrganizations()
@@ -137,21 +147,68 @@ export default function AdminOrganizations() {
     setDeleteTarget(null)
   }
 
-  const filtered = organizations.filter((o) => {
-    const q = query.toLowerCase()
-    return (
-      o.name.toLowerCase().includes(q) ||
-      o.description?.toLowerCase().includes(q) ||
-      o.industry?.toLowerCase().includes(q) ||
-      o.manager?.username?.toLowerCase().includes(q)
-    )
-  })
+  // Derived filter options from data
+  const industryOptions = Array.from(
+    new Set(organizations.map((o) => o.industry).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b))
+
+  const managerOptions = Array.from(
+    new Map(
+      organizations
+        .filter((o) => o.manager)
+        .map((o) => [String(o.manager.id), o.manager.username])
+    ).entries()
+  ).sort((a, b) => a[1].localeCompare(b[1]))
+
+  const hasActiveFilters = industryFilter !== "all" || managerFilter !== "all"
+
+  const clearFilters = () => {
+    setIndustryFilter("all")
+    setManagerFilter("all")
+    setPage(1)
+  }
+
+  const filtered = organizations
+    .filter((o) => {
+      const q = query.toLowerCase()
+      const matchesSearch =
+        o.name.toLowerCase().includes(q) ||
+        o.description?.toLowerCase().includes(q) ||
+        o.industry?.toLowerCase().includes(q) ||
+        o.manager?.username?.toLowerCase().includes(q)
+
+      const matchesIndustry =
+        industryFilter === "all" || o.industry === industryFilter
+
+      const matchesManager =
+        managerFilter === "all" || String(o.manager?.id) === managerFilter
+
+      return matchesSearch && matchesIndustry && matchesManager
+    })
+    .sort((a, b) => {
+      if (sortField === "default") return 0
+      const dir = sortDir === "asc" ? 1 : -1
+      switch (sortField) {
+        case "name":
+          return a.name.localeCompare(b.name) * dir
+        case "members":
+          return (a.memberCount - b.memberCount) * dir
+        case "projects":
+          return (a.projectCount - b.projectCount) * dir
+        case "teams":
+          return (a.teamCount - b.teamCount) * dir
+        case "date":
+          return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * dir
+        default:
+          return 0
+      }
+    })
 
   const itemsPerPage = 9
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
   const paginated = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage)
 
-  useEffect(() => { setPage(1) }, [query])
+  useEffect(() => { setPage(1) }, [query, industryFilter, managerFilter])
 
   if (loading) return (
     <div className="flex items-center justify-center py-24">
@@ -181,19 +238,117 @@ export default function AdminOrganizations() {
         </div>
       </header>
 
-      <div className="flex w-full items-center gap-3 rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 shadow-sm">
-        <Search className="h-5 w-5 text-slate-400 dark:text-slate-500 flex-none" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name, description, industry or manager…"
-          className="w-full bg-transparent text-sm text-slate-700 dark:text-slate-300 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
-        />
-        {query && (
-          <button onClick={() => setQuery("")} className="text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 transition flex-none">
-            <X className="h-4 w-4" />
-          </button>
-        )}
+      {/* Filters + Sort + Search */}
+      <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 px-4 py-3 shadow-sm">
+
+        {/* Filters + Sort */}
+        <div className="flex flex-wrap items-center gap-4">
+
+          {/* Filters */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <ListFilter className="h-4 w-4 flex-none text-slate-500 dark:text-slate-400" />
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Filter:</span>
+
+            <select
+              value={managerFilter}
+              onChange={(e) => { setManagerFilter(e.target.value); setPage(1) }}
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-200 outline-none transition focus:border-slate-400 dark:focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700"
+            >
+              <option value="all">All managers</option>
+              {managerOptions.map(([id, name]) => (
+                <option key={id} value={id}>{name}</option>
+              ))}
+            </select>
+            
+            <select
+              value={industryFilter}
+              onChange={(e) => { setIndustryFilter(e.target.value); setPage(1) }}
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-200 outline-none transition focus:border-slate-400 dark:focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700"
+            >
+              <option value="all">All industries</option>
+              {industryOptions.map((industry) => (
+                <option key={industry} value={industry}>{industry}</option>
+              ))}
+            </select>
+
+            {/* Clear filters */}
+            {hasActiveFilters && (
+              <div className="relative group">
+                <button
+                  onClick={clearFilters}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+                <span className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 -translate-y-full mb-2 hidden rounded-full bg-slate-800 dark:bg-slate-700 px-3 py-1 text-xs text-white shadow-sm group-hover:block whitespace-nowrap">
+                  Clear filters
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="hidden h-6 w-px bg-slate-200 dark:bg-slate-700 md:block" />
+
+          {/* Sort */}
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="h-4 w-4 flex-none text-slate-500 dark:text-slate-400" />
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Sort:</span>
+
+            <select
+              value={sortField}
+              onChange={(e) => { setSortField(e.target.value as SortField); setPage(1) }}
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-200 outline-none transition focus:border-slate-400 dark:focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700"
+            >
+              <option value="default">Default</option>
+              <option value="name">Name</option>
+              <option value="members">Members</option>
+              <option value="projects">Projects</option>
+              <option value="teams">Teams</option>
+              <option value="date">Date</option>
+            </select>
+
+            {sortField !== "default" && (
+              <button
+                onClick={() => { setSortDir((d) => (d === "asc" ? "desc" : "asc")); setPage(1) }}
+                className="flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700"
+              >
+                {sortDir === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                {sortDir === "asc" ? "Asc" : "Desc"}
+              </button>
+            )}
+
+            {/* Reset sorting */}
+            {sortField !== "default" && (
+              <div className="relative group">
+                <button
+                  onClick={() => { setSortField("default"); setSortDir("asc"); setPage(1) }}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+                <span className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 -translate-y-full mb-2 hidden rounded-full bg-slate-800 dark:bg-slate-700 px-3 py-1 text-xs text-white shadow-sm group-hover:block whitespace-nowrap">
+                  Reset sorting
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="flex w-full items-center gap-3 rounded-2xl bg-slate-50 dark:bg-slate-800 px-3 py-2 border border-slate-200 dark:border-slate-700">
+          <Search className="h-4 w-4 flex-none text-slate-400 dark:text-slate-500" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name, description, industry or manager…"
+            className="w-full bg-transparent text-sm text-slate-700 dark:text-slate-300 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
+          />
+          {query && (
+            <button onClick={() => setQuery("")} className="text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 transition flex-none">
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {organizations.length === 0 ? (
@@ -203,8 +358,13 @@ export default function AdminOrganizations() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-20 shadow-sm text-center gap-2">
-          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No organizations match your search.</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500">Try a different name, industry, or manager.</p>
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No organizations match your filters.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Try adjusting your search or filters.</p>
+          {hasActiveFilters && (
+            <button onClick={clearFilters} className="mt-1 text-xs text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-200 transition">
+              Clear filters
+            </button>
+          )}
         </div>
       ) : (
         <>
@@ -260,6 +420,11 @@ export default function AdminOrganizations() {
                     <span className="ml-auto text-xs font-medium text-slate-700 dark:text-slate-300">
                       {org.manager.username}
                     </span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Calendar className="h-3.5 w-3.5 flex-none text-slate-400 dark:text-slate-500" />
+                    <span className="text-xs text-slate-500 dark:text-slate-400">Created</span>
+                    <span className="ml-auto text-xs font-medium text-slate-700 dark:text-slate-300">{formatDateShortMonth(org.createdAt)}</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Users className="h-3.5 w-3.5 flex-none text-slate-400 dark:text-slate-500" />

@@ -230,9 +230,9 @@ export default function OrgLayout() {
 
   const navItems = [
     { to: "/org/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { to: "/org/users",     icon: UserCircle,      label: "Users"     },
     { to: "/org/projects",  icon: FolderKanban,    label: "Projects"  },
     { to: "/org/teams",     icon: Users,           label: "Teams"     },
-    { to: "/org/users",     icon: UserCircle,      label: "Users"     },
   ]
 
   async function handleEditOrg(data: OrganizationUpdateDto) {
@@ -322,9 +322,13 @@ export default function OrgLayout() {
       </aside>
 
       <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-8 py-8">
-          <TopBar />
-          <Outlet />
+        <div className="px-8 py-8">
+          <div className="mx-auto max-w-6xl">
+            <TopBar />
+          </div>
+          <div className="mx-auto max-w-6xl">
+            <Outlet />
+          </div>
         </div>
       </main>
 
