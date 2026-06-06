@@ -4,6 +4,7 @@ import { Search, Bell, Settings, X, Check, Info, AlertTriangle, ChevronRight, Us
 import { logout } from "../api/auth"
 import { getCurrentUser } from "../api/user"
 import { useTheme } from "../context/ThemeContext"
+import { getInitials } from "../utils/functions"
 
 const MOCK_NOTIFICATIONS = [
   { id: "1", type: "info", title: "New comment on WI #2", desc: "Mihai Pop left a comment on your task.", time: "2m ago", read: false, workItemId: "2" },
@@ -12,12 +13,6 @@ const MOCK_NOTIFICATIONS = [
   { id: "4", type: "info", title: "You were added to Mobile App", desc: "Joe Nik added you to the project.", time: "1d ago", read: true, workItemId: null },
   { id: "5", type: "success", title: "WI #5 moved in Testing", desc: "Auth token refresh bug is in testing.", time: "2d ago", read: true, workItemId: "5" },
 ]
-
-function getInitials(username: string): string {
-  const parts = username.split(/[.\s_-]/).filter(Boolean)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return username.slice(0, 2).toUpperCase()
-}
 
 function NotificationsPopup({ onClose, notifications, setNotifications }: {
   onClose: () => void
@@ -87,7 +82,11 @@ function NotificationsPopup({ onClose, notifications, setNotifications }: {
 function SettingsPopup({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const routePrefix = location.pathname.startsWith("/org") ? "/org" : "/project"
+  const routePrefix = location.pathname.startsWith("/admin")
+    ? "/admin"
+    : location.pathname.startsWith("/org")
+      ? "/org"
+      : "/project"
   const { theme, setTheme } = useTheme()
 
   return (
@@ -137,7 +136,11 @@ function SettingsPopup({ onClose }: { onClose: () => void }) {
 export default function TopBar() {
   const navigate = useNavigate()
   const location = useLocation()
-  const routePrefix = location.pathname.startsWith("/org") ? "/org" : "/project"
+  const routePrefix = location.pathname.startsWith("/admin")
+    ? "/admin"
+    : location.pathname.startsWith("/org")
+      ? "/org"
+      : "/project"
 
   const [currentUser, setCurrentUser] = useState<{ username: string; email: string } | null>(null)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
@@ -164,7 +167,6 @@ export default function TopBar() {
   }, [])
 
   const userName = currentUser?.username ?? ""
-  const initials = getInitials(userName)
   const unreadCount = notifications.filter((n) => !n.read).length
 
   return (
@@ -205,7 +207,7 @@ export default function TopBar() {
             className="inline-flex items-center gap-2 rounded-3xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-600"
           >
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold">
-              {initials}
+              {getInitials(userName)}
             </span>
             <span className="truncate max-w-25 text-left text-sm text-slate-900 dark:text-slate-100">{userName}</span>
           </button>

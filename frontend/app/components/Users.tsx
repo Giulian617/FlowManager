@@ -20,11 +20,11 @@ import type {
 } from "../types/user"
 import type { OrganizationSummaryDto } from "../types/organization"
 import type { Role } from "../types/enums"
+import { getInitials } from "../utils/functions"
 
 const ROLE_OPTIONS: Role[] = ["USER", "MANAGER", "ADMIN"]
 
 function fullName(u: UserResponseDto) { return `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() }
-function initials(u: UserResponseDto) { return `${u.firstName?.[0] ?? "?"}${u.lastName?.[0] ?? "?"}`.toUpperCase() }
 
 function ConfirmDeleteModal({ user, onConfirm, onClose }: {
   user: UserResponseDto;
@@ -591,7 +591,7 @@ export default function OrgUsers({ mode = "org" }: { mode: "org" | "admin" }) {
 
                 <div className="flex items-center gap-4 mb-4 pr-14">
                   <div className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-sm font-bold">
-                    {initials(user)}
+                    {getInitials(`${user.firstName} ${user.lastName}`)}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">

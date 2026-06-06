@@ -14,6 +14,7 @@ import type { UserSummaryDto } from "../types/user"
 import type { OrganizationResponseDto } from "../types/organization"
 import type { WorkItemSummaryDto } from "../types/workItem"
 import type { ItemType } from "../types/enums"
+import { formatDateLongMonth } from "../utils/functions"
 
 type ActivityType = "bug" | "task" | "epic" | "user_story"
 
@@ -36,10 +37,6 @@ const activityIcons = {
   bug: <Bug className="h-4 w-4 flex-none" />,
   user_story: <BookOpen className="h-4 w-4 flex-none" />,
   epic: <Zap className="h-4 w-4 flex-none" />,
-}
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("ro-RO", { day: "2-digit", month: "long", year: "numeric" })
 }
 
 function timeAgo(dateStr: string) {
@@ -154,7 +151,7 @@ export default function OrgDashboard() {
             </div>
             <div>
               <p className="text-xs text-slate-400 dark:text-slate-500">Created</p>
-              <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{formatDate(org.createdAt)}</p>
+              <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{formatDateLongMonth(org.createdAt)}</p>
             </div>
           </div>
         </div>

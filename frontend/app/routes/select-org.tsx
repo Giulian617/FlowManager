@@ -6,10 +6,7 @@ import { getOrganizations } from "../api/organization"
 import OrgFormModal from "../components/OrgFormModal"
 import type { UserSummaryDto } from "../types/user"
 import type { OrganizationSummaryDto } from "../types/organization"
-
-function getAvatar(name: string) {
-  return name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
-}
+import { getInitials } from "../utils/functions"
 
 export default function SelectOrg() {
   const navigate = useNavigate()
@@ -91,13 +88,12 @@ export default function SelectOrg() {
               onClick={() => {
                 localStorage.setItem("selectedOrg", String(org.id))
                 localStorage.setItem("selectedOrgName", org.name)
-                localStorage.setItem("selectedOrgAvatar", getAvatar(org.name))
                 navigate("/org/dashboard")
               }}
               className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 px-4 py-4 text-left shadow-sm transition hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-md"
             >
               <div className="flex h-10 w-10 flex-none items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-950 text-sm font-bold text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                {getAvatar(org.name)}
+                {getInitials(org.name)}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-slate-900 dark:text-slate-100">{org.name}</p>

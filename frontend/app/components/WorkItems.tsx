@@ -7,6 +7,7 @@ import { getWorkItemsByProjectId } from "../api/project"
 import { getWorkItems } from "../api/workItem"
 import NewWorkItemModal from "../components/NewWorkItemModal"
 import type { WorkItemSummaryDto } from "../types/workItem"
+import { getInitials } from "../utils/functions"
 
 const typeOptions = ["Task", "Bug", "User Story", "Epic"]
 const severityOptions = ["Low", "Medium", "High", "Critical", "Blocker"]
@@ -29,12 +30,6 @@ const backendStatusMap: Record<string, keyof typeof statusMeta> = {
 
 function formatItemType(itemType: string): string {
   return itemType === "User_Story" ? "User Story" : itemType
-}
-
-function getInitials(username: string): string {
-  const parts = username.split(/[.\s_-]/).filter(Boolean)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return username.slice(0, 2).toUpperCase()
 }
 
 function MultiSelect({ label, options, selected, onChange }: {
@@ -377,8 +372,10 @@ export default function WorkItems({ mode }: { mode: "project" | "admin" }) {
                       onClick={() => {
                         if (mode === "admin") {
                           localStorage.setItem("selectedProject", String(item.projectId))
+                          navigate(`/admin/work-items/${item.id}`)
+                        } else {
+                          navigate(`/project/work-items/${item.id}`)
                         }
-                        navigate(`/project/work-items/${item.id}`)
                       }}
                     >
                       <td className="whitespace-nowrap px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">{item.id}</td>

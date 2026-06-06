@@ -8,12 +8,7 @@ import {
 } from "../api/comment"
 import type { CommentResponseWorkItemDto } from "../types/comment"
 import type { UserSummaryDto } from "../types/user"
-
-function initials(username: string): string {
-  const parts = username.split(/[.\s_-]/).filter(Boolean)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return username.slice(0, 2).toUpperCase()
-}
+import { getInitials, formatDateTimeShortMonth } from "../utils/functions"
 
 export default function CommentSection({
   currentUser,
@@ -89,7 +84,7 @@ export default function CommentSection({
         {comments.map((c) => (
           <div key={c.id} className="flex gap-3">
             <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-900 dark:border-blue-700 text-xs font-semibold">
-              {initials(c.author.username)}
+              {getInitials(c.author.username)}
             </div>
             <div className="flex-1 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-4 py-3">
               <div className="flex items-baseline justify-between gap-2 mb-1">
@@ -98,10 +93,10 @@ export default function CommentSection({
                   <span className="text-xs text-slate-500 dark:text-slate-400">
                     {new Date(c.updatedAt).getTime() - new Date(c.createdAt).getTime() > 1000
                         ? <>
-                            {new Date(c.updatedAt).toLocaleString("ro-RO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                            {formatDateTimeShortMonth(c.updatedAt)}
                             <span className="italic"> (edited)</span>
                         </>
-                        : new Date(c.createdAt).toLocaleString("ro-RO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                        : formatDateTimeShortMonth(c.createdAt)
                     }
                   </span>
                 </div>
@@ -195,7 +190,7 @@ export default function CommentSection({
       <div className="flex gap-3">
         {authorName && (
           <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-900 dark:border-blue-700 text-xs font-semibold">
-            {initials(authorName)}
+            {getInitials(authorName)}
           </div>
         )}
         <div className="flex-1 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 overflow-hidden focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 focus-within:border-slate-400 dark:focus-within:border-slate-500 transition">

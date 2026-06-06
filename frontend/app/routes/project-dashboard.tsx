@@ -8,6 +8,7 @@ import {
 import type { ProjectSummaryDto } from "../types/project";
 import type { WorkItemSummaryDto } from "../types/workItem";
 import type { ItemType} from "../types/enums"
+import { formatDateLongMonth } from "../utils/functions";
 
 type ActivityType = "bug" | "task" | "epic" | "user_story"
 
@@ -30,10 +31,6 @@ const activityIcons = {
   bug:        <Bug className="h-4 w-4 flex-none" />,
   user_story: <BookOpen className="h-4 w-4 flex-none" />,
   epic:       <Zap className="h-4 w-4 flex-none" />,
-}
-
-function formatDeadline(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("ro-RO", { day: "2-digit", month: "long", year: "numeric" })
 }
 
 function daysLeft(dateStr: string) {
@@ -114,7 +111,10 @@ export default function Dashboard() {
       </header>
 
       <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-5 shadow-sm">
+        <div
+          onClick={() => navigate("/project/work-items")}
+          className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-5 shadow-sm cursor-pointer hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 hover:-translate-y-0.5 transition duration-150"
+        >
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm text-slate-500 dark:text-slate-400">Open work items</span>
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-400">
@@ -122,10 +122,19 @@ export default function Dashboard() {
             </span>
           </div>
           <div className="mt-4 text-4xl font-semibold text-slate-900 dark:text-slate-100">{openItems}</div>
-          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{workItems.length} total</p>
+          <div className="mt-3 flex justify-between items-center">
+            <p className="text-xs text-slate-400 dark:text-slate-500">{workItems.length} total</p>
+            <div className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
+              <span>View all</span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </div>
+          </div>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-5 shadow-sm">
+        <div
+          onClick={() => navigate("/project/teams")}
+          className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-5 shadow-sm cursor-pointer hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 hover:-translate-y-0.5 transition duration-150"
+        >
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm text-slate-500 dark:text-slate-400">Teams</span>
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400">
@@ -133,6 +142,10 @@ export default function Dashboard() {
             </span>
           </div>
           <div className="mt-4 text-4xl font-semibold text-slate-900 dark:text-slate-100">{project.teamCount}</div>
+          <div className="mt-3 flex justify-end items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
+            <span>View all</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </div>
         </div>
 
         <div className={`rounded-3xl border p-5 shadow-sm ${
@@ -160,7 +173,7 @@ export default function Dashboard() {
             {isOverdue ? `${Math.abs(days)} days overdue` : `${days} days left`}
           </div>
           <p className={`mt-1 text-xs ${isOverdue ? "text-rose-500 dark:text-rose-500" : isNear ? "text-amber-500 dark:text-amber-500" : "text-slate-400 dark:text-slate-500"}`}>
-            {formatDeadline(project.endDate)}
+            {formatDateLongMonth(project.endDate)}
           </p>
         </div>
       </div>

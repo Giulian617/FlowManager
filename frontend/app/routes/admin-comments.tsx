@@ -6,12 +6,7 @@ import {
   deleteComment
 } from "../api/comment"
 import type { CommentResponseWorkItemDto } from "../types/comment"
-
-function initials(username: string): string {
-  const parts = username.split(/[.\s_-]/).filter(Boolean)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return username.slice(0, 2).toUpperCase()
-}
+import { getInitials, formatDateTimeShortMonth } from "../utils/functions"
 
 function ConfirmDeleteModal({ onConfirm, onClose }: {
   onConfirm: () => void
@@ -149,7 +144,7 @@ export default function AdminComments() {
               return (
                 <div key={c.id} className="flex items-start gap-4 px-6 py-4 group hover:bg-slate-50 dark:hover:bg-slate-800/80 transition">
                   <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold">
-                    {initials(c.author?.username ?? "?")}
+                    {getInitials(c.author?.username ?? "?")}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 mb-1">
@@ -158,8 +153,8 @@ export default function AdminComments() {
                       </span>
                       <span className="text-xs text-slate-400 dark:text-slate-500">
                         {edited
-                          ? <>{new Date(c.updatedAt).toLocaleString("ro-RO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}<span className="italic"> (edited)</span></>
-                          : new Date(c.createdAt).toLocaleString("ro-RO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                          ? <>{formatDateTimeShortMonth(c.updatedAt)}<span className="italic"> (edited)</span></>
+                          : formatDateTimeShortMonth(c.createdAt)
                         }
                       </span>
                     </div>

@@ -1,4 +1,4 @@
 import Users from "../components/Users"
 export default function OrgUsersRoute() {
-  return <Users mode="admin" />
+  return <Users mode="org" />
 }

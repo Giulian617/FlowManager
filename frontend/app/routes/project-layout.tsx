@@ -106,7 +106,6 @@ export default function ProjectLayout() {
             onClick={() => {
               localStorage.removeItem("selectedOrg")
               localStorage.removeItem("selectedOrgName")
-              localStorage.removeItem("selectedOrgAvatar")
               localStorage.removeItem("selectedProject")
               localStorage.removeItem("selectedProjectName")
               navigate("/select-org", { replace: true })

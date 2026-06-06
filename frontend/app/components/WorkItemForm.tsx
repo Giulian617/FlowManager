@@ -9,10 +9,8 @@ import { getCurrentUser } from "../api/user"
 import {
   getWorkItemsByProjectId,
   getMembersByProjectId,
-  getProjects,
 } from "../api/project"
 import {
-  getWorkItemComments,
   createWorkItem,
   updateWorkItem,
   setWorkItemParent,
@@ -30,6 +28,7 @@ import type { ItemType, Severity, Status } from "../types/enums"
 import { statusMeta } from "../utils/status"
 import CommentSection from "./CommentSection"
 import SelectDropdown from "./SelectDropdown"
+import { getInitials, formatDateShortMonth } from "../utils/functions"
 
 const severityOptions = ["Low", "Medium", "High", "Critical", "Blocker"]
 const statusOptions: { value: Status; label: string }[] = [
@@ -39,12 +38,6 @@ const statusOptions: { value: Status; label: string }[] = [
   { value: "Done",        label: "Done" },
   { value: "Closed",      label: "Closed" },
 ]
-
-function initials(username: string): string {
-  const parts = username.split(/[.\s_-]/).filter(Boolean)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return username.slice(0, 2).toUpperCase()
-}
 
 const backendStatusMap: Record<string, keyof typeof statusMeta> = {
   To_do:       "ToDo",
@@ -95,8 +88,8 @@ function AssigneeMultiDropdown({ value, onChange, options }: {
   }, [])
 
   const filtered = options.filter((o) => o.username.toLowerCase().includes(search.toLowerCase()))
-  const toggle = (name: string) =>
-    value.includes(name) ? onChange(value.filter((v) => v !== name)) : onChange([...value, name])
+  const toggle = (id: string) =>
+    value.includes(id) ? onChange(value.filter((v) => v !== id)) : onChange([...value, id])
 
   const selectedUsers = options.filter((o) => value.includes(String(o.id)))
 
@@ -107,7 +100,7 @@ function AssigneeMultiDropdown({ value, onChange, options }: {
           {selectedUsers.map((user) => (
             <span key={user.id} className="inline-flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 pl-1.5 pr-1 py-0.5 text-xs text-slate-700 dark:text-slate-300">
               <div className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[9px] font-semibold flex-none">
-                {initials(user.username)}
+                {getInitials(user.username)}
               </div>
               {user.username}
               <button
@@ -163,7 +156,7 @@ function AssigneeMultiDropdown({ value, onChange, options }: {
                     )}
                   </div>
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[10px] font-semibold flex-none">
-                    {initials(opt.username)}
+                    {getInitials(opt.username)}
                   </div>
                   <span className="text-slate-700 dark:text-slate-300">{opt.username}</span>
                 </li>
@@ -406,15 +399,10 @@ const configs: Record<WorkItemType, WorkItemFormConfig> = {
   },
 }
 
-interface ProjectSummary {
-  id: number
-  name: string
-}
-
 export default function WorkItemForm({
-    type,
-    mode = "new",
-    initialData
+  type,
+  mode = "new",
+  initialData,
 }: {
   type: WorkItemType
   mode?: WorkItemMode
@@ -424,30 +412,25 @@ export default function WorkItemForm({
   const cfg = configs[type]
   const isView = mode === "view"
   const isEdit = mode === "edit"
-  const isNew = mode === "new"
+  const isNew  = mode === "new"
 
-  const [currentUser, setCurrentUser] = useState<UserSummaryDto | null>(null)
+  const [currentUser, setCurrentUser]       = useState<UserSummaryDto | null>(null)
   const [projectMembers, setProjectMembers] = useState<UserSummaryDto[]>([])
   const [projectWorkItems, setProjectWorkItems] = useState<WorkItemSummaryDto[]>([])
-  const [saving, setSaving] = useState(false)
-  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saving, setSaving]         = useState(false)
+  const [saveError, setSaveError]   = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [deleting, setDeleting]     = useState(false)
+  const [loading, setLoading]       = useState(true)
 
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [projects, setProjects] = useState<ProjectSummary[]>([])
-  const [selectedProjectId, setSelectedProjectId] = useState<number>()
-  const projectOk = !!selectedProjectId
-
-  const [title, setTitle]       = useState(initialData?.title ?? "")
-  const [description, setDesc]  = useState(initialData?.description ?? "")
-  const [status, setStatus]     = useState<string>(initialData?.status ?? "To_do")
-  const [severity, setSeverity] = useState<string>(initialData?.severity ?? "")
-  const [assignees, setAssignees] = useState<string[]>(initialData?.assignees?.map((a) => String(a.id)) ?? [])
-  const [deadline, setDeadline] = useState(initialData?.dueDate ?? "")
-  const [parent, setParent]     = useState(initialData?.parent ? String(initialData.parent.id) : "")
-  const [children, setChildren] = useState<string[]>(initialData?.children?.map((c) => String(c.id)) ?? [])
+  const [title, setTitle]           = useState(initialData?.title ?? "")
+  const [description, setDesc]      = useState(initialData?.description ?? "")
+  const [status, setStatus]         = useState<string>(initialData?.status ?? "To_do")
+  const [severity, setSeverity]     = useState<string>(initialData?.severity ?? "")
+  const [assignees, setAssignees]   = useState<string[]>(initialData?.assignees?.map((a) => String(a.id)) ?? [])
+  const [deadline, setDeadline]     = useState(initialData?.dueDate ?? "")
+  const [parent, setParent]         = useState(initialData?.parent ? String(initialData.parent.id) : "")
+  const [children, setChildren]     = useState<string[]>(initialData?.children?.map((c) => String(c.id)) ?? [])
 
   const [baseline, setBaseline] = useState({
     title:       initialData?.title ?? "",
@@ -465,23 +448,8 @@ export default function WorkItemForm({
       try {
         const user = await getCurrentUser()
         setCurrentUser(user)
-        const adminMode = user.role === "ADMIN"
-        setIsAdmin(adminMode)
 
-        const storedProjectId =
-          typeof window !== "undefined"
-            ? Number(localStorage.getItem("selectedProject")) || 0
-            : 0
-        setSelectedProjectId(storedProjectId)
-
-        if (adminMode && isNew && !Number(localStorage.getItem("selectedProject"))) {
-          const allProjects = await getProjects()
-          setProjects(allProjects)
-        }
-
-        const projectId = adminMode && isNew
-          ? storedProjectId
-          : storedProjectId
+        const projectId = Number(localStorage.getItem("selectedProject")) || 0
         if (!projectId) return
 
         const [members, workItems] = await Promise.all([
@@ -497,9 +465,9 @@ export default function WorkItemForm({
       }
     }
     load()
-  }, [selectedProjectId])
+  }, [])
 
-    if (loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
         <p className="text-slate-500 dark:text-slate-400">Loading...</p>
@@ -507,36 +475,23 @@ export default function WorkItemForm({
     )
   }
 
-  const handleProjectChange = (id: number) => {
-    setSelectedProjectId(id)
-    if (id !== 0) localStorage.setItem("selectedProject", String(id))
-    setParent("")
-    setChildren([])
-    setAssignees([])
-    setProjectMembers([])
-    setProjectWorkItems([])
-  }
-
-  const createdDate = initialData?.createdAt
-    ? new Date(initialData.createdAt).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" })
-    : new Date().toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" })
+  const createdDate = formatDateShortMonth(initialData?.createdAt ?? new Date().toISOString())
   const reporter = initialData?.reporter ?? currentUser
 
   const isDirty =
-    title              !== baseline.title ||
-    description        !== baseline.description ||
-    status             !== baseline.status ||
-    severity           !== baseline.severity ||
-    deadline           !== baseline.deadline ||
-    parent             !== baseline.parent ||
+    title        !== baseline.title ||
+    description  !== baseline.description ||
+    status       !== baseline.status ||
+    severity     !== baseline.severity ||
+    deadline     !== baseline.deadline ||
+    parent       !== baseline.parent ||
     JSON.stringify(assignees) !== baseline.assignees ||
     JSON.stringify(children)  !== baseline.children
 
   const titleOk    = title.trim() !== ""
   const descOk     = description.trim() !== ""
   const severityOk = severity !== ""
-  const showProjectPicker = isNew && isAdmin && selectedProjectId === 0
-  const canSave = titleOk && descOk && severityOk && (!isEdit || isDirty) && (!showProjectPicker || projectOk)
+  const canSave    = titleOk && descOk && severityOk && (!isEdit || isDirty)
 
   const canEdit = currentUser && initialData && (
     currentUser.role === "ADMIN" ||
@@ -555,10 +510,7 @@ export default function WorkItemForm({
     setSaveError(null)
 
     try {
-      const projectId =
-        isNew && isAdmin
-          ? selectedProjectId ?? 0
-          : Number(localStorage.getItem("selectedProject"))
+      const projectId = Number(localStorage.getItem("selectedProject"))
 
       if (isEdit) {
         const payload: WorkItemUpdateDto = {
@@ -571,13 +523,10 @@ export default function WorkItemForm({
         }
         await updateWorkItem(initialData!.id, payload)
 
-        const originalParent = baseline.parent
-        if (parent !== originalParent) {
-          if (parent) {
-            await setWorkItemParent(initialData!.id, Number(parent))
-          } else {
-            await removeWorkItemParent(initialData!.id)
-          }
+        if (parent !== baseline.parent) {
+          parent
+            ? await setWorkItemParent(initialData!.id, Number(parent))
+            : await removeWorkItemParent(initialData!.id)
         }
 
         const originalChildren = JSON.parse(baseline.children) as string[]
@@ -595,7 +544,6 @@ export default function WorkItemForm({
           assignees: JSON.stringify(assignees),
           children:  JSON.stringify(children),
         })
-
       } else {
         const payload: WorkItemCreateDto = {
           title,
@@ -635,10 +583,7 @@ export default function WorkItemForm({
     }
   }
 
-  const statusKey   = backendStatusMap[initialData?.status ?? ""] ?? "ToDo"
-  const statusClass = statusMeta[statusKey]
   const assignedUsers = projectMembers.filter((m) => assignees.includes(String(m.id)))
-
   const modeLabel = isView ? "View Work Item" : isEdit ? "Edit Work Item" : "New Work Item"
 
   return (
@@ -775,14 +720,10 @@ export default function WorkItemForm({
               )}
             </div>
 
-            {!isView && (!titleOk || !descOk || !severityOk || (showProjectPicker && !projectOk)) && (
+            {!isView && (!titleOk || !descOk || !severityOk) && (
               <div className="flex items-center gap-2 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
                 <AlertCircle className="h-4 w-4 flex-none" />
-                <span>
-                  {showProjectPicker && !projectOk
-                    ? "Please select a project before saving."
-                    : "Title, description, and severity are required to save."}
-                </span>
+                <span>Title, description, and severity are required to save.</span>
               </div>
             )}
 
@@ -797,7 +738,7 @@ export default function WorkItemForm({
           {/* Comments */}
           {isView && (
             <div className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
-              <CommentSection currentUser={currentUser} workItemId={initialData!.id} reporterId={initialData?.reporter?.id}/>
+              <CommentSection currentUser={currentUser} workItemId={initialData!.id} reporterId={initialData?.reporter?.id} />
             </div>
           )}
         </div>
@@ -805,28 +746,6 @@ export default function WorkItemForm({
         {/* Right column */}
         <div className="space-y-5">
           <div className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm space-y-3.5">
-
-            {/* Project picker — admin new mode only */}
-            {showProjectPicker && (
-              <div>
-                <FieldLabel required satisfied={projectOk}>Project</FieldLabel>
-                <SelectDropdown
-                  value={selectedProjectId !== 0 ? String(selectedProjectId) : ""}
-                  options={projects.map((p) => String(p.id))}
-                  onChange={(v) => handleProjectChange(Number(v))}
-                  placeholder="Select project…"
-                  error={!projectOk}
-                  renderOption={(v) => {
-                    const p = projects.find((p) => String(p.id) === v)
-                    return <span>{p?.name ?? v}</span>
-                  }}
-                  renderSelected={(v) => {
-                    const p = projects.find((p) => String(p.id) === v)
-                    return <span>{p?.name ?? v}</span>
-                  }}
-                />
-              </div>
-            )}
 
             {/* Status */}
             <div>
@@ -906,7 +825,7 @@ export default function WorkItemForm({
                 {reporter ? (
                   <>
                     <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[10px] font-semibold flex-none">
-                      {initials(reporter.username)}
+                      {getInitials(reporter.username)}
                     </div>
                     <span className="text-sm text-slate-600 dark:text-slate-400">{reporter.username}</span>
                   </>
@@ -933,7 +852,7 @@ export default function WorkItemForm({
                   <Calendar className="h-3.5 w-3.5 flex-none text-slate-400 dark:text-slate-500" />
                   <span className="text-sm text-slate-600 dark:text-slate-400">
                     {deadline
-                      ? new Date(deadline).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" })
+                      ? formatDateShortMonth(deadline)
                       : <span className="text-slate-400 dark:text-slate-500 italic">Not set</span>
                     }
                   </span>
@@ -965,7 +884,7 @@ export default function WorkItemForm({
                     assignedUsers.map((user) => (
                       <ReadOnlyField key={user.id}>
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-900 dark:border-blue-700 text-[10px] font-semibold flex-none">
-                          {initials(user.username)}
+                          {getInitials(user.username)}
                         </div>
                         <span className="text-sm text-slate-700 dark:text-slate-300">{user.username}</span>
                       </ReadOnlyField>

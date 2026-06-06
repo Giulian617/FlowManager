@@ -2,12 +2,7 @@ import React, { useRef, useState, useEffect } from "react"
 import { Mail, User, Phone, Lock, Shield } from "lucide-react"
 import { getCurrentUser, updateUser } from "../api/user"
 import type { UserResponseDto } from "../types/user"
-
-function getInitials(username: string): string {
-  const parts = username.split(/[.\s_-]/).filter(Boolean)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return username.slice(0, 2).toUpperCase()
-}
+import { getInitials } from "../utils/functions"
 
 export default function Profile() {
   const [user, setUser] = useState<UserResponseDto | null>(null)
@@ -44,8 +39,6 @@ export default function Profile() {
       <p className="text-slate-500 dark:text-slate-400">Loading profile…</p>
     </div>
   )
-
-  const initials = getInitials(user?.username ?? "")
 
   const handleSaveProfile = async () => {
     if (!user) return
@@ -121,7 +114,7 @@ export default function Profile() {
         <div className="flex items-center gap-5">
           <div className="flex-none">
             <div className="h-20 w-20 rounded-3xl bg-blue-100 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-2xl font-semibold text-blue-900 dark:text-blue-300">
-              {initials}
+              {getInitials(user?.username ?? "")}
             </div>
           </div>
           <div>

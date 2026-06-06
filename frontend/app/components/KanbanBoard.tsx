@@ -6,6 +6,7 @@ import { getWorkItemsByProjectId } from "../api/project"
 import { updateWorkItem } from "../api/workItem"
 import type { WorkItemSummaryDto } from "../types/workItem"
 import type { Status } from "../types/enums"
+import { getInitials } from "../utils/functions"
 
 type WorkItem = {
   id: string
@@ -59,12 +60,6 @@ const typeIcons: Record<string, { textClass: string; icon: React.ReactNode }> = 
   Bug:          { textClass: "text-rose-700 dark:text-rose-400",   icon: <Bug className="h-3.5 w-3.5" /> },
   "User Story": { textClass: "text-emerald-700 dark:text-emerald-400", icon: <BookOpen className="h-3.5 w-3.5" /> },
   Epic:         { textClass: "text-violet-700 dark:text-violet-400", icon: <Zap className="h-3.5 w-3.5" /> },
-}
-
-function initials(username: string): string {
-  const parts = username.split(/[.\s_-]/).filter(Boolean)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return username.slice(0, 2).toUpperCase()
 }
 
 function formatDate(d?: string) {
@@ -138,7 +133,7 @@ function KanbanCard({ item, isDragging, onDragStart, onClick }: {
               className="flex h-7 w-7 flex-none items-center justify-center rounded-full border-2 border-white dark:border-slate-800 bg-blue-100 dark:bg-blue-950 text-[10px] font-semibold text-blue-900 dark:text-blue-300"
               title={a.name}
             >
-              {initials(a.name)}
+              {getInitials(a.name)}
             </div>
           ))}
         </div>

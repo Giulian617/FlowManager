@@ -13,6 +13,8 @@ export default [
     route("projects", "routes/admin-projects.tsx"),
     route("teams", "routes/admin-teams.tsx"),
     route("work-items", "routes/admin-workItems.tsx"),
+    route("work-items/:id", "routes/workItems-view.tsx", { id: "admin-workItems-view" }),
+    route("work-items/:id/edit", "routes/workItems-edit.tsx", { id: "admin-workItems-edit" }),
     route("comments", "routes/admin-comments.tsx"),
     route("notification-settings", "routes/notification-settings.tsx", { id: "admin-notification-settings" }),
     route("profile", "routes/profile.tsx", { id: "admin-profile" }),

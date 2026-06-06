@@ -28,16 +28,7 @@ import type {
 import type { UserSummaryDto } from "../types/user"
 import type { OrganizationResponseDto } from "../types/organization"
 import SelectDropdown from "./SelectDropdown"
-
-function getInitials(username: string): string {
-  const parts = username.split(/[.\s_-]/).filter(Boolean)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return username.slice(0, 2).toUpperCase()
-}
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" })
-}
+import { getInitials, formatDateShortMonth } from "../utils/functions"
 
 function MembersPicker({ value, onChange, users }: {
   value: string[]
@@ -211,7 +202,7 @@ function TeamDetailModal({ team, onClose }: {
             <div className="flex items-center gap-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-700 px-4 py-2.5">
               <Calendar className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-none" />
               <span className="text-xs text-slate-500 dark:text-slate-400 w-24">Created</span>
-              <span className="ml-auto text-sm font-medium text-slate-700 dark:text-slate-300">{formatDate(team.createdAt)}</span>
+              <span className="ml-auto text-sm font-medium text-slate-700 dark:text-slate-300">{formatDateShortMonth(team.createdAt)}</span>
             </div>
           </div>
           <div>
@@ -641,7 +632,7 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
                     <div className="flex items-center gap-2.5">
                       <Calendar className="h-3.5 w-3.5 flex-none text-slate-400 dark:text-slate-500" />
                       <span className="text-xs text-slate-500 dark:text-slate-400">Created</span>
-                      <span className="ml-auto text-xs font-medium text-slate-700 dark:text-slate-300">{formatDate(team.createdAt)}</span>
+                      <span className="ml-auto text-xs font-medium text-slate-700 dark:text-slate-300">{formatDateShortMonth(team.createdAt)}</span>
                     </div>
                   </div>
                   <div className="border-t border-slate-100 dark:border-slate-700" />

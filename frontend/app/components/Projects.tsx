@@ -27,16 +27,7 @@ import type { UserSummaryDto } from "../types/user"
 import type { TeamSummaryDto } from "../types/team"
 import type { OrganizationResponseDto } from "../types/organization"
 import SelectDropdown from "./SelectDropdown"
-
-function getInitials(name: string): string {
-  const parts = name.split(/[.\s_-]/).filter(Boolean)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return name.slice(0, 2).toUpperCase()
-}
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" })
-}
+import { getInitials, formatDateShortMonth } from "../utils/functions" 
 
 function isOverdue(endDate: string) {
   return new Date(endDate) < new Date()
@@ -542,6 +533,10 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
   }
 
   const handleSelect = (project: ProjectResponseDto) => {
+    if (mode === "admin" && project.organization?.id) {
+      localStorage.setItem("selectedOrg", String(project.organization.id))
+      localStorage.setItem("selectedOrgName", project.organization.name)
+    }
     localStorage.setItem("selectedProject", String(project.id))
     localStorage.setItem("selectedProjectName", project.name)
     navigate("/project/dashboard")
@@ -686,13 +681,13 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
                       <div className="flex items-center gap-2.5">
                         <Calendar className="h-3.5 w-3.5 flex-none text-slate-400 dark:text-slate-500" />
                         <span className="text-xs text-slate-500 dark:text-slate-400">Start date</span>
-                        <span className="ml-auto text-xs font-medium text-slate-700 dark:text-slate-300">{formatDate(project.startDate)}</span>
+                        <span className="ml-auto text-xs font-medium text-slate-700 dark:text-slate-300">{formatDateShortMonth(project.startDate)}</span>
                       </div>
                       <div className="flex items-center gap-2.5">
                         <Calendar className="h-3.5 w-3.5 flex-none text-slate-400 dark:text-slate-500" />
                         <span className="text-xs text-slate-500 dark:text-slate-400">End date</span>
                         <span className={`ml-auto text-xs font-medium ${overdue ? "text-rose-600 dark:text-rose-400" : nearDeadline ? "text-amber-600 dark:text-amber-400" : "text-slate-700 dark:text-slate-300"}`}>
-                          {formatDate(project.endDate)}
+                          {formatDateShortMonth(project.endDate)}
                           {overdue && <span className="ml-1.5 rounded-full bg-rose-100 dark:bg-rose-950/50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 dark:text-rose-400">Overdue</span>}
                           {!overdue && nearDeadline && <span className="ml-1.5 rounded-full bg-amber-100 dark:bg-amber-950/50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">Soon</span>}
                         </span>

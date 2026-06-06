@@ -1,15 +1,65 @@
 import { useEffect, useState } from "react"
-import { Building2, Search, X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Users, User, FolderKanban, UsersRound } from "lucide-react"
+import { Building2, Search, X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Users, User, FolderKanban, UsersRound, Calendar } from "lucide-react"
 import {
   getOrganizations,
-  getOrganizationById,
   deleteOrganization
 } from "../api/organization"
 import OrgFormModal from "../components/OrgFormModal"
 import type { OrganizationResponseDto } from "../types/organization"
+import { getInitials, formatDateShortMonth } from "../utils/functions"
 
-function getAvatar(name: string) {
-  return name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
+function OrgDetailModal({ org, onClose }: {
+  org: OrganizationResponseDto
+  onClose: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-700">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{org.name}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{org.description}</p>
+          </div>
+          <button onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="overflow-y-auto px-6 py-5 space-y-3">
+          <div className="flex items-center gap-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-700 px-4 py-2.5">
+            <Building2 className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-none" />
+            <span className="text-xs text-slate-500 dark:text-slate-400 w-24">Industry</span>
+            <span className="ml-auto text-sm font-medium text-slate-700 dark:text-slate-300">{org.industry}</span>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-700 px-4 py-2.5">
+            <User className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-none" />
+            <span className="text-xs text-slate-500 dark:text-slate-400 w-24">Manager</span>
+            <span className="ml-auto text-sm font-medium text-slate-700 dark:text-slate-300">{org.manager.username}</span>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-700 px-4 py-2.5">
+            <Calendar className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-none" />
+            <span className="text-xs text-slate-500 dark:text-slate-400 w-24">Created</span>
+            <span className="ml-auto text-sm font-medium text-slate-700 dark:text-slate-300">{formatDateShortMonth(org.createdAt)}</span>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-700 px-4 py-2.5">
+            <Users className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-none" />
+            <span className="text-xs text-slate-500 dark:text-slate-400 w-24">Members</span>
+            <span className="ml-auto text-sm font-medium text-slate-700 dark:text-slate-300">{org.memberCount}</span>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-700 px-4 py-2.5">
+            <FolderKanban className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-none" />
+            <span className="text-xs text-slate-500 dark:text-slate-400 w-24">Projects</span>
+            <span className="ml-auto text-sm font-medium text-slate-700 dark:text-slate-300">{org.projectCount}</span>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-700 px-4 py-2.5">
+            <UsersRound className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-none" />
+            <span className="text-xs text-slate-500 dark:text-slate-400 w-24">Teams</span>
+            <span className="ml-auto text-sm font-medium text-slate-700 dark:text-slate-300">{org.teamCount}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function ConfirmDeleteModal({ org, onConfirm, onClose }: {
@@ -71,6 +121,7 @@ export default function AdminOrganizations() {
   const [showCreate, setShowCreate] = useState(false)
   const [editOrg, setEditOrg] = useState<OrganizationResponseDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<OrganizationResponseDto | null>(null)
+  const [viewOrg, setViewOrg] = useState<OrganizationResponseDto | null>(null)
   const [page, setPage] = useState(1)
 
   useEffect(() => {
@@ -159,17 +210,21 @@ export default function AdminOrganizations() {
         <>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {paginated.map((org) => (
-              <div key={org.id} className="relative group rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm transition hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 hover:-translate-y-0.5 duration-150">
+              <div
+                key={org.id}
+                onClick={() => setViewOrg(org)}
+                className="relative group rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm transition hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 hover:-translate-y-0.5 duration-150 cursor-pointer"
+              >
                 <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
-                    onClick={() => setEditOrg(org)}
+                    onClick={(e) => { e.stopPropagation(); setEditOrg(org) }}
                     className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-300"
                     title="Edit"
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
                   <button
-                    onClick={() => setDeleteTarget(org)}
+                    onClick={(e) => { e.stopPropagation(); setDeleteTarget(org) }}
                     className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-rose-100 dark:border-rose-900/50 bg-white dark:bg-slate-800 text-rose-400 dark:text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 dark:hover:text-rose-400"
                     title="Delete"
                   >
@@ -179,7 +234,7 @@ export default function AdminOrganizations() {
 
                 <div className="flex items-center gap-4 mb-4 pr-14">
                   <div className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-sm font-bold">
-                    {getAvatar(org.name)}
+                    {getInitials(org.name)}
                   </div>
                   <div className="min-w-0">
                     <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">{org.name}</h2>
@@ -194,9 +249,9 @@ export default function AdminOrganizations() {
                     <Building2 className="h-3.5 w-3.5 flex-none text-slate-400 dark:text-slate-500" />
                     <span className="text-xs text-slate-500 dark:text-slate-400">Industry</span>
                     <span className="ml-auto">
-                    <span className="inline-flex rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-2.5 py-0.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {org.industry}
-                    </span>
+                      <span className="inline-flex rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-2.5 py-0.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        {org.industry}
+                      </span>
                     </span>
                   </div>
                   <div className="flex items-center gap-2.5">
@@ -292,6 +347,12 @@ export default function AdminOrganizations() {
           org={deleteTarget}
           onConfirm={() => handleDelete(deleteTarget.id)}
           onClose={() => setDeleteTarget(null)}
+        />
+      )}
+      {viewOrg && (
+        <OrgDetailModal
+          org={viewOrg}
+          onClose={() => setViewOrg(null)}
         />
       )}
     </div>

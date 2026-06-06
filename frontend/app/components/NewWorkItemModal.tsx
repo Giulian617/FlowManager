@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import ReactDOM from "react-dom"
 import { useNavigate } from "react-router"
-import { Bug, CheckSquare, Zap, BookOpen, X } from "lucide-react"
+import { Bug, CheckSquare, Zap, BookOpen, X, ChevronLeft } from "lucide-react"
+import { getProjects } from "../api/project"
 
 const types = [
   {
@@ -41,6 +42,10 @@ const types = [
 function ModalContent({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate()
   const ref = useRef<HTMLDivElement>(null)
+  const [step, setStep] = useState<"type" | "project">("type")
+  const [selectedType, setSelectedType] = useState<string | null>(null)
+  const [projects, setProjects] = useState<{ id: number; name: string }[]>([])
+  const [loadingProjects, setLoadingProjects] = useState(false)
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -50,9 +55,22 @@ function ModalContent({ onClose }: { onClose: () => void }) {
     return () => document.removeEventListener("keydown", handleKey)
   }, [onClose])
 
-  const handleSelect = (typeId: string) => {
+  const handleTypeSelect = async (typeId: string) => {
+    setSelectedType(typeId)
+    setLoadingProjects(true)
+    setStep("project")
+    try {
+      const all = await getProjects()
+      setProjects(all)
+    } finally {
+      setLoadingProjects(false)
+    }
+  }
+
+  const handleProjectSelect = (projectId: number) => {
+    localStorage.setItem("selectedProject", String(projectId))
     onClose()
-    navigate(`/project/work-items/new/${typeId}`)
+    navigate(`/project/work-items/new/${selectedType}`)
   }
 
   return (
@@ -61,30 +79,70 @@ function ModalContent({ onClose }: { onClose: () => void }) {
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div ref={ref} className="w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-xl">
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Select work item type</h2>
-          <button
-            onClick={onClose}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          {types.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => handleSelect(t.id)}
-              className={`flex flex-col gap-3 rounded-2xl border px-5 py-5 text-left transition ${t.bgClass}`}
-            >
-              <span className={`flex-none ${t.textClass}`}>{t.icon}</span>
-              <div>
-                <p className={`text-base font-semibold ${t.textClass}`}>{t.label}</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{t.description}</p>
+        
+        {step === "type" && (
+          <>
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Select work item type</h2>
+              <button onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {types.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => handleTypeSelect(t.id)}
+                  className={`flex flex-col gap-3 rounded-2xl border px-5 py-5 text-left transition ${t.bgClass}`}
+                >
+                  <span className={`flex-none ${t.textClass}`}>{t.icon}</span>
+                  <div>
+                    <p className={`text-base font-semibold ${t.textClass}`}>{t.label}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{t.description}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {step === "project" && (
+          <>
+            <div className="mb-5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setStep("type")}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Select a project</h2>
               </div>
-            </button>
-          ))}
-        </div>
+              <button onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {loadingProjects ? (
+              <p className="py-8 text-center text-sm text-slate-400 dark:text-slate-500">Loading projects…</p>
+            ) : (
+              <div className="flex flex-col gap-2 max-h-72 overflow-y-auto">
+                {projects.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => handleProjectSelect(p.id)}
+                    className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                  >
+                    {p.name}
+                  </button>
+                ))}
+                {projects.length === 0 && (
+                  <p className="py-8 text-center text-sm text-slate-400 dark:text-slate-500">No projects found.</p>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
       </div>
     </div>
   )
