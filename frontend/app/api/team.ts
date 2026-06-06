@@ -4,23 +4,10 @@ import type {
   TeamUpdateDto,
   TeamResponseDto,
 } from "../types/team"
-import type { UserSummaryDto } from "../types/user"
 
-export async function getTeams() {
+export async function getTeams(): Promise<TeamResponseDto> {
   const response = await apiFetch("/teams")
   if (!response.ok) throw new Error("Failed to fetch teams")
-  return response.json()
-}
-
-export async function getTeamById(teamId: number): Promise<TeamResponseDto> {
-  const response = await apiFetch(`/teams/${teamId}`)
-  if (!response.ok) throw new Error(`Failed to fetch team ${teamId}`)
-  return response.json()
-}
-
-export async function getMembersByTeamId(teamId: number): Promise<UserSummaryDto[]> {
-  const response = await apiFetch(`/teams/${teamId}/members`)
-  if (!response.ok) throw new Error(`Failed to fetch members for team ${teamId}`)
   return response.json()
 }
 

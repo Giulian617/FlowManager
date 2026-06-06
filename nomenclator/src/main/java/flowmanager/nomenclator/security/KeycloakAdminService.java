@@ -1,7 +1,9 @@
 package flowmanager.nomenclator.security;
 
 import flowmanager.nomenclator.dto.UserCreateDto;
+import flowmanager.nomenclator.dto.UserUpdateDto;
 import flowmanager.nomenclator.model.Role;
+import flowmanager.nomenclator.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -9,12 +11,10 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -142,20 +142,75 @@ public class KeycloakAdminService {
         });
         assignRole(keycloakId, newRole);
     }
+    private void patchKeycloakUser(String keycloakId, Map<String, Object> overrides) {
+        String token = getAdminToken();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                keycloakUrl + "/admin/realms/" + realm + "/users/" + keycloakId,
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
+                new ParameterizedTypeReference<>() {}
+        );
+
+        if (response.getBody() == null) throw new RuntimeException("Keycloak user not found");
+
+        Map<String, Object> existing = response.getBody();
+
+        Map<String, Object> kcUser = new HashMap<>();
+        kcUser.put("id",              existing.get("id"));
+        kcUser.put("username",        existing.get("username"));
+        kcUser.put("email",           existing.get("email"));
+        kcUser.put("firstName",       existing.get("firstName"));
+        kcUser.put("lastName",        existing.get("lastName"));
+        kcUser.put("enabled",         existing.get("enabled"));
+        kcUser.put("emailVerified",   existing.get("emailVerified"));
+        kcUser.put("requiredActions", existing.get("requiredActions"));
+
+        kcUser.putAll(overrides);
+
+        headers.setContentType(MediaType.APPLICATION_JSON);
+//        restTemplate.exchange(
+//                keycloakUrl + "/admin/realms/" + realm + "/users/" + keycloakId,
+//                HttpMethod.PUT,
+//                new HttpEntity<>(kcUser, headers),
+//                Void.class
+//        );
+        try {
+            restTemplate.exchange(
+                    keycloakUrl + "/admin/realms/" + realm + "/users/" + keycloakId,
+                    HttpMethod.PUT,
+                    new HttpEntity<>(kcUser, headers),
+                    Void.class
+            );
+        } catch (HttpClientErrorException e) {
+        System.out.println("Keycloak error: " + e.getStatusCode());
+        System.out.println("Keycloak body: " + e.getResponseBodyAsString());
+        throw new RuntimeException("Keycloak update failed: " + e.getResponseBodyAsString(), e);
+    }
+    }
+
+    public void updateUser(User user, UserUpdateDto dto) {
+        boolean updateNeeded =
+                dto.getUsername() != null ||
+                        dto.getEmail() != null ||
+                        dto.getFirstName() != null ||
+                        dto.getLastName() != null;
+
+        if (!updateNeeded) return;
+
+        Map<String, Object> overrides = new HashMap<>();
+        if (dto.getUsername() != null)  overrides.put("username",  dto.getUsername());
+        if (dto.getEmail() != null)     overrides.put("email",     dto.getEmail());
+        if (dto.getFirstName() != null) overrides.put("firstName", dto.getFirstName());
+        if (dto.getLastName() != null)  overrides.put("lastName",  dto.getLastName());
+
+        patchKeycloakUser(user.getKeycloakId(), overrides);
+    }
 
     public void setUserEnabled(String keycloakId, boolean enabled) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(getAdminToken());
-
-        Map<String, Object> body = Map.of("enabled", enabled);
-
-        restTemplate.exchange(
-                keycloakUrl + "/admin/realms/" + realm + "/users/" + keycloakId,
-                HttpMethod.PUT,
-                new HttpEntity<>(body, headers),
-                Void.class
-        );
+        patchKeycloakUser(keycloakId, Map.of("enabled", enabled));
     }
 
     public void deleteUser(String keycloakId) {

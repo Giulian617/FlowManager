@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router"
 import { Building2, ChevronRight, Search, ChevronLeft } from "lucide-react"
 import { useEffect, useState } from "react"
-import { getCurrentUser, getUserOrganizations } from "../api/user"
+import { getCurrentUser, getMemberOrganizationsByUserId } from "../api/user"
 import { getOrganizations } from "../api/organization"
 import OrgFormModal from "../components/OrgFormModal"
 import type { UserSummaryDto } from "../types/user"
@@ -23,7 +23,7 @@ export default function SelectOrg() {
         setUser(currentUser)
         const data = currentUser.role === "ADMIN"
           ? await getOrganizations()
-          : await getUserOrganizations(currentUser.id)
+          : await getMemberOrganizationsByUserId(currentUser.id)
         setOrgs(data)
       } catch (err) {
         console.error(err)

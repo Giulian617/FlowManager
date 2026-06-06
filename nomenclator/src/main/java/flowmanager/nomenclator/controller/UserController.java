@@ -115,15 +115,6 @@ public class UserController {
         return ResponseEntity.ok(userService.findAllAssignedWorkItemsByUserId(userId));
     }
 
-    @PreAuthorize("@userSecurity.canView(authentication, #userId)")
-    @GetMapping("/{userId}")
-    @ResponseBody
-    public ResponseEntity<UserResponseDto> getUserById(
-            @PathVariable Integer userId
-    ) {
-        return ResponseEntity.ok(userService.findUserById(userId));
-    }
-
     @PostMapping("")
     @ResponseBody
     public ResponseEntity<UserResponseDto> createUser(

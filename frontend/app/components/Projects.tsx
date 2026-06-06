@@ -4,7 +4,8 @@ import { Calendar, User, Users, Search, Plus, X, ChevronDown, AlertCircle, Penci
 import {
   getCurrentUser,
   getManagedProjectsByUserId,
-  getAssignedProjectsByUserId
+  getAssignedProjectsByUserId,
+  getManagedOrganizationsByUserId
 } from "../api/user"
 import {
   getOrganizations,
@@ -455,6 +456,7 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
   const [organizations, setOrganizations] = useState<OrganizationResponseDto[]>([])
   const [managers, setManagers] = useState<UserSummaryDto[]>([])
   const [teams, setTeams] = useState<TeamSummaryDto[]>([])
+  const [managedOrgIds, setManagedOrgIds] = useState<number[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState("")
@@ -479,6 +481,9 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
         const user = await getCurrentUser()
         setCurrentUser(user)
         setOrgId(storedOrgId)
+
+        const managedOrgs = await getManagedOrganizationsByUserId(user.id)
+        setManagedOrgIds(managedOrgs.map((o: { id: any }) => o.id))
 
         let projectsData: ProjectResponseDto[] = []
 
@@ -775,40 +780,45 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
             {paginated.map((project) => {
               const overdue      = isOverdue(project.endDate)
               const nearDeadline = isNearDeadline(project.endDate)
-              const canModify    = currentUser?.role === "ADMIN" || project.manager?.id === currentUser?.id
+              const canEdit   = currentUser?.role === "ADMIN" || project.manager?.id === currentUser?.id
+              const canDelete = currentUser?.role === "ADMIN" || (project.organization?.id != null && managedOrgIds.includes(project.organization.id))
 
               return (
                 <div key={project.id} className="relative group rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm transition hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 hover:-translate-y-0.5 duration-150">
-                  {canModify && (
+                  {(canEdit || canDelete) && (
                     <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation()
-                          if (mode === "admin") {
-                            const orgIdForProject = project.organization?.id
-                            if (orgIdForProject) {
-                              const [managersData, teamsData] = await Promise.all([
-                                getUsersByOrganizationId(orgIdForProject, "MANAGER"),
-                                getTeamsByOrganizationId(orgIdForProject),
-                              ])
-                              setManagers(managersData)
-                              setTeams(teamsData)
+                      {canEdit && (
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation()
+                            if (mode === "admin") {
+                              const orgIdForProject = project.organization?.id
+                              if (orgIdForProject) {
+                                const [managersData, teamsData] = await Promise.all([
+                                  getUsersByOrganizationId(orgIdForProject, "MANAGER"),
+                                  getTeamsByOrganizationId(orgIdForProject),
+                                ])
+                                setManagers(managersData)
+                                setTeams(teamsData)
+                              }
                             }
-                          }
-                          setEditProject(project)
-                        }}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-300"
-                        title="Edit"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(project) }}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-300 transition hover:bg-rose-100 dark:hover:bg-rose-900/50 hover:text-rose-700 dark:hover:text-rose-200"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                            setEditProject(project)
+                          }}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-300"
+                          title="Edit"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setDeleteTarget(project) }}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-300 transition hover:bg-rose-100 dark:hover:bg-rose-900/50 hover:text-rose-700 dark:hover:text-rose-200"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
                   )}
 

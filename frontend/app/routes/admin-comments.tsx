@@ -5,8 +5,9 @@ import {
   updateComment,
   deleteComment
 } from "../api/comment"
-import type { CommentResponseWorkItemDto } from "../types/comment"
+import type { CommentResponseDto } from "../types/comment"
 import { getInitials, formatDateTimeShortMonth } from "../utils/functions"
+import { useNavigate } from "react-router"
 
 type SortField = "date" | "author" | "default"
 
@@ -47,7 +48,8 @@ function ConfirmDeleteModal({ onConfirm, onClose }: {
 }
 
 export default function AdminComments() {
-  const [comments, setComments] = useState<CommentResponseWorkItemDto[]>([])
+  const navigate = useNavigate()
+  const [comments, setComments] = useState<CommentResponseDto[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState("")
@@ -285,6 +287,13 @@ export default function AdminComments() {
                           : formatDateTimeShortMonth(c.createdAt)
                         }
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/admin/work-items/${c.workItem.id}`)}
+                        className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        Work item #{c.workItem.id}
+                      </button>
                     </div>
 
                     {editingId === c.id ? (

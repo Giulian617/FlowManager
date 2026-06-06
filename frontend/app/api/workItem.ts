@@ -24,21 +24,15 @@ export async function getWorkItems(filters?: {
   return response.json()
 }
 
-export async function getWorkItemById(workItemId: number): Promise<WorkItemResponseDto> {
-  const response = await apiFetch(`/work-items/${workItemId}`)
-  if (!response.ok) throw new Error("Failed to fetch work item")
-  return response.json()
-}
-
 export async function getWorkItemComments(workItemId: number): Promise<CommentResponseWorkItemDto[]> {
   const response = await apiFetch(`/work-items/${workItemId}/comments`)
   if (!response.ok) throw new Error("Failed to fetch comments")
   return response.json()
 }
 
-export async function getWorkItemChildren(workItemId: number): Promise<WorkItemSummaryDto[]> {
-  const response = await apiFetch(`/work-items/${workItemId}/children`)
-  if (!response.ok) throw new Error("Failed to fetch children")
+export async function getWorkItemById(workItemId: number): Promise<WorkItemResponseDto> {
+  const response = await apiFetch(`/work-items/${workItemId}`)
+  if (!response.ok) throw new Error("Failed to fetch work item")
   return response.json()
 }
 

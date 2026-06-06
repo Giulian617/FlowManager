@@ -195,63 +195,6 @@ public class WorkItemServiceTests {
     }
 
     @Test
-    void testFindAllChildrenByWorkItemId_Valid() {
-        WorkItem workItem = WorkItem.builder()
-                .id(3)
-                .title("Work item 2")
-                .description("Description work item 2")
-                .itemType(ItemType.Task)
-                .status(Status.In_Progress)
-                .severity(Severity.High)
-                .createdAt(LocalDate.of(2026, 5, 15))
-                .project(BuildInstances.buildProject())
-                .reporter(BuildInstances.buildUser())
-                .build();
-        List<WorkItem> children = BuildInstances.buildWorkItems();
-        List<WorkItemSummaryDto> childrenDto = children.stream()
-                .map(BuildDtos::buildWorkItemSummaryDto)
-                .toList();
-        workItem.setChildren(children);
-
-        when(workItemRepository.findById(workItem.getId())).thenReturn(Optional.of(workItem));
-        when(workItemMapper.toSummaryDto(children.get(0))).thenReturn(childrenDto.get(0));
-        when(workItemMapper.toSummaryDto(children.get(1))).thenReturn(childrenDto.get(1));
-
-        List<WorkItemSummaryDto> result = workItemService.findAllChildrenByWorkItemId(workItem.getId());
-
-        assertEquals(2, result.size());
-        assertEquals(childrenDto.get(0), result.get(0));
-        assertEquals(childrenDto.get(1), result.get(1));
-        verify(workItemRepository, times(1)).findById(workItem.getId());
-        verify(workItemMapper, times(1)).toSummaryDto(children.get(0));
-        verify(workItemMapper, times(1)).toSummaryDto(children.get(1));
-    }
-
-    @Test
-    void testFindAllChildrenByWorkItemId_Empty() {
-        WorkItem workItem = BuildInstances.buildWorkItem();
-        workItem.setChildren(List.of());
-
-        when(workItemRepository.findById(workItem.getId())).thenReturn(Optional.of(workItem));
-
-        List<WorkItemSummaryDto> result = workItemService.findAllChildrenByWorkItemId(workItem.getId());
-
-        assertEquals(0, result.size());
-        verify(workItemRepository, times(1)).findById(workItem.getId());
-        verify(workItemMapper, never()).toSummaryDto(any());
-    }
-
-    @Test
-    void testFindAllChildrenByWorkItemId_NotFound() {
-        when(workItemRepository.findById(1)).thenReturn(Optional.empty());
-
-        NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> workItemService.findAllChildrenByWorkItemId(1));
-
-        assertEquals("WorkItem with id 1 not found", exception.getMessage());
-    }
-
-    @Test
     void testFindWorkItemById_Valid() {
         WorkItem workItem = BuildInstances.buildWorkItem();
         WorkItemResponseDto responseDto = BuildDtos.buildWorkItemResponseDto(workItem);

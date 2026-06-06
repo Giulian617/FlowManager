@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { useNavigate} from "react-router"
-import { Search, X, Plus, Pencil, Trash2, AlertCircle, ChevronDown, Building2, Mail, Phone, EyeOff, Eye, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Shield, ArrowUpDown, ListFilter, ArrowUp, ArrowDown } from "lucide-react"
+import { Search, X, Plus, Pencil, Trash2, AlertCircle, ChevronDown, Building2, Mail, Phone, EyeOff, Eye, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Shield, ArrowUpDown, ListFilter, ArrowUp, ArrowDown, Users } from "lucide-react"
 import {
   getUsers,
   getCurrentUser,
@@ -198,6 +198,150 @@ function OrgsPicker({ value, onChange, organizations }: {
   )
 }
 
+function AddUsersToOrgModal({ orgId, currentMembers, onClose, onSave }: {
+  orgId: number
+  currentMembers: UserResponseDto[]
+  onClose: () => void
+  onSave: () => void
+}) {
+  const [allUsers, setAllUsers] = useState<UserResponseDto[]>([])
+  const [selected, setSelected] = useState<number[]>(currentMembers.map((u) => u.id))
+  const [search, setSearch] = useState("")
+  const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await getUsers()
+        setAllUsers(data.filter((u: UserResponseDto) => u.role === "USER" || u.role === "MANAGER"))
+      } catch {
+        setError("Failed to load users.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  const toggle = (id: number) =>
+    setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
+
+  const filtered = allUsers.filter((u) =>
+    u.username.toLowerCase().includes(search.toLowerCase()) ||
+    fullName(u).toLowerCase().includes(search.toLowerCase())
+  )
+
+  const handleSave = async () => {
+    setSaving(true)
+    setError(null)
+    try {
+      await Promise.all(allUsers.map((u) => {
+        const currentOrgIds = u.memberOrganizations?.map((o) => o.id) ?? []
+        const shouldBeIn = selected.includes(u.id)
+        const isIn = currentOrgIds.includes(orgId)
+        if (shouldBeIn === isIn) return Promise.resolve()
+        const newOrgIds = shouldBeIn
+          ? [...currentOrgIds, orgId]
+          : currentOrgIds.filter((id) => id !== orgId)
+        return updateUser(u.id, { organizationIds: newOrgIds })
+      }))
+      onSave()
+      onClose()
+    } catch {
+      setError("Failed to update users.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-700">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Add Users to Organization</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Select users to add or remove from this organization.</p>
+          </div>
+          <button onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="px-6 pt-4 pb-2">
+          <div className="flex items-center gap-3 rounded-2xl bg-slate-50 dark:bg-slate-700 px-3 py-2 border border-slate-200 dark:border-slate-600">
+            <Search className="h-4 w-4 flex-none text-slate-400 dark:text-slate-500" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search users…"
+              className="w-full bg-transparent text-sm text-slate-700 dark:text-slate-300 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
+            />
+            {search && (
+              <button onClick={() => setSearch("")} className="text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 transition">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="overflow-y-auto px-6 py-3 flex-1">
+          {loading ? (
+            <p className="text-sm text-slate-400 dark:text-slate-500 py-4 text-center">Loading users…</p>
+          ) : filtered.length === 0 ? (
+            <p className="text-sm text-slate-400 dark:text-slate-500 py-4 text-center">No users found.</p>
+          ) : (
+            <ul className="space-y-1">
+              {filtered.map((u) => {
+                const sel = selected.includes(u.id)
+                return (
+                  <li
+                    key={u.id}
+                    onClick={() => toggle(u.id)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-700 ${sel ? "bg-slate-50 dark:bg-slate-700" : ""}`}
+                  >
+                    <div className={`h-4 w-4 flex-none rounded border flex items-center justify-center transition-colors ${sel ? "bg-slate-900 dark:bg-slate-100 border-slate-900 dark:border-slate-100" : "border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-700"}`}>
+                      {sel && (
+                        <svg className="h-2.5 w-2.5 text-white dark:text-slate-900" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M2 6l3 3 5-5" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold flex-none">
+                      {getInitials(`${u.firstName} ${u.lastName}`)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{fullName(u) || u.username}</p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500">@{u.username} · {u.role}</p>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+          {error && (
+            <div className="flex items-center gap-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 px-4 py-3 text-xs text-rose-700 dark:text-rose-300 mt-3">
+              <AlertCircle className="h-4 w-4 flex-none" />
+              {error}
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-2 px-6 pb-6 pt-4 border-t border-slate-100 dark:border-slate-700">
+          <button onClick={onClose} className="flex-1 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-700">
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={saving || loading} className="flex-1 rounded-xl bg-slate-900 dark:bg-slate-100 px-5 py-2.5 text-sm font-semibold text-white dark:text-slate-900 transition hover:bg-slate-800 dark:hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed">
+            {saving ? "Saving…" : "Save"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function UserFormModal({ initial, orgName, orgId, organizations, onClose, onSave }: {
   initial?: UserResponseDto
   orgName: string
@@ -246,7 +390,7 @@ function UserFormModal({ initial, orgName, orgId, organizations, onClose, onSave
           phoneNumber: phoneNumber.trim(),
           active,
           role: role as Role,
-          organizationsIds: organizationIds,
+          organizationIds: organizationIds,
         }
         result = await updateUser(initial!.id, payload)
       } else {
@@ -258,13 +402,14 @@ function UserFormModal({ initial, orgName, orgId, organizations, onClose, onSave
           lastName: lastName.trim(),
           phoneNumber: phoneNumber.trim(),
           role: role as Role,
-          organizationsIds: organizationIds,
+          organizationIds: organizationIds,
         }
         result = await createUser(payload)
       }
       onSave(result)
       onClose()
-    } catch {
+    } catch (e) {
+      console.error(e)
       setError("Failed to save user. Please try again.")
     } finally {
       setSaving(false)
@@ -366,7 +511,7 @@ function UserFormModal({ initial, orgName, orgId, organizations, onClose, onSave
 
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-              Organization{!isEdit && <span className="ml-1 text-rose-500 dark:text-rose-400">*</span>}
+              Organization
             </label>
             <OrgsPicker value={organizationIds} onChange={setOrganizationIds} organizations={organizations} />
           </div>
@@ -441,6 +586,7 @@ export default function OrgUsers({ mode = "org" }: { mode: "org" | "admin" }) {
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [showCreate, setShowCreate] = useState(false)
+  const [showAddUsers, setShowAddUsers] = useState(false)
   const [editUser, setEditUser] = useState<UserResponseDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<UserResponseDto | null>(null)
   const [page, setPage] = useState(1)
@@ -571,13 +717,24 @@ export default function OrgUsers({ mode = "org" }: { mode: "org" | "admin" }) {
             )}
           </div>
           {currentUser?.role === "ADMIN" && (
-            <button
-              onClick={() => setShowCreate(true)}
-              className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 dark:bg-slate-700 px-5 py-3 text-sm font-semibold text-white dark:text-white transition hover:bg-slate-800 dark:hover:bg-slate-600"
-            >
-              <Plus className="h-4 w-4" />
-              New User
-            </button>
+            <div className="flex items-center gap-2">
+              {mode !== "admin" && (
+                <button
+                  onClick={() => setShowAddUsers(true)}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-5 py-3 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-600"
+                >
+                  <Users className="h-4 w-4" />
+                  Add Users
+                </button>
+              )}
+              <button
+                onClick={() => setShowCreate(true)}
+                className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 dark:bg-slate-700 px-5 py-3 text-sm font-semibold text-white dark:text-white transition hover:bg-slate-800 dark:hover:bg-slate-600"
+              >
+                <Plus className="h-4 w-4" />
+                New User
+              </button>
+            </div>
           )}
         </div>
       </header>
@@ -893,6 +1050,17 @@ export default function OrgUsers({ mode = "org" }: { mode: "org" | "admin" }) {
           user={deleteTarget}
           onConfirm={() => handleDelete(deleteTarget.id)}
           onClose={() => setDeleteTarget(null)}
+        />
+      )}
+      {showAddUsers && (
+        <AddUsersToOrgModal
+          orgId={orgId}
+          currentMembers={users}
+          onClose={() => setShowAddUsers(false)}
+          onSave={async () => {
+            const updated = await getUsersByOrganizationId(orgId)
+            setUsers(updated)
+          }}
         />
       )}
     </div>

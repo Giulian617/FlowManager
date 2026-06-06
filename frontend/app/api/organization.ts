@@ -11,18 +11,6 @@ export async function getOrganizations() {
   return response.json()
 }
 
-export async function getOrganizationById(orgId: number) {
-  const response = await apiFetch(`/organizations/${orgId}`)
-  if (!response.ok) throw new Error("Failed to fetch organization")
-  return response.json()
-}
-
-export async function getProjectsByOrganizationId(orgId: number) {
-  const response = await apiFetch(`/organizations/${orgId}/projects`)
-  if (!response.ok) throw new Error("Failed to fetch projects")
-  return response.json()
-}
-
 export async function getTeamsByOrganizationId(orgId: number) {
   const response = await apiFetch(`/organizations/${orgId}/teams`)
   if (!response.ok) throw new Error("Failed to fetch teams")
@@ -38,9 +26,21 @@ export async function getUsersByOrganizationId(orgId: number, role?: Role) {
   return response.json()
 }
 
+export async function getProjectsByOrganizationId(orgId: number) {
+  const response = await apiFetch(`/organizations/${orgId}/projects`)
+  if (!response.ok) throw new Error("Failed to fetch projects")
+  return response.json()
+}
+
 export async function getWorkItemsByOrganizationId(orgId: number) {
   const response = await apiFetch(`/organizations/${orgId}/work-items`)
   if (!response.ok) throw new Error("Failed to fetch work items")
+  return response.json()
+}
+
+export async function getOrganizationById(orgId: number) {
+  const response = await apiFetch(`/organizations/${orgId}`)
+  if (!response.ok) throw new Error("Failed to fetch organization")
   return response.json()
 }
 

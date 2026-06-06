@@ -143,10 +143,6 @@ public class UserService {
                 .toList();
     }
 
-    public UserResponseDto findUserById(Integer userId) {
-        return userMapper.toResponseDto(getUser(userId));
-    }
-
     @Transactional
     protected List<Organization> getOrganizations(List<Integer> organizationsIds) {
         List<Organization> organizations = organizationRepository.findAllById(organizationsIds);
@@ -208,6 +204,7 @@ public class UserService {
             throw new DuplicateAttributeException(String.format("Username %s already exists", userUpdateDto.getUsername()));
         }
 
+        keycloakAdminService.updateUser(user, userUpdateDto);
         if (userUpdateDto.getRole() != null) {
             keycloakAdminService.updateUserRole(user.getKeycloakId(), userUpdateDto.getRole());
         }

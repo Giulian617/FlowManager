@@ -549,32 +549,6 @@ public class UserServiceTests {
     }
 
     @Test
-    void testFindUserById_Valid() {
-        User user = BuildInstances.buildUser();
-        UserResponseDto responseDto = BuildDtos.buildUserResponseDto(user);
-
-        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(userMapper.toResponseDto(user)).thenReturn(responseDto);
-
-        UserResponseDto result = userService.findUserById(user.getId());
-
-        assertNotNull(result);
-        assertEquals(responseDto, result);
-        verify(userRepository, times(1)).findById(user.getId());
-        verify(userMapper, times(1)).toResponseDto(user);
-    }
-
-    @Test
-    void testFindUserById_UserNotFound() {
-        when(userRepository.findById(1)).thenReturn(Optional.empty());
-
-        NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> userService.findUserById(1));
-
-        assertEquals("User with id 1 not found", exception.getMessage());
-    }
-
-    @Test
     void testCreateUser_WithoutRole() {
         String keycloakId = "keycloak-uuid-1";
         User user = User.builder()

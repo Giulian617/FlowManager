@@ -1,5 +1,4 @@
 import type { UserSummaryDto } from "./user"
-import type { WorkItemSummaryDto } from "./workItem"
 
 export interface OrganizationCreateDto {
   name: string

@@ -9,7 +9,7 @@ export interface UserCreateDto {
   lastName: string
   phoneNumber: string
   role: Role
-  organizationsIds: number[]
+  organizationIds?: number[]
 }
  
 export interface UserUpdateDto {
@@ -20,7 +20,7 @@ export interface UserUpdateDto {
   phoneNumber?: string
   active?: boolean
   role?: Role
-  organizationsIds?: number[]
+  organizationIds?: number[]
 }
 
 export interface UserSummaryDto {

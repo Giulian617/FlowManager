@@ -5,6 +5,7 @@ import {
   getCurrentUser,
   getManagedTeamsByUserId,
   getAssignedTeamsByUserId,
+  getManagedOrganizationsByUserId,
 } from "../api/user"
 import {
   getTeams,
@@ -422,6 +423,7 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
   const [managers, setManagers] = useState<UserSummaryDto[]>([])
   const [organizations, setOrganizations] = useState<OrganizationResponseDto[]>([])
   const [users, setUsers] = useState<UserSummaryDto[]>([])
+  const [managedOrgIds, setManagedOrgIds] = useState<number[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState("")
@@ -452,6 +454,9 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
       try {
         const user = await getCurrentUser()
         setCurrentUser(user)
+
+        const managedOrgs = await getManagedOrganizationsByUserId(user.id)
+        setManagedOrgIds(managedOrgs.map((o: { id: any }) => o.id))
 
         let teamsData: TeamResponseDto[] = []
 
@@ -770,41 +775,46 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
         <>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {paginated.map((team) => {
-              const canModify = currentUser?.role === "ADMIN" || team.manager?.id === currentUser?.id
+              const canEdit   = currentUser?.role === "ADMIN" || team.manager?.id === currentUser?.id
+                const canDelete = currentUser?.role === "ADMIN" || (team.organization?.id != null && managedOrgIds.includes(team.organization.id))
               return (
                 <div key={team.id}
                   onClick={() => setViewTeam(team)}
                   className="relative group rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm transition hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 hover:-translate-y-0.5 duration-150 space-y-4 cursor-pointer">
-                  {canModify && (
+                  {(canEdit || canDelete) && (
                     <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation()
-                          if (mode === "admin") {
-                            const orgIdForTeam = team.organization?.id
-                            if (orgIdForTeam) {
-                              const [managersData, regularUsersData] = await Promise.all([
-                                getUsersByOrganizationId(orgIdForTeam, "MANAGER"),
-                                getUsersByOrganizationId(orgIdForTeam, "USER"),
-                              ])
-                              setManagers(managersData)
-                              setUsers([...(managersData ?? []), ...(regularUsersData ?? [])].filter(
-                                (u, i, arr) => arr.findIndex((x) => x.id === u.id) === i
-                              ))
+                      {canEdit && (
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation()
+                            if (mode === "admin") {
+                              const orgIdForTeam = team.organization?.id
+                              if (orgIdForTeam) {
+                                const [managersData, regularUsersData] = await Promise.all([
+                                  getUsersByOrganizationId(orgIdForTeam, "MANAGER"),
+                                  getUsersByOrganizationId(orgIdForTeam, "USER"),
+                                ])
+                                setManagers(managersData)
+                                setUsers([...(managersData ?? []), ...(regularUsersData ?? [])].filter(
+                                  (u, i, arr) => arr.findIndex((x) => x.id === u.id) === i
+                                ))
+                              }
                             }
-                          }
-                          setEditTeam(team)
-                        }}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-500 transition hover:bg-slate-50 dark:hover:bg-slate-600 hover:text-slate-700 dark:hover:text-slate-300" title="Edit">
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button onClick={(e) => { e.stopPropagation(); setDeleteTarget(team) }}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-300 transition hover:bg-rose-100 dark:hover:bg-rose-900/50 hover:text-rose-700 dark:hover:text-rose-200" title="Delete">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                            setEditTeam(team)
+                          }}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-500 transition hover:bg-slate-50 dark:hover:bg-slate-600 hover:text-slate-700 dark:hover:text-slate-300" title="Edit">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button onClick={(e) => { e.stopPropagation(); setDeleteTarget(team) }}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-300 transition hover:bg-rose-100 dark:hover:bg-rose-900/50 hover:text-rose-700 dark:hover:text-rose-200" title="Delete">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
                   )}
-                  <div className={`flex items-center gap-3 ${canModify ? "pr-14" : ""}`}>
+                  <div className={`flex items-center gap-3 ${(canEdit || canDelete) ? "pr-14" : ""}`}>
                     <div className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-sm font-bold">
                       {getInitials(team.name)}
                     </div>

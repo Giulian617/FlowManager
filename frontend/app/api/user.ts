@@ -10,15 +10,15 @@ export async function getUsers() {
   return response.json()
 }
 
-export async function getCurrentUser() {
-  const response = await apiFetch("/users/me")
-  if (!response.ok) throw new Error("Failed to fetch user")
-  return response.json()
-}
-
 export async function getManagers() {
   const response = await apiFetch("/users?role=MANAGER")
   if (!response.ok) throw new Error("Failed to fetch managers")
+  return response.json()
+}
+
+export async function getCurrentUser() {
+  const response = await apiFetch("/users/me")
+  if (!response.ok) throw new Error("Failed to fetch user")
   return response.json()
 }
 
@@ -31,6 +31,18 @@ export async function getManagedProjectsByUserId(userId: number) {
 export async function getAssignedProjectsByUserId(userId: number) {
   const response = await apiFetch(`/users/${userId}/projects/assignee`)
   if (!response.ok) throw new Error("Failed to fetch projects")
+  return response.json()
+}
+
+export async function getManagedOrganizationsByUserId(userId: number) {
+  const response = await apiFetch(`/users/${userId}/organizations/manager`)
+  if (!response.ok) throw new Error("Failed to fetch projects")
+  return response.json()
+}
+
+export async function getMemberOrganizationsByUserId(userId: number) {
+  const response = await apiFetch(`/users/${userId}/organizations/member`)
+  if (!response.ok) throw new Error("Failed to fetch organizations")
   return response.json()
 }
 
@@ -55,12 +67,6 @@ export async function getReportedWorkItemsByUserId(userId: number) {
 export async function getAssignedWorkItemsByUserId(userId: number) {
   const response = await apiFetch(`/users/${userId}/work-items/assignee`)
   if (!response.ok) throw new Error("Failed to fetch assigned work items")
-  return response.json()
-}
-
-export async function getUserOrganizations(userId: number) {
-  const response = await apiFetch(`/users/${userId}/organizations/member`)
-  if (!response.ok) throw new Error("Failed to fetch organizations")
   return response.json()
 }
 
