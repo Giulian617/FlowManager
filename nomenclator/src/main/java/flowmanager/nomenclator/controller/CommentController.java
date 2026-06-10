@@ -46,7 +46,7 @@ public class CommentController {
         return ResponseEntity.ok(commentService.updateComment(commentId, commentUpdateDto));
     }
 
-    @PreAuthorize("@commentSecurity.canModify(authentication, #commentId)")
+    @PreAuthorize("@commentSecurity.canDelete(authentication, #commentId)")
     @DeleteMapping("/{commentId}")
     @ResponseBody
     public ResponseEntity<Void> deleteComment(

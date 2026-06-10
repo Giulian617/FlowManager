@@ -1,5 +1,7 @@
 package flowmanager.nomenclator.security.model;
 
+import flowmanager.nomenclator.exception.NotFoundException;
+import flowmanager.nomenclator.model.Comment;
 import flowmanager.nomenclator.repository.CommentRepository;
 import flowmanager.nomenclator.security.Utils;
 import lombok.RequiredArgsConstructor;
@@ -17,12 +19,26 @@ public class CommentSecurity {
         if (Utils.isAdmin(auth))
             return true;
 
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new NotFoundException(String.format("Comment with id %d not found", commentId)));
+
+        String currentUserId = Utils.getCurrentUserId(auth);
+        if (comment.getAuthor().getKeycloakId().equals(currentUserId))
+            return true;
+        return comment.getWorkItem().getReporter().getKeycloakId().equals(currentUserId);
+    }
+
+    public boolean canDelete(Authentication auth, Integer commentId) {
+        if (Utils.isNotAuthenticated(auth))
+            return false;
+        if (Utils.isAdmin(auth))
+            return true;
+
         String currentUserId = Utils.getCurrentUserId(auth);
         return commentRepository.findById(commentId).map(comment -> {
-            if (comment.getAuthor().getKeycloakId().equals(currentUserId)) {
+            if (comment.getAuthor().getKeycloakId().equals(currentUserId))
                 return true;
-            }
             return comment.getWorkItem().getReporter().getKeycloakId().equals(currentUserId);
-        }).orElse(false);
+        }).orElse(true); // missing resource → let it through, service returns 204 silently
     }
 }

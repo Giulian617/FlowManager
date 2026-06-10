@@ -99,6 +99,7 @@ public class ProjectService {
                 () -> new NotFoundException("User not found")
         );
         Project project = projectMapper.toEntity(projectCreateDto, organization, user);
+        projectRepository.save(project);
 
         if (projectCreateDto.getTeamsIds() != null && !projectCreateDto.getTeamsIds().isEmpty()) {
             List<Team> teams = getTeams(projectCreateDto.getTeamsIds());
@@ -111,7 +112,7 @@ public class ProjectService {
             project.setTeams(teams);
         }
 
-        return projectMapper.toResponseDto(projectRepository.save(project));
+        return projectMapper.toResponseDto(project);
     }
 
     @Transactional
