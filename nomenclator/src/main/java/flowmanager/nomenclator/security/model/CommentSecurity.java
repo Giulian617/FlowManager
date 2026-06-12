@@ -29,16 +29,6 @@ public class CommentSecurity {
     }
 
     public boolean canDelete(Authentication auth, Integer commentId) {
-        if (Utils.isNotAuthenticated(auth))
-            return false;
-        if (Utils.isAdmin(auth))
-            return true;
-
-        String currentUserId = Utils.getCurrentUserId(auth);
-        return commentRepository.findById(commentId).map(comment -> {
-            if (comment.getAuthor().getKeycloakId().equals(currentUserId))
-                return true;
-            return comment.getWorkItem().getReporter().getKeycloakId().equals(currentUserId);
-        }).orElse(true); // missing resource → let it through, service returns 204 silently
+        return canModify(auth, commentId);
     }
 }

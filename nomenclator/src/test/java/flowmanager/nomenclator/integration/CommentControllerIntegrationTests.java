@@ -258,11 +258,20 @@ class CommentControllerIntegrationTests extends BaseIntegrationTests {
     }
 
     @Test
-    void deleteComment_returns204_whenMissing() throws Exception {
+    void deleteComment_returns404_whenMissing() throws Exception {
         createUserAndMockJwt("kc-12", "user12", "u12@t.com", Role.USER);
 
         mockMvc.perform(delete("/comments/99999")
                         .header("Authorization", bearer("kc-12")))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteComment_returns404_notForbidden_whenMissing() throws Exception {
+        createUserAndMockJwt("kc-13", "user13", "u13@t.com", Role.USER);
+
+        mockMvc.perform(delete("/comments/99999")
+                        .header("Authorization", bearer("kc-13")))
+                .andExpect(status().isNotFound());
     }
 }

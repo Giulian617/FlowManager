@@ -414,12 +414,12 @@ class WorkItemControllerIntegrationTests extends BaseIntegrationTests {
     }
 
     @Test
-    void deleteWorkItem_returns204_whenMissing() throws Exception {
+    void deleteWorkItem_returns404_whenMissing() throws Exception {
         Ctx ctx = seedContext("kc-wi-22");
 
         mockMvc.perform(delete("/work-items/99999")
                         .header("Authorization", bearer("kc-wi-22")))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isNotFound());
     }
 
     @Test

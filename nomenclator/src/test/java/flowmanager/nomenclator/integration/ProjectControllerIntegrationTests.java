@@ -311,12 +311,12 @@ class ProjectControllerIntegrationTests extends BaseIntegrationTests {
     }
 
     @Test
-    void deleteProject_returns204_whenMissing() throws Exception {
+    void deleteProject_returns404_whenMissing() throws Exception {
         User mgr = seedManager("kc-p16");
 
         mockMvc.perform(delete("/projects/99999")
                         .header("Authorization", bearer("kc-p16")))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isNotFound());
     }
 
     @Test

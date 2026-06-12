@@ -30,9 +30,10 @@ public class TeamSecurity {
         if (Utils.isNotAuthenticated(auth)) return false;
         if (Utils.isAdmin(auth)) return true;
 
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new NotFoundException(String.format("Team with id %d not found", teamId)));
+
         String currentUserId = Utils.getCurrentUserId(auth);
-        return teamRepository.findById(teamId)
-                .map(team -> team.getOrganization().getManager().getKeycloakId().equals(currentUserId))
-                .orElse(true);
+        return team.getOrganization().getManager().getKeycloakId().equals(currentUserId);
     }
 }

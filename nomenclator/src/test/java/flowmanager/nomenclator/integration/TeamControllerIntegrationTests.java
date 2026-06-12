@@ -178,12 +178,12 @@ class TeamControllerIntegrationTests extends BaseIntegrationTests {
     }
 
     @Test
-    void deleteTeam_returns204_whenMissing() throws Exception {
+    void deleteTeam_returns404_whenMissing() throws Exception {
         User mgr = seedManager("kc-t11");
 
         mockMvc.perform(delete("/teams/99999")
                         .header("Authorization", bearer("kc-t11")))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isNotFound());
     }
 
     @Test

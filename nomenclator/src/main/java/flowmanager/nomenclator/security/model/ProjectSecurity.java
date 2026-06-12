@@ -51,9 +51,10 @@ public class ProjectSecurity {
         if (Utils.isNotAuthenticated(auth)) return false;
         if (Utils.isAdmin(auth)) return true;
 
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new NotFoundException(String.format("Project with id %d not found", projectId)));
+
         String currentUserId = Utils.getCurrentUserId(auth);
-        return projectRepository.findById(projectId)
-                .map(project -> project.getOrganization().getManager().getKeycloakId().equals(currentUserId))
-                .orElse(true);
+        return project.getOrganization().getManager().getKeycloakId().equals(currentUserId);
     }
 }
