@@ -1,6 +1,9 @@
 import { NavLink, Outlet, useNavigate } from "react-router"
 import { LayoutDashboard, Users, Building2, FolderKanban, UsersRound, CheckSquare, MessageSquare, LogOut, ShieldCheck } from "lucide-react"
 import TopBar from "../components/TopBar"
+import { requireAuth } from "../utils/functions"
+
+export const clientLoader = requireAuth
 
 export default function AdminLayout() {
   const navigate = useNavigate()

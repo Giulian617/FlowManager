@@ -2,16 +2,15 @@ import apiFetch from "./utils"
 import type {
   TeamCreateDto,
   TeamUpdateDto,
-  TeamResponseDto,
 } from "../types/team"
 
-export async function getTeams(): Promise<TeamResponseDto[]> {
+export async function getTeams() {
   const response = await apiFetch("/teams")
   if (!response.ok) throw new Error("Failed to fetch teams")
   return response.json()
 }
 
-export async function createTeam(data: TeamCreateDto): Promise<TeamResponseDto> {
+export async function createTeam(data: TeamCreateDto) {
   const response = await apiFetch("/teams", {
     method: "POST",
     body: JSON.stringify(data),
@@ -20,7 +19,7 @@ export async function createTeam(data: TeamCreateDto): Promise<TeamResponseDto> 
   return response.json()
 }
 
-export async function updateTeam(teamId: number, data: TeamUpdateDto): Promise<TeamResponseDto> {
+export async function updateTeam(teamId: number, data: TeamUpdateDto) {
   const response = await apiFetch(`/teams/${teamId}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -29,7 +28,7 @@ export async function updateTeam(teamId: number, data: TeamUpdateDto): Promise<T
   return response.json()
 }
 
-export async function deleteTeam(teamId: number): Promise<void> {
+export async function deleteTeam(teamId: number) {
   const response = await apiFetch(`/teams/${teamId}`, { method: "DELETE" })
   if (!response.ok) throw new Error(`Failed to delete team ${teamId}`)
 }

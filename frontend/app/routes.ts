@@ -1,9 +1,12 @@
-import { type RouteConfig, index, route } from "@react-router/dev/routes";
+import { type RouteConfig, index, route, layout } from "@react-router/dev/routes";
 
 export default [
   index("routes/login.tsx"),
-  route("select-org", "routes/select-org.tsx"),
-  route("admin-menu", "routes/admin-menu.tsx"),
+
+  layout("routes/protected-layout.tsx", [
+    route("select-org", "routes/select-org.tsx"),
+    route("admin-menu", "routes/admin-menu.tsx"),
+  ]),
 
   route("admin", "routes/admin-layout.tsx", [
     index("routes/admin-dashboard.tsx"),

@@ -10,19 +10,19 @@ import type { WorkItemSummaryDto } from "../types/workItem"
 import type { UserResponseDto } from "../types/user"
 import type { Role } from "../types/enums"
 
-export async function getOrganizations(): Promise<OrganizationResponseDto[]> {
+export async function getOrganizations() {
   const response = await apiFetch("/organizations")
   if (!response.ok) throw new Error("Failed to fetch organizations")
   return response.json()
 }
 
-export async function getTeamsByOrganizationId(orgId: number): Promise<TeamSummaryOrganizationDto[]> {
+export async function getTeamsByOrganizationId(orgId: number) {
   const response = await apiFetch(`/organizations/${orgId}/teams`)
   if (!response.ok) throw new Error("Failed to fetch teams")
   return response.json()
 }
 
-export async function getUsersByOrganizationId(orgId: number, role?: Role): Promise<UserResponseDto[]> {
+export async function getUsersByOrganizationId(orgId: number, role?: Role) {
   const url = role
     ? `/organizations/${orgId}/users?role=${role}`
     : `/organizations/${orgId}/users`
@@ -31,25 +31,25 @@ export async function getUsersByOrganizationId(orgId: number, role?: Role): Prom
   return response.json()
 }
 
-export async function getProjectsByOrganizationId(orgId: number): Promise<ProjectResponseDto[]> {
+export async function getProjectsByOrganizationId(orgId: number) {
   const response = await apiFetch(`/organizations/${orgId}/projects`)
   if (!response.ok) throw new Error("Failed to fetch projects")
   return response.json()
 }
 
-export async function getWorkItemsByOrganizationId(orgId: number): Promise<WorkItemSummaryDto[]> {
+export async function getWorkItemsByOrganizationId(orgId: number) {
   const response = await apiFetch(`/organizations/${orgId}/work-items`)
   if (!response.ok) throw new Error("Failed to fetch work items")
   return response.json()
 }
 
-export async function getOrganizationById(orgId: number): Promise<OrganizationResponseDto> {
+export async function getOrganizationById(orgId: number) {
   const response = await apiFetch(`/organizations/${orgId}`)
   if (!response.ok) throw new Error("Failed to fetch organization")
   return response.json()
 }
 
-export async function createOrganization(data: OrganizationCreateDto): Promise<OrganizationResponseDto> {
+export async function createOrganization(data: OrganizationCreateDto) {
   const response = await apiFetch("/organizations", {
     method: "POST",
     body: JSON.stringify(data),
@@ -58,7 +58,7 @@ export async function createOrganization(data: OrganizationCreateDto): Promise<O
   return response.json()
 }
 
-export async function updateOrganization(orgId: number, data: OrganizationUpdateDto): Promise<OrganizationResponseDto> {
+export async function updateOrganization(orgId: number, data: OrganizationUpdateDto) {
   const response = await apiFetch(`/organizations/${orgId}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -67,7 +67,7 @@ export async function updateOrganization(orgId: number, data: OrganizationUpdate
   return response.json()
 }
 
-export async function deleteOrganization(orgId: number): Promise<void> {
+export async function deleteOrganization(orgId: number) {
   const response = await apiFetch(`/organizations/${orgId}`, {
     method: "DELETE",
   })

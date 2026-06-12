@@ -419,6 +419,7 @@ export default function WorkItemForm({
   const [saving, setSaving]         = useState(false)
   const [saveError, setSaveError]   = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showLeaveConfirm, setShowLeaveConfirm]   = useState(false)
   const [deleting, setDeleting]     = useState(false)
   const [loading, setLoading]       = useState(true)
 
@@ -582,6 +583,14 @@ export default function WorkItemForm({
     }
   }
 
+  const handleBack = () => {
+    if (!isView && (isEdit ? isDirty : title || description || severity || deadline || parent || assignees.length || children.length)) {
+      setShowLeaveConfirm(true)
+    } else {
+      navigate(-1)
+    }
+  }
+
   const assignedUsers = projectMembers.filter((m) => assignees.includes(String(m.id)))
   const modeLabel = isView ? "View Work Item" : isEdit ? "Edit Work Item" : "New Work Item"
 
@@ -591,7 +600,7 @@ export default function WorkItemForm({
       <header className="flex flex-col gap-2">
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={handleBack}
           className="inline-flex w-fit items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition"
         >
           <ArrowLeft className="h-4 w-4" /> Back to Work Items
@@ -665,6 +674,41 @@ export default function WorkItemForm({
                 className="flex-1 rounded-2xl bg-rose-600 dark:bg-rose-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 dark:hover:bg-rose-600 disabled:opacity-40"
               >
                 {deleting ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave confirmation modal */}
+      {showLeaveConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-xl space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 flex-none items-center justify-center rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800">
+                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Discard changes?</h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  If you go back now, all unsaved information will be lost. This cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowLeaveConfirm(false)}
+                className="flex-1 rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-600"
+              >
+                Stay on page
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="flex-1 rounded-2xl bg-amber-500 dark:bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 dark:hover:bg-amber-500"
+              >
+                Discard &amp; go back
               </button>
             </div>
           </div>
@@ -978,7 +1022,7 @@ export default function WorkItemForm({
               </button>
               <button
                 type="button"
-                onClick={() => navigate(-1)}
+                onClick={handleBack}
                 className="w-full rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-5 py-3 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-600"
               >
                 Cancel

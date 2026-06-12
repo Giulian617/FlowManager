@@ -1,0 +1,21 @@
+{
+  "name": "flowmanager-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:auth": "playwright test --project=auth",
+    "test:admin": "playwright test --project=admin",
+    "test:manager": "playwright test --project=manager",
+    "test:user": "playwright test --project=user",
+    "test:api": "playwright test --project=api",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0",
+    "@types/node": "^22",
+    "dotenv": "^16.4.5",
+    "typescript": "^5.9.3"
+  }
+}

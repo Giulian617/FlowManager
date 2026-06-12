@@ -5,12 +5,21 @@ import { login } from "../api/auth"
 import { getCurrentUser } from "../api/user"
 
 export async function clientLoader() {
-  const isLoggedIn = localStorage.getItem("accessToken") !== null
+  const accessToken = localStorage.getItem("accessToken")
+  const tokenExpiry = Number(localStorage.getItem("tokenExpiry") ?? 0)
+  const isLoggedIn = accessToken !== null && Date.now() < tokenExpiry
+
+  if (!isLoggedIn) {
+    localStorage.removeItem("accessToken")
+    localStorage.removeItem("refreshToken")
+    localStorage.removeItem("tokenExpiry")
+    localStorage.removeItem("userRole")
+    return null
+  }
+
   const role = localStorage.getItem("userRole")
   const orgId = localStorage.getItem("selectedOrg")
   const projectId = localStorage.getItem("selectedProject")
-
-  if (!isLoggedIn) return null
 
   if (orgId && projectId) return redirect("/project/dashboard")
   if (orgId) return redirect("/org/dashboard")
