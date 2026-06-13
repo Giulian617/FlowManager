@@ -32,6 +32,14 @@ management:
       application: api-gateway
 
 resilience4j:
+  ratelimiter:
+    rate-limiter-aspect-order: 0
+    instances:
+      nomenclator:
+        limit-for-period: 50
+        limit-refresh-period: 1s
+        timeout-duration: 0ms
+        register-health-indicator: true
   circuitbreaker:
     circuit-breaker-aspect-order: 1
     instances:

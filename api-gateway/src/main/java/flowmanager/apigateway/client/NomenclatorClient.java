@@ -1,6 +1,8 @@
 package flowmanager.apigateway.client;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -31,10 +33,7 @@ public class NomenclatorClient {
         this.restTemplate = restTemplate;
     }
 
-    // Aspect order matters: the circuit breaker must wrap the retry (configured via
-    // circuit-breaker-aspect-order < retry-aspect-order in application.yml) so the retry
-    // exhausts its attempts before the fallback runs. With the resilience4j defaults the
-    // order is reversed and the fallback swallows the first failure, so retries never fire.
+    @RateLimiter(name = "nomenclator", fallbackMethod = "rateLimitFallback")
     @CircuitBreaker(name = "nomenclator", fallbackMethod = "fallback")
     @Retry(name = "nomenclator")
     public ResponseEntity<byte[]> forward(HttpServletRequest request, byte[] body) {
@@ -62,7 +61,22 @@ public class NomenclatorClient {
         return restTemplate.exchange(uri, method, entity, byte[].class);
     }
 
-    public ResponseEntity<byte[]> fallback(HttpServletRequest request, byte[] body, Throwable ex) {
+    public ResponseEntity<byte[]> rateLimitFallback(HttpServletRequest request,
+                                                    byte[] body,
+                                                    RequestNotPermitted ex) {
+        log.warn("Rate limit exceeded for {} {}: {}",
+                request.getMethod(), request.getRequestURI(), ex.getMessage());
+        return ResponseEntity
+                .status(429)
+                .header("Content-Type", "application/json")
+                .header("Retry-After", "1")
+                .body("{\"error\":\"Too many requests. Please slow down.\"}".getBytes());
+    }
+
+    // Called when the circuit breaker is OPEN (downstream is considered down).
+    public ResponseEntity<byte[]> fallback(HttpServletRequest request,
+                                           byte[] body,
+                                           Throwable ex) {
         log.error("Circuit breaker triggered for {} {}: {}",
                 request.getMethod(), request.getRequestURI(), ex.getMessage());
         return ResponseEntity
