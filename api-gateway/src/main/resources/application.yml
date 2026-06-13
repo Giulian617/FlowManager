@@ -2,6 +2,8 @@ server:
   port: 8081
 
 spring:
+  application:
+    name: api-gateway
   security:
     oauth2:
       resourceserver:
@@ -10,3 +12,21 @@ spring:
 
 gateway:
   internal-secret: ${GATEWAY_SECRET}
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0 # needs to be changed to 0.1 in production
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: api-gateway

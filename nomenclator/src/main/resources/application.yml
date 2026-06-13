@@ -19,12 +19,21 @@ gateway:
 
 logging:
   config: classpath:logback-spring.xml
-  level:
-    root: INFO
-    flowmanager.nomenclator: DEBUG
-    org.springframework.web: INFO
-    org.springframework.security: WARN
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql: TRACE
-  file:
-    path: logs
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0 # needs to be changed to 0.1 in production
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: nomenclator
