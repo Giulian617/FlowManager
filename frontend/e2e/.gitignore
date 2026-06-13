@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Playwright browsers (downloaded locally via `npx playwright install`)
+/playwright/.cache/
+
+# Test results and artifacts
+/test-results/
+/playwright-report/
+/blob-report/
+
+# Saved auth state (contains real JWTs — never commit these)
+/fixtures/.auth/
+
+# Local env file (contains credentials)
+.env
+
+# TypeScript build output
+*.tsbuildinfo

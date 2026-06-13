@@ -257,8 +257,8 @@ function ProjectFormModal({ initial, managers, currentUser, orgId, teams, organi
   const [description, setDesc] = useState(initial?.description ?? "")
   const [startDate, setStartDate] = useState(initial?.startDate ?? "")
   const [endDate, setEndDate] = useState(initial?.endDate ?? "")
-  const [teamsIds, setTeamsIds] = useState<string[]>(initial?.teams.map(team => String(team.id)) ?? [])
-  const [managerId, setManagerId] = useState(initial?.manager.id ?? currentUser?.id ?? null)
+  const [teamsIds, setTeamsIds] = useState<string[]>(initial?.teams?.map(team => String(team.id)) ?? [])
+  const [managerId, setManagerId] = useState(initial?.manager?.id ?? currentUser?.id ?? null)
   const [selectedOrgId, setSelectedOrgId] = useState<number>(orgId)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -525,7 +525,7 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
   }, [])
 
   const handleCreate = async (data: ProjectCreateDto) => {
-    const created = await createProject(orgId, data)
+    const created = await createProject({ ...data, organizationId: data.organizationId || orgId })
     setProjects((prev) => [...prev, created])
   }
 

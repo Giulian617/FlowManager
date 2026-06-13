@@ -1,7 +1,9 @@
 package flowmanager.nomenclator.security.model;
 
 import flowmanager.nomenclator.dto.WorkItemCreateDto;
+import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.model.ItemType;
+import flowmanager.nomenclator.model.WorkItem;
 import flowmanager.nomenclator.repository.WorkItemRepository;
 import flowmanager.nomenclator.security.Utils;
 import lombok.RequiredArgsConstructor;
@@ -17,17 +19,18 @@ public class WorkItemSecurity {
         if (Utils.isNotAuthenticated(auth)) return false;
         if (Utils.isAdmin(auth)) return true;
 
+        WorkItem workItem = workItemRepository.findById(workItemId)
+                .orElseThrow(() -> new NotFoundException(String.format("WorkItem with id %d not found", workItemId)));
+
         String currentUserId = Utils.getCurrentUserId(auth);
-        return workItemRepository.findById(workItemId).map(workItem -> {
-            if (workItem.getProject().getManager().getKeycloakId().equals(currentUserId))
-                return true;
-            return workItem.getProject().getTeams().stream()
-                    .anyMatch(team ->
-                            team.getManager().getKeycloakId().equals(currentUserId) ||
-                                    team.getOrganization().getManager().getKeycloakId().equals(currentUserId) ||
-                                    team.getMembers().stream().anyMatch(member -> member.getKeycloakId().equals(currentUserId))
-                    );
-        }).orElse(false);
+        if (workItem.getProject().getManager().getKeycloakId().equals(currentUserId))
+            return true;
+        return workItem.getProject().getTeams().stream()
+                .anyMatch(team ->
+                        team.getManager().getKeycloakId().equals(currentUserId) ||
+                                team.getOrganization().getManager().getKeycloakId().equals(currentUserId) ||
+                                team.getMembers().stream().anyMatch(member -> member.getKeycloakId().equals(currentUserId))
+                );
     }
 
     public boolean canCreate(Authentication auth, WorkItemCreateDto dto) {
@@ -39,40 +42,38 @@ public class WorkItemSecurity {
     }
 
     public boolean canModify(Authentication auth, Integer workItemId) {
-        if (Utils.isNotAuthenticated(auth))
-            return false;
-        if (Utils.isAdmin(auth))
-            return true;
+        if (Utils.isNotAuthenticated(auth)) return false;
+        if (Utils.isAdmin(auth)) return true;
+
+        WorkItem workItem = workItemRepository.findById(workItemId)
+                .orElseThrow(() -> new NotFoundException(String.format("WorkItem with id %d not found", workItemId)));
 
         String currentUserId = Utils.getCurrentUserId(auth);
-        return workItemRepository.findById(workItemId).map(workItem -> {
-            if (workItem.getReporter().getKeycloakId().equals(currentUserId))
-                return true;
-            if (workItem.getProject().getManager().getKeycloakId().equals(currentUserId))
-                return true;
-            return workItem.getProject().getTeams().stream()
-                    .anyMatch(team ->
-                            team.getManager().getKeycloakId().equals(currentUserId) ||
-                                    team.getOrganization().getManager().getKeycloakId().equals(currentUserId)
-                    );
-        }).orElse(false);
+        if (workItem.getReporter().getKeycloakId().equals(currentUserId))
+            return true;
+        if (workItem.getProject().getManager().getKeycloakId().equals(currentUserId))
+            return true;
+        return workItem.getProject().getTeams().stream()
+                .anyMatch(team ->
+                        team.getManager().getKeycloakId().equals(currentUserId) ||
+                                team.getOrganization().getManager().getKeycloakId().equals(currentUserId)
+                );
     }
 
     public boolean canDelete(Authentication auth, Integer workItemId) {
-        if (Utils.isNotAuthenticated(auth))
-            return false;
-        if (Utils.isAdmin(auth))
-            return true;
+        if (Utils.isNotAuthenticated(auth)) return false;
+        if (Utils.isAdmin(auth)) return true;
+
+        WorkItem workItem = workItemRepository.findById(workItemId)
+                .orElseThrow(() -> new NotFoundException(String.format("WorkItem with id %d not found", workItemId)));
 
         String currentUserId = Utils.getCurrentUserId(auth);
-        return workItemRepository.findById(workItemId).map(workItem -> {
-            if (workItem.getProject().getManager().getKeycloakId().equals(currentUserId))
-                return true;
-            return workItem.getProject().getTeams().stream()
-                    .anyMatch(team ->
-                            team.getManager().getKeycloakId().equals(currentUserId) ||
-                                    team.getOrganization().getManager().getKeycloakId().equals(currentUserId)
-                    );
-        }).orElse(false);
+        if (workItem.getProject().getManager().getKeycloakId().equals(currentUserId))
+            return true;
+        return workItem.getProject().getTeams().stream()
+                .anyMatch(team ->
+                        team.getManager().getKeycloakId().equals(currentUserId) ||
+                                team.getOrganization().getManager().getKeycloakId().equals(currentUserId)
+                );
     }
 }

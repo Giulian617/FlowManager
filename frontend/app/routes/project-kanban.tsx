@@ -1,56 +1,13 @@
 import React, { useState } from "react"
-import { ListFilter, ArrowUp, ArrowDown, ArrowUpDown, X, Plus, ChevronDown, Bug, CheckSquare, Zap, BookOpen } from "lucide-react"
+import { ListFilter, ArrowUp, ArrowDown, ArrowUpDown, X, Plus, ChevronDown } from "lucide-react"
 import { useNavigate } from "react-router"
 import KanbanBoard from "../components/KanbanBoard"
+import NewWorkItemModal from "../components/NewWorkItemModal"
+import { getCurrentUser } from "../api/user"
 
 const typeOptions = ["Task", "Bug", "User Story", "Epic"]
 const sortOptions = ["Default", "Deadline", "Severity"] as const
 
-type WorkItemType = "Task" | "Bug" | "User Story" | "Epic"
-
-const typeConfig: Record<WorkItemType, { textClass: string; bgClass: string; borderClass: string; icon: React.ReactNode; description: string }> = {
-  Task:         { textClass: "text-sky-700 dark:text-sky-400",     bgClass: "bg-sky-50 dark:bg-sky-950/40",     borderClass: "border-sky-200 dark:border-sky-800",     icon: <CheckSquare className="h-5 w-5" />, description: "A unit of work to be completed" },
-  Bug:          { textClass: "text-rose-700 dark:text-rose-400",   bgClass: "bg-rose-50 dark:bg-rose-950/40",   borderClass: "border-rose-200 dark:border-rose-800",   icon: <Bug className="h-5 w-5" />,         description: "Track a defect or unexpected behaviour" },
-  "User Story": { textClass: "text-emerald-700 dark:text-emerald-400", bgClass: "bg-emerald-50 dark:bg-emerald-950/40", borderClass: "border-emerald-200 dark:border-emerald-800", icon: <BookOpen className="h-5 w-5" />, description: "Describe functionality from the user's perspective" },
-  Epic:         { textClass: "text-violet-700 dark:text-violet-400", bgClass: "bg-violet-50 dark:bg-violet-950/40", borderClass: "border-violet-200 dark:border-violet-800", icon: <Zap className="h-5 w-5" />,      description: "A large body of work spanning multiple items" },
-}
-
-function TypeSelectorModal({ onSelect, onClose }: { onSelect: (t: WorkItemType) => void; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl p-6">
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">New Work Item</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Select the type of work item to create</p>
-          </div>
-          <button onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          {(Object.keys(typeConfig) as WorkItemType[]).map((type) => {
-            const cfg = typeConfig[type]
-            return (
-              <button
-                key={type}
-                onClick={() => onSelect(type)}
-                className={`flex flex-col items-start gap-2 rounded-2xl border-2 p-4 text-left transition hover:shadow-md ${cfg.bgClass} ${cfg.borderClass}`}
-              >
-                <span className={cfg.textClass}>{cfg.icon}</span>
-                <div>
-                  <div className={`font-semibold text-sm ${cfg.textClass}`}>{type}</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">{cfg.description}</div>
-                </div>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function MultiSelect({
   label, options, selected, onChange,
@@ -117,6 +74,11 @@ export default function Kanban() {
   const [showModal, setShowModal] = useState(false)
   const navigate = useNavigate()
 
+  const handleNewWorkItem = async () => {
+    const user = await getCurrentUser()
+    user.role === "USER" ? navigate("/project/work-items/new/bug") : setShowModal(true)
+  }
+
   const hasFilters = typeFilter.size > 0
   const hasSort = sortBy !== "Default"
 
@@ -135,7 +97,7 @@ export default function Kanban() {
               <p className="text-sm leading-6 text-slate-600 dark:text-slate-400">Manage your active tasks and filter by type or sort by deadline and severity.</p>
             </div>
             <button
-              onClick={() => setShowModal(true)}
+              onClick={handleNewWorkItem}
               className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 dark:bg-slate-700 px-5 py-3 text-sm font-semibold text-white dark:text-white transition hover:bg-slate-800 dark:hover:bg-slate-600"
             >
               <Plus className="h-4 w-4" />
@@ -204,15 +166,7 @@ export default function Kanban() {
 
       <KanbanBoard sortBy={sortBy} sortDir={sortDir} typeFilter={typeFilter} />
 
-      {showModal && (
-        <TypeSelectorModal
-          onSelect={(type) => {
-            setShowModal(false)
-            navigate(`/project/work-items/new/${type.toLowerCase().replace(" ", "-")}`)
-          }}
-          onClose={() => setShowModal(false)}
-        />
-      )}
+      {showModal && <NewWorkItemModal onClose={() => setShowModal(false)} mode="project" />}
     </div>
   )
 }

@@ -6,12 +6,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
 @Component
+@ConditionalOnProperty(name = "gateway.filter.enabled", havingValue = "true", matchIfMissing = true)
 public class GatewayOnlyFilter extends OncePerRequestFilter {
     private static final String INTERNAL_HEADER_NAME = "Internal-Gateway";
 

@@ -2,44 +2,39 @@ import apiFetch from "./utils"
 import type {
   ProjectCreateDto,
   ProjectUpdateDto,
-  ProjectResponseDto,
-  ProjectSummaryDto,
 } from "../types/project"
-import type { TeamSummaryOrganizationDto } from "../types/team"
-import type { WorkItemResponseDto } from "../types/workItem"
-import type { UserSummaryDto } from "../types/user"
 
-export async function getProjects(): Promise<ProjectResponseDto[]> {
+export async function getProjects() {
   const response = await apiFetch("/projects")
   if (!response.ok) throw new Error("Failed to fetch projects")
   return response.json()
 }
 
-export async function getWorkItemsByProjectId(projectId: number): Promise<WorkItemResponseDto[]> {
+export async function getWorkItemsByProjectId(projectId: number) {
   const response = await apiFetch(`/projects/${projectId}/work-items`)
   if (!response.ok) throw new Error("Failed to fetch work items")
   return response.json()
 }
 
-export async function getTeamsByProjectId(projectId: number): Promise<TeamSummaryOrganizationDto[]> {
+export async function getTeamsByProjectId(projectId: number) {
   const response = await apiFetch(`/projects/${projectId}/teams`)
   if (!response.ok) throw new Error("Failed to fetch teams")
   return response.json()
 }
 
-export async function getMembersByProjectId(projectId: number): Promise<UserSummaryDto[]> {
+export async function getMembersByProjectId(projectId: number) {
   const response = await apiFetch(`/projects/${projectId}/members`)
   if (!response.ok) throw new Error("Failed to fetch project members")
   return response.json()
 }
 
-export async function getProjectById(projectId: number): Promise<ProjectSummaryDto> {
+export async function getProjectById(projectId: number) {
   const response = await apiFetch(`/projects/${projectId}`)
   if (!response.ok) throw new Error("Failed to fetch project")
   return response.json()
 }
 
-export async function createProject(data: ProjectCreateDto): Promise<ProjectResponseDto> {
+export async function createProject(data: ProjectCreateDto) {
   const response = await apiFetch(`/projects`, {
     method: "POST",
     body: JSON.stringify(data),
@@ -48,7 +43,7 @@ export async function createProject(data: ProjectCreateDto): Promise<ProjectResp
   return response.json()
 }
 
-export async function updateProject(projectId: number, data: ProjectUpdateDto): Promise<ProjectResponseDto> {
+export async function updateProject(projectId: number, data: ProjectUpdateDto) {
   const response = await apiFetch(`/projects/${projectId}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -57,7 +52,7 @@ export async function updateProject(projectId: number, data: ProjectUpdateDto): 
   return response.json()
 }
 
-export async function deleteProject(projectId: number): Promise<void> {
+export async function deleteProject(projectId: number) {
   const response = await apiFetch(`/projects/${projectId}`, {
     method: "DELETE",
   })

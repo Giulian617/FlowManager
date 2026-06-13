@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react"
-import { NavLink, Outlet, useNavigate } from "react-router"
+import { NavLink, Outlet, redirect, useNavigate } from "react-router"
 import { LayoutDashboard, FolderKanban, Users, LogOut, UserCircle, Pencil, Trash2, X, AlertTriangle, AlertCircle } from "lucide-react"
 import TopBar from "../components/TopBar"
 import { getCurrentUser, getUsers } from "../api/user"
 import { getOrganizationById, updateOrganization, deleteOrganization } from "../api/organization"
 import type { UserSummaryDto } from "../types/user"
 import type { OrganizationUpdateDto } from "../types/organization"
+import { requireAuth } from "../utils/functions"
+
+export const clientLoader = requireAuth
 
 const INDUSTRY_OPTIONS = ["Software", "Cloud", "Mobile", "Finance", "Healthcare", "Education", "Retail", "Other"]
 
@@ -164,7 +167,7 @@ function DeleteOrgModal({ open, onClose, onConfirm, orgName, deleting }: {
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
               Type <span className="font-semibold text-slate-700 dark:text-slate-300 normal-case tracking-normal">{orgName}</span> to confirm
             </label>
-            <input value={input} onChange={(e) => setInput(e.target.value)} placeholder={orgName} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-slate-500 focus:border-rose-400 dark:focus:border-rose-600 focus:ring-2 focus:ring-rose-100 dark:focus:ring-rose-900/30" />
+            <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Type the organization name to confirm" className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-slate-500 focus:border-rose-400 dark:focus:border-rose-600 focus:ring-2 focus:ring-rose-100 dark:focus:ring-rose-900/30" />
           </div>
         </div>
 
@@ -173,7 +176,7 @@ function DeleteOrgModal({ open, onClose, onConfirm, orgName, deleting }: {
             Cancel
           </button>
           <button onClick={onConfirm} disabled={input !== orgName || deleting} className="flex-1 rounded-xl bg-rose-600 dark:bg-rose-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 dark:hover:bg-rose-600 disabled:opacity-40 disabled:cursor-not-allowed">
-            {deleting ? "Deleting…" : "Delete Organization"}
+            {deleting ? "Deleting…" : "Delete"}
           </button>
         </div>
       </div>

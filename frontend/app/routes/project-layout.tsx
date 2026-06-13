@@ -5,6 +5,9 @@ import { LayoutDashboard, Users, List, KanbanSquare, Building2, ChevronRight, Lo
 import {
   getProjectById
 } from "../api/project"
+import { requireAuth } from "../utils/functions"
+
+export const clientLoader = requireAuth
 
 const fullNav = [
   { to: "/project/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },

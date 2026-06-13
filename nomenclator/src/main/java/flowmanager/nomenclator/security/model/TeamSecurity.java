@@ -1,5 +1,7 @@
 package flowmanager.nomenclator.security.model;
 
+import flowmanager.nomenclator.exception.NotFoundException;
+import flowmanager.nomenclator.model.Team;
 import flowmanager.nomenclator.repository.TeamRepository;
 import flowmanager.nomenclator.security.Utils;
 import lombok.RequiredArgsConstructor;
@@ -11,46 +13,27 @@ import org.springframework.stereotype.Component;
 public class TeamSecurity {
     private final TeamRepository teamRepository;
 
-    public boolean canView(Authentication auth, Integer teamId) {
-        if (Utils.isNotAuthenticated(auth))
-            return false;
-        if (Utils.isAdmin(auth))
-            return true;
-
-        String currentUserId = Utils.getCurrentUserId(auth);
-        return teamRepository.findById(teamId).map(team -> {
-            if (team.getManager().getKeycloakId().equals(currentUserId))
-                return true;
-            if (team.getOrganization().getManager().getKeycloakId().equals(currentUserId))
-                return true;
-            return team.getMembers().stream()
-                    .anyMatch(member -> member.getKeycloakId().equals(currentUserId));
-        }).orElse(false);
-    }
-
     public boolean canModify(Authentication auth, Integer teamId) {
-        if (Utils.isNotAuthenticated(auth))
-            return false;
-        if (Utils.isAdmin(auth))
-            return true;
+        if (Utils.isNotAuthenticated(auth)) return false;
+        if (Utils.isAdmin(auth)) return true;
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new NotFoundException(String.format("Team with id %d not found", teamId)));
 
         String currentUserId = Utils.getCurrentUserId(auth);
-        return teamRepository.findById(teamId).map(team -> {
-            if (team.getManager().getKeycloakId().equals(currentUserId))
-                return true;
-            return team.getOrganization().getManager().getKeycloakId().equals(currentUserId);
-        }).orElse(false);
+        if (team.getManager().getKeycloakId().equals(currentUserId))
+            return true;
+        return team.getOrganization().getManager().getKeycloakId().equals(currentUserId);
     }
 
     public boolean canDelete(Authentication auth, Integer teamId) {
-        if (Utils.isNotAuthenticated(auth))
-            return false;
-        if (Utils.isAdmin(auth))
-            return true;
+        if (Utils.isNotAuthenticated(auth)) return false;
+        if (Utils.isAdmin(auth)) return true;
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new NotFoundException(String.format("Team with id %d not found", teamId)));
 
         String currentUserId = Utils.getCurrentUserId(auth);
-        return teamRepository.findById(teamId)
-                .map(team -> team.getOrganization().getManager().getKeycloakId().equals(currentUserId))
-                .orElse(false);
+        return team.getOrganization().getManager().getKeycloakId().equals(currentUserId);
     }
 }
