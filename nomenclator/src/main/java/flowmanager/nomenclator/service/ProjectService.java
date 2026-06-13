@@ -99,20 +99,20 @@ public class ProjectService {
                 () -> new NotFoundException("User not found")
         );
         Project project = projectMapper.toEntity(projectCreateDto, organization, user);
-        projectRepository.save(project);
+        Project savedProject = projectRepository.save(project);
 
         if (projectCreateDto.getTeamsIds() != null && !projectCreateDto.getTeamsIds().isEmpty()) {
             List<Team> teams = getTeams(projectCreateDto.getTeamsIds());
             teams.forEach(team -> {
-                if (!team.getProjects().contains(project)) {
-                    team.getProjects().add(project);
+                if (!team.getProjects().contains(savedProject)) {
+                    team.getProjects().add(savedProject);
                 }
                 teamRepository.save(team);
             });
-            project.setTeams(teams);
+            savedProject.setTeams(teams);
         }
 
-        return projectMapper.toResponseDto(project);
+        return projectMapper.toResponseDto(savedProject);
     }
 
     @Transactional

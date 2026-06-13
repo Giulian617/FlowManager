@@ -8,10 +8,5 @@ spring:
         jwt:
           issuer-uri: http://localhost:8080/realms/flowmanager
 
-logging:
-  level:
-    org.springframework.security: DEBUG
-    org.springframework.cloud.gateway: DEBUG
-
 gateway:
   internal-secret: ${GATEWAY_SECRET}
