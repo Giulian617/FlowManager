@@ -6,7 +6,7 @@ async function gotoAndWait(page: any, url: string) {
 }
 
 test.describe("TopBar", () => {
-  test("settings button opens theme/notification popup", async ({ page }) => {
+  test("settings button opens theme popup", async ({ page }) => {
     await gotoAndWait(page, "/admin/dashboard");
 
     await page.getByRole("button", { name: "" }).filter({ has: page.locator("svg") }).nth(1).click();
@@ -35,17 +35,6 @@ test.describe("TopBar", () => {
 
     await page.locator("button").filter({ has: page.locator("svg.lucide-x") }).last().click();
     await expect(page.getByRole("button", { name: /^light$/i })).not.toBeVisible();
-  });
-
-  test("notification settings link in settings popup navigates correctly", async ({ page }) => {
-    await gotoAndWait(page, "/admin/dashboard");
-
-    // Open settings popup
-    const settingsBtn = page.locator("button").nth(1);
-    await settingsBtn.click();
-
-    await page.getByText("Notification settings").click();
-    await expect(page).toHaveURL(/\/notification-settings/);
   });
 });
 
@@ -108,65 +97,5 @@ test.describe("Profile page", () => {
 
     await expect(page.getByText("Change Password")).toBeVisible();
     await expect(page.getByRole("button", { name: /reset password/i })).toBeVisible();
-  });
-});
-
-test.describe("Notification Settings page", () => {
-  test("loads with three channel rows", async ({ page }) => {
-    await gotoAndWait(page, "/admin/notification-settings");
-
-    await expect(page.getByText("Preferences")).toBeVisible();
-    await expect(page.getByText("Email notifications")).toBeVisible();
-    await expect(page.getByText("Push notifications")).toBeVisible();
-    await expect(page.getByText("Web notifications")).toBeVisible();
-  });
-
-  test("all three channels are toggled on by default", async ({ page }) => {
-    await gotoAndWait(page, "/admin/notification-settings");
-
-    // Each toggle is a button — they render with translate-x-4.5 when on
-    const toggles = page.locator("button[class*='rounded-full']");
-    expect(await toggles.count()).toBeGreaterThanOrEqual(3);
-  });
-
-  test("Save and Cancel are disabled when no changes", async ({ page }) => {
-    await gotoAndWait(page, "/admin/notification-settings");
-
-    await expect(page.getByRole("button", { name: /save changes/i })).toBeDisabled();
-    await expect(page.getByRole("button", { name: /cancel/i })).toBeDisabled();
-  });
-
-  test("toggling a channel enables Save and Cancel", async ({ page }) => {
-    await gotoAndWait(page, "/admin/notification-settings");
-
-    // Click the first channel's toggle (Email)
-    const firstToggle = page.locator("button[class*='rounded-full']").first();
-    await firstToggle.click();
-
-    await expect(page.getByRole("button", { name: /save changes/i })).toBeEnabled();
-    await expect(page.getByRole("button", { name: /cancel/i })).toBeEnabled();
-  });
-
-  test("Cancel reverts toggle state", async ({ page }) => {
-    await gotoAndWait(page, "/admin/notification-settings");
-
-    const firstToggle = page.locator("button[class*='rounded-full']").first();
-    await firstToggle.click();
-
-    await page.getByRole("button", { name: /cancel/i }).click();
-
-    // After cancel, buttons should be disabled again (state reverted)
-    await expect(page.getByRole("button", { name: /save changes/i })).toBeDisabled();
-  });
-
-  test("expanding a channel shows trigger sub-options", async ({ page }) => {
-    await gotoAndWait(page, "/admin/notification-settings");
-
-    // Click on the Email channel row to expand it (the row, not the toggle)
-    await page.getByText("Email notifications").click();
-
-    await expect(page.getByText("Assigned to a work item")).toBeVisible();
-    await expect(page.getByText("Work item status changes")).toBeVisible();
-    await expect(page.getByText("Deadline reminder")).toBeVisible();
   });
 });

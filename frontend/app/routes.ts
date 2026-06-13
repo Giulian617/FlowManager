@@ -19,7 +19,6 @@ export default [
     route("work-items/:id", "routes/workItems-view.tsx", { id: "admin-workItems-view" }),
     route("work-items/:id/edit", "routes/workItems-edit.tsx", { id: "admin-workItems-edit" }),
     route("comments", "routes/admin-comments.tsx"),
-    route("notification-settings", "routes/notification-settings.tsx", { id: "admin-notification-settings" }),
     route("profile", "routes/profile.tsx", { id: "admin-profile" }),
   ]),
 
@@ -29,7 +28,6 @@ export default [
     route("projects", "routes/org-projects.tsx"),
     route("teams", "routes/org-teams.tsx"),
     route("users", "routes/org-users.tsx"),
-    route("notification-settings", "routes/notification-settings.tsx", { id: "org-notification-settings" }),
     route("profile", "routes/profile.tsx", { id: "org-profile" }),
   ]),
 
@@ -42,7 +40,6 @@ export default [
     route("work-items/:id", "routes/workItems-view.tsx"),
     route("work-items/:id/edit", "routes/workItems-edit.tsx"),
     route("kanban", "routes/project-kanban.tsx"),
-    route("notification-settings", "routes/notification-settings.tsx", { id: "project-notification-settings" }),
     route("profile", "routes/profile.tsx", { id: "project-profile" }),
   ]),
 ] satisfies RouteConfig;
