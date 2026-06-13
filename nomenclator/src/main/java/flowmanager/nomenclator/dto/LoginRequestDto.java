@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Data
 @AllArgsConstructor
@@ -13,5 +14,6 @@ public class LoginRequestDto {
     private String username;
 
     @NotBlank(message = "password is required and cannot be blank")
+    @ToString.Exclude
     private String password;
 }

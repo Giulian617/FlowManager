@@ -305,9 +305,9 @@ public class ProjectServiceTests {
         ProjectResponseDto result = projectService.createProject(createDto, manager.getKeycloakId());
 
         assertEquals(responseDto, result);
-        teams.forEach(t -> assertTrue(t.getProjects().contains(project)));
+        teams.forEach(t -> assertTrue(t.getProjects().contains(savedProject)));
         teams.forEach(t -> verify(teamRepository, times(1)).save(t));
-        assertEquals(teams, project.getTeams());
+        assertEquals(teams, savedProject.getTeams());
         verify(organizationRepository, times(1)).findById(organization.getId());
         verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
         verify(projectMapper, times(1)).toEntity(createDto, organization, manager);
@@ -358,9 +358,9 @@ public class ProjectServiceTests {
 
         assertEquals(responseDto, result);
         assertEquals(1, teams.get(0).getProjects().stream()
-                .filter(p -> p.equals(project)).count());
-        assertTrue(teams.get(1).getProjects().contains(project));
-        assertEquals(teams, project.getTeams());
+                .filter(p -> p.equals(savedProject)).count());
+        assertTrue(teams.get(1).getProjects().contains(savedProject));
+        assertEquals(teams, savedProject.getTeams());
         teams.forEach(t -> verify(teamRepository, times(1)).save(t));
         verify(organizationRepository, times(1)).findById(organization.getId());
         verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
@@ -512,8 +512,8 @@ public class ProjectServiceTests {
         verify(organizationRepository, times(1)).findById(organization.getId());
         verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
         verify(projectMapper, times(1)).toEntity(createDto, organization, manager);
+        verify(projectRepository, times(1)).save(project);
         verify(teamRepository, times(1)).findAllById(teamsIds);
-        verify(projectRepository, never()).save(any());
     }
 
     @Test

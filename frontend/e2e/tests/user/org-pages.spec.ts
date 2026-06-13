@@ -29,7 +29,7 @@ test.describe("Org Dashboard", () => {
     await expect(page.getByRole("main").getByText("Dashboard", { exact: true })).toBeVisible();
     // Org info card shows Industry, Manager, Created
     await expect(page.getByRole("main").getByText("Industry", { exact: true })).toBeVisible();
-    await expect(page.getByRole("main").getByText("Manager", { exact: true })).toBeVisible();
+    await expect(page.getByRole("main").getByText("Manager", { exact: true }).first()).toBeVisible();
     await expect(page.getByRole("main").getByText("Created", { exact: true })).toBeVisible();
   });
 
