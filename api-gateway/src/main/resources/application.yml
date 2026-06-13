@@ -17,9 +17,9 @@ management:
   tracing:
     sampling:
       probability: 1.0 # needs to be changed to 0.1 in production
-  zipkin:
-    tracing:
-      endpoint: http://localhost:9411/api/v2/spans
+    export:
+      zipkin:
+        endpoint: http://localhost:9411/api/v2/spans
   endpoints:
     web:
       exposure:
@@ -30,3 +30,24 @@ management:
   metrics:
     tags:
       application: api-gateway
+
+resilience4j:
+  circuitbreaker:
+    circuit-breaker-aspect-order: 1
+    instances:
+      nomenclator:
+        sliding-window-size: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2
+        register-health-indicator: true
+  retry:
+    retry-aspect-order: 2
+    instances:
+      nomenclator:
+        max-attempts: 3
+        wait-duration: 500ms
+  timelimiter:
+    instances:
+      nomenclator:
+        timeout-duration: 5s
