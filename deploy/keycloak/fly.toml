@@ -1,0 +1,39 @@
+app = "flowmanager-keycloak"
+primary_region = "fra"
+
+[build]
+  image = "quay.io/keycloak/keycloak:24.0.1"
+
+[processes]
+  app = "start"
+
+[env]
+  KC_DB = "postgres"
+  KC_DB_URL_HOST = "flowmanager-keycloak-db.internal"
+  KC_DB_URL_DATABASE = "keycloak"
+  KC_DB_USERNAME = "keycloak-user"
+  KC_HOSTNAME = "flowmanager-keycloak.fly.dev"
+  KC_HOSTNAME_STRICT = "false"
+  KC_HTTP_ENABLED = "true"
+  KC_PROXY_HEADERS = "xforwarded"
+  KC_HEALTH_ENABLED = "true"
+  JAVA_OPTS_APPEND = "-Djava.net.preferIPv6Addresses=true"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/realms/master"
+    interval = "20s"
+    timeout = "10s"
+    grace_period = "60s"
+
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = 2048

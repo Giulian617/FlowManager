@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:8081"
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8081"
 
 async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = localStorage.getItem("refreshToken")
