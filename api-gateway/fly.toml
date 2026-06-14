@@ -8,7 +8,7 @@ primary_region = "fra"
   NOMENCLATOR_BASE_URL = "http://flowmanager-nomenclator.internal:8082"
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI = "https://flowmanager-keycloak.fly.dev/realms/flowmanager"
   CORS_ALLOWED_ORIGINS = "https://flowmanager-frontend.fly.dev"
-  MANAGEMENT_ZIPKIN_TRACING_ENDPOINT = "http://flowmanager-zipkin.internal:9411/api/v2/spans"
+  MANAGEMENT_TRACING_EXPORT_ZIPKIN_ENDPOINT = "http://flowmanager-zipkin.internal:9411/api/v2/spans"
 
 [http_service]
   internal_port = 8081

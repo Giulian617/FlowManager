@@ -11,7 +11,7 @@ primary_region = "fra"
   SPRING_DATA_REDIS_PORT = "6379"
   KEYCLOAK_ADMIN_URL = "https://flowmanager-keycloak.fly.dev"
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI = "https://flowmanager-keycloak.fly.dev/realms/flowmanager"
-  MANAGEMENT_ZIPKIN_TRACING_ENDPOINT = "http://flowmanager-zipkin.internal:9411/api/v2/spans"
+  MANAGEMENT_TRACING_EXPORT_ZIPKIN_ENDPOINT = "http://flowmanager-zipkin.internal:9411/api/v2/spans"
 
 [[vm]]
   size = "shared-cpu-1x"
