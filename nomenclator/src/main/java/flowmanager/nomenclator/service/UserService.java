@@ -245,6 +245,8 @@ public class UserService {
                 .forEach(organization -> organization.getMembers().remove(user));
 
         commentRepository.deleteAll(user.getComments());
+
+        keycloakAdminService.deleteUser(user.getKeycloakId());
         userRepository.deleteById(userId);
     }
 }

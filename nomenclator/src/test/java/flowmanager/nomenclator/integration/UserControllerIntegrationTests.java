@@ -355,6 +355,7 @@ class UserControllerIntegrationTests extends BaseIntegrationTests {
                 .andExpect(status().isNoContent());
 
         assertFalse(userRepository.findById(user.getId()).isPresent());
+        verify(keycloakAdminService, times(1)).deleteUser(user.getKeycloakId());
     }
 
     @Test
@@ -364,5 +365,7 @@ class UserControllerIntegrationTests extends BaseIntegrationTests {
         mockMvc.perform(delete("/users/99999")
                         .header("Authorization", bearer("kc-u18")))
                 .andExpect(status().isNoContent());
+
+        verify(keycloakAdminService, never()).deleteUser(any());
     }
 }

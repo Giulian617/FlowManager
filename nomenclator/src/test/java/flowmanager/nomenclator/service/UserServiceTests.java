@@ -1446,6 +1446,7 @@ public class UserServiceTests {
         teams.forEach(t -> verify(teamService).deleteTeam(t.getId()));
         organizations.forEach(o -> verify(organizationService).deleteOrganization(o.getId()));
         verify(commentRepository).deleteAll(comments);
+        verify(keycloakAdminService, times(1)).deleteUser(user.getKeycloakId());
         verify(userRepository, times(1)).deleteById(1);
     }
 
@@ -1460,6 +1461,7 @@ public class UserServiceTests {
         verify(teamService, never()).deleteTeam(any());
         verify(organizationService, never()).deleteOrganization(any());
         verify(commentRepository, never()).deleteAll(any());
+        verify(keycloakAdminService, never()).deleteUser(any());
         verify(userRepository, never()).deleteById(any());
     }
 }

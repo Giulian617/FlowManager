@@ -263,13 +263,14 @@ function ConfirmDeleteModal({ team, onConfirm, onClose }: {
   )
 }
 
-function TeamFormModal({ initial, currentUser, managers, users, orgId, organizations = [], onClose, onSave }: {
+function TeamFormModal({ initial, currentUser, managers, users, orgId, organizations = [], mode, onClose, onSave }: {
   initial?: TeamResponseDto
   currentUser: UserSummaryDto | null
   managers: UserSummaryDto[]
   users: UserSummaryDto[]
   orgId: number
   organizations?: OrganizationResponseDto[]
+  mode: "org" | "project" | "admin"
   onClose: () => void
   onSave: (data: TeamCreateDto | TeamUpdateDto, id?: number) => Promise<void>
 }) {
@@ -337,26 +338,33 @@ function TeamFormModal({ initial, currentUser, managers, users, orgId, organizat
             <textarea value={description} onChange={(e) => setDesc(e.target.value)} rows={3}
               placeholder="What does this team do?" className={inputCls(descOk) + " resize-none"} />
           </div>
-          {organizations.length > 0 && !isEdit && (
+          {mode === "admin" && !isEdit && (
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                 Organization <span className={selectedOrgId !== 0 ? "text-slate-300 dark:text-slate-600" : "text-rose-500 dark:text-rose-400"}>*</span>
               </label>
-              <SelectDropdown
-                value={selectedOrgId !== 0 ? String(selectedOrgId) : ""}
-                options={organizations.map((o) => String(o.id))}
-                onChange={(v) => setSelectedOrgId(Number(v))}
-                placeholder="Select organization…"
-                error={selectedOrgId === 0}
-                renderOption={(v) => {
-                  const o = organizations.find((o) => String(o.id) === v)
-                  return <span>{o?.name ?? v}</span>
-                }}
-                renderSelected={(v) => {
-                  const o = organizations.find((o) => String(o.id) === v)
-                  return <span>{o?.name ?? v}</span>
-                }}
-              />
+              {organizations.length > 0 ? (
+                <SelectDropdown
+                  value={selectedOrgId !== 0 ? String(selectedOrgId) : ""}
+                  options={organizations.map((o) => String(o.id))}
+                  onChange={(v) => setSelectedOrgId(Number(v))}
+                  placeholder="Select organization…"
+                  error={selectedOrgId === 0}
+                  renderOption={(v) => {
+                    const o = organizations.find((o) => String(o.id) === v)
+                    return <span>{o?.name ?? v}</span>
+                  }}
+                  renderSelected={(v) => {
+                    const o = organizations.find((o) => String(o.id) === v)
+                    return <span>{o?.name ?? v}</span>
+                  }}
+                />
+              ) : (
+                <div className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-4 py-3 text-xs text-amber-700 dark:text-amber-300">
+                  <AlertCircle className="h-4 w-4 flex-none" />
+                  No organizations exist yet. Create an organization first before you can create a team.
+                </div>
+              )}
             </div>
           )}
           <div>
@@ -394,9 +402,12 @@ function TeamFormModal({ initial, currentUser, managers, users, orgId, organizat
               <AlertCircle className="h-4 w-4 flex-none" />{error}
             </div>
           )}
-          {!canSave && (
+          {!canSave && !(mode === "admin" && !isEdit && organizations.length === 0) && (
             <div className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
-              <AlertCircle className="h-4 w-4 flex-none" />Name and description are required.
+              <AlertCircle className="h-4 w-4 flex-none" />
+              {mode === "admin" && !isEdit && selectedOrgId === 0
+                ? "Name, description and organization are required."
+                : "Name and description are required."}
             </div>
           )}
         </div>
@@ -915,6 +926,7 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
           users={users}
           orgId={orgId}
           organizations={mode === "admin" ? organizations : []}
+          mode={mode}
           onClose={() => setShowCreate(false)}
           onSave={(data) => handleCreate(data as TeamCreateDto)}
         />
@@ -926,6 +938,7 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
           managers={managers}
           users={users}
           orgId={orgId}
+          mode={mode}
           onClose={() => setEditTeam(null)}
           onSave={(data, id) => handleEdit(data as TeamUpdateDto, id)}
         />

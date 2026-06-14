@@ -242,13 +242,14 @@ function TeamsPicker({ value, onChange, teams }: {
   )
 }
 
-function ProjectFormModal({ initial, managers, currentUser, orgId, teams, organizations = [], onClose, onSave }: {
+function ProjectFormModal({ initial, managers, currentUser, orgId, teams, organizations = [], mode, onClose, onSave }: {
   initial?: ProjectResponseDto
   managers: UserSummaryDto[]
   currentUser: UserSummaryDto | null
   teams: TeamSummaryDto[]
   orgId: number
   organizations?: OrganizationResponseDto[]
+  mode: "org" | "admin"
   onClose: () => void
   onSave: (data: ProjectCreateDto | ProjectUpdateDto, id?: number) => Promise<void>
 }) {
@@ -364,26 +365,33 @@ function ProjectFormModal({ initial, managers, currentUser, orgId, teams, organi
             </div>
           )}
 
-          {organizations.length > 0 && (
+          {mode === "admin" && !isEdit && (
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                 Organization <span className={selectedOrgId !== 0 ? "text-slate-300 dark:text-slate-600" : "text-rose-500 dark:text-rose-400"}>*</span>
               </label>
-              <SelectDropdown
-                value={selectedOrgId !== 0 ? String(selectedOrgId) : ""}
-                options={organizations.map((o) => String(o.id))}
-                onChange={(v) => setSelectedOrgId(Number(v))}
-                placeholder="Select organization…"
-                error={selectedOrgId === 0}
-                renderOption={(v) => {
-                  const o = organizations.find((o) => String(o.id) === v)
-                  return <span>{o?.name ?? v}</span>
-                }}
-                renderSelected={(v) => {
-                  const o = organizations.find((o) => String(o.id) === v)
-                  return <span>{o?.name ?? v}</span>
-                }}
-              />
+              {organizations.length > 0 ? (
+                <SelectDropdown
+                  value={selectedOrgId !== 0 ? String(selectedOrgId) : ""}
+                  options={organizations.map((o) => String(o.id))}
+                  onChange={(v) => setSelectedOrgId(Number(v))}
+                  placeholder="Select organization…"
+                  error={selectedOrgId === 0}
+                  renderOption={(v) => {
+                    const o = organizations.find((o) => String(o.id) === v)
+                    return <span>{o?.name ?? v}</span>
+                  }}
+                  renderSelected={(v) => {
+                    const o = organizations.find((o) => String(o.id) === v)
+                    return <span>{o?.name ?? v}</span>
+                  }}
+                />
+              ) : (
+                <div className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-4 py-3 text-xs text-amber-700 dark:text-amber-300">
+                  <AlertCircle className="h-4 w-4 flex-none" />
+                  No organizations exist yet. Create an organization first before you can create a project.
+                </div>
+              )}
             </div>
           )}
 
@@ -417,10 +425,12 @@ function ProjectFormModal({ initial, managers, currentUser, orgId, teams, organi
             </div>
           )}
 
-          {!canSave && dateRangeOk && (
+          {!canSave && dateRangeOk && !(mode === "admin" && !isEdit && organizations.length === 0) && (
             <div className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-4 py-3 text-xs text-amber-700 dark:text-amber-300">
               <AlertCircle className="h-4 w-4 flex-none" />
-              Name, description, manager and both dates are required.
+              {mode === "admin" && !isEdit && selectedOrgId === 0
+                ? "Name, description, manager, organization and both dates are required."
+                : "Name, description, manager and both dates are required."}
             </div>
           )}
         </div>
@@ -940,6 +950,7 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
           teams={teams}
           orgId={orgId}
           organizations={mode === "admin" ? organizations : []}
+          mode={mode}
           onClose={() => setShowCreate(false)}
           onSave={(data) => handleCreate(data as ProjectCreateDto)}
         />
@@ -951,6 +962,7 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
           currentUser={currentUser}
           teams={teams}
           orgId={orgId}
+          mode={mode}
           onClose={() => setEditProject(null)}
           onSave={(data, id) => handleEdit(data as ProjectUpdateDto, id)}
         />

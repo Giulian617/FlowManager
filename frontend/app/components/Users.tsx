@@ -361,7 +361,9 @@ function UserFormModal({ initial, orgName, orgId, organizations, onClose, onSave
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [organizationIds, setOrganizationIds] = useState<number[]>(
-    initial ? (initial.memberOrganizations?.map((o) => o.id) ?? [orgId]) : [orgId]
+    initial
+      ? (initial.memberOrganizations?.map((o) => o.id) ?? [])
+      : (orgId ? [orgId] : [])
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
