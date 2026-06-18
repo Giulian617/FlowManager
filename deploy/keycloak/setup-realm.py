@@ -87,10 +87,21 @@ def main():
     token = get_token()
     print("Got admin token.")
 
-    # 1. Realm
+    # 1. Realm + login settings
     print("Realm:")
-    ok(req("POST", "/admin/realms", token, data={"realm": REALM, "enabled": True})[0],
-       f"realm {REALM}")
+    realm_settings = {
+        "realm": REALM,
+        "enabled": True,
+        # username is its own field, never the email address
+        "registrationEmailAsUsername": False,
+        # allow a user's username to be changed after creation
+        "editUsernameAllowed": True,
+        # no email-verification / "complete your profile" prompt after login
+        "verifyEmail": False,
+    }
+    ok(req("POST", "/admin/realms", token, data=realm_settings)[0], f"realm {REALM}")
+    # Apply the settings even when the realm already existed (POST returned 409).
+    ok(req("PUT", f"/admin/realms/{REALM}", token, data=realm_settings)[0], "realm login settings")
 
     # 2. Realm roles
     print("Roles:")

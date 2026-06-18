@@ -277,7 +277,7 @@ function ProjectFormModal({ initial, managers, currentUser, orgId, teams, organi
     setError(null)
     try {
       const payload = isEdit
-        ? { name: name.trim(), description: description.trim(), startDate, endDate, teamsIds: teamsIds.map(Number) } satisfies ProjectUpdateDto
+        ? { name: name.trim(), description: description.trim(), startDate, endDate, managerId: managerId !== initial?.manager?.id ? managerId ?? undefined : undefined, teamsIds: teamsIds.map(Number) } satisfies ProjectUpdateDto
         : { name: name.trim(), description: description.trim(), startDate, endDate, organizationId: selectedOrgId, teamsIds: teamsIds.map(Number) } satisfies ProjectCreateDto
       await onSave(payload, initial?.id)
       onClose()
