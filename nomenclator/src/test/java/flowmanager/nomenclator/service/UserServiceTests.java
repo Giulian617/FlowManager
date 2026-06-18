@@ -17,6 +17,8 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -88,16 +90,17 @@ public class UserServiceTests {
                 .map(BuildDtos::buildUserResponseDto)
                 .toList();
 
-        when(userRepository.findAll(ArgumentMatchers.<Specification<User>>any())).thenReturn(users);
+        when(userRepository.findAll(ArgumentMatchers.<Specification<User>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(users));
         when(userMapper.toResponseDto(users.get(0))).thenReturn(usersDto.get(0));
         when(userMapper.toResponseDto(users.get(1))).thenReturn(usersDto.get(1));
 
-        List<UserResponseDto> result = userService.findAllUsers(null);
+        PageResponseDto<UserResponseDto> result = userService.findAllUsers(null, null, null, Pageable.unpaged());
 
-        assertEquals(2, result.size());
-        assertEquals(usersDto.get(0), result.get(0));
-        assertEquals(usersDto.get(1), result.get(1));
-        verify(userRepository, times(1)).findAll(ArgumentMatchers.<Specification<User>>any());
+        assertEquals(2, result.content().size());
+        assertEquals(usersDto.get(0), result.content().get(0));
+        assertEquals(usersDto.get(1), result.content().get(1));
+        verify(userRepository, times(1)).findAll(ArgumentMatchers.<Specification<User>>any(), any(Pageable.class));
         verify(userMapper, times(1)).toResponseDto(users.get(0));
         verify(userMapper, times(1)).toResponseDto(users.get(1));
     }
@@ -109,26 +112,28 @@ public class UserServiceTests {
                 .map(BuildDtos::buildUserResponseDto)
                 .toList();
 
-        when(userRepository.findAll(ArgumentMatchers.<Specification<User>>any())).thenReturn(List.of(users.getFirst()));
+        when(userRepository.findAll(ArgumentMatchers.<Specification<User>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(users.getFirst())));
         when(userMapper.toResponseDto(users.getFirst())).thenReturn(usersDto.getFirst());
 
-        List<UserResponseDto> result = userService.findAllUsers(Role.MANAGER);
+        PageResponseDto<UserResponseDto> result = userService.findAllUsers(null, Role.MANAGER, null, Pageable.unpaged());
 
-        assertEquals(1, result.size());
-        assertEquals(usersDto.getFirst(), result.getFirst());
-        verify(userRepository, times(1)).findAll(ArgumentMatchers.<Specification<User>>any());
+        assertEquals(1, result.content().size());
+        assertEquals(usersDto.getFirst(), result.content().getFirst());
+        verify(userRepository, times(1)).findAll(ArgumentMatchers.<Specification<User>>any(), any(Pageable.class));
         verify(userMapper, times(1)).toResponseDto(users.get(0));
         verify(userMapper, never()).toResponseDto(users.get(1));
     }
 
     @Test
     void testFindAllUsers_EmptyList() {
-        when(userRepository.findAll(ArgumentMatchers.<Specification<User>>any())).thenReturn(List.of());
+        when(userRepository.findAll(ArgumentMatchers.<Specification<User>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
 
-        List<UserResponseDto> result = userService.findAllUsers(null);
+        PageResponseDto<UserResponseDto> result = userService.findAllUsers(null, null, null, Pageable.unpaged());
 
-        assertEquals(0, result.size());
-        verify(userRepository, times(1)).findAll(ArgumentMatchers.<Specification<User>>any());
+        assertEquals(0, result.content().size());
+        verify(userRepository, times(1)).findAll(ArgumentMatchers.<Specification<User>>any(), any(Pageable.class));
         verify(userMapper, never()).toSummaryDto(any());
     }
 

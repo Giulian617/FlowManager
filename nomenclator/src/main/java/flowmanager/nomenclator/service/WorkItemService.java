@@ -9,12 +9,16 @@ import flowmanager.nomenclator.repository.CommentRepository;
 import flowmanager.nomenclator.repository.ProjectRepository;
 import flowmanager.nomenclator.repository.UserRepository;
 import flowmanager.nomenclator.repository.WorkItemRepository;
+import flowmanager.nomenclator.repository.spec.WorkItemSpecifications;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -32,26 +36,29 @@ public class WorkItemService {
         );
     }
 
-    public List<WorkItemSummaryDto> findAllWorkItems(ItemType itemType, Status status, Severity severity) {
-        Specification<WorkItem> specs = Specification.allOf();
+    public PageResponseDto<WorkItemSummaryDto> findAllWorkItems(
+            String search,
+            List<ItemType> itemTypes,
+            List<Status> statuses,
+            List<Severity> severities,
+            List<Integer> reporterIds,
+            List<Integer> assigneeIds,
+            Boolean unassigned,
+            Integer projectId,
+            Pageable pageable) {
+        List<Specification<WorkItem>> specs = Stream.of(
+                WorkItemSpecifications.projectIdEquals(projectId),
+                WorkItemSpecifications.search(search),
+                WorkItemSpecifications.itemTypeIn(itemTypes),
+                WorkItemSpecifications.statusIn(statuses),
+                WorkItemSpecifications.severityIn(severities),
+                WorkItemSpecifications.reporterIdIn(reporterIds),
+                WorkItemSpecifications.assigneeFilter(assigneeIds, Boolean.TRUE.equals(unassigned))
+        ).filter(Objects::nonNull).toList();
 
-        if (itemType != null) {
-            specs = specs.and((root, query, cb) -> cb.equal(root.get("itemType"), itemType));
-        }
-
-        if (status != null) {
-            specs = specs.and((root, query, cb) -> cb.equal(root.get("status"), status));
-        }
-
-        if (severity != null) {
-            specs = specs.and((root, query, cb) -> cb.equal(root.get("severity"), severity));
-        }
-
-        return workItemRepository
-                .findAll(specs)
-                .stream()
-                .map(workItemMapper::toSummaryDto)
-                .toList();
+        return PageResponseDto.from(
+                workItemRepository.findAll(Specification.allOf(specs), pageable),
+                workItemMapper::toSummaryDto);
     }
 
     public List<CommentResponseWorkItemDto> findAllCommentsByWorkItemId(Integer workItemId) {

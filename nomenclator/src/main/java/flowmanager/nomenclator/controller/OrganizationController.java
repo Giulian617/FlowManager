@@ -5,9 +5,13 @@ import flowmanager.nomenclator.model.Role;
 import flowmanager.nomenclator.service.OrganizationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,34 +23,56 @@ public class OrganizationController {
     private final OrganizationService organizationService;
 
     @GetMapping("")
-    public ResponseEntity<List<OrganizationResponseDto>> getAllOrganizations() {
-        return ResponseEntity.ok(organizationService.findAllOrganizations());
+    public ResponseEntity<PageResponseDto<OrganizationResponseDto>> getAllOrganizations(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String industry,
+            @RequestParam(required = false) Integer managerId,
+            @PageableDefault(size = 9) Pageable pageable
+    ) {
+        return ResponseEntity.ok(organizationService.findAllOrganizations(search, industry, managerId, pageable));
     }
 
     @PreAuthorize("@organizationSecurity.canView(authentication, #organizationId)")
     @GetMapping("/{organizationId}/teams")
     @ResponseBody
-    public ResponseEntity<List<TeamSummaryOrganizationDto>> getAllTeamsByOrganizationId(
-            @PathVariable Integer organizationId
+    public ResponseEntity<PageResponseDto<TeamSummaryOrganizationDto>> getAllTeamsByOrganizationId(
+            @PathVariable Integer organizationId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer managerId,
+            @RequestParam(required = false) String teamSize,
+            @PageableDefault(size = 6) Pageable pageable,
+            Authentication authentication
     ) {
-        return ResponseEntity.ok(organizationService.findAllTeamsByOrganizationId(organizationId));
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        return ResponseEntity.ok(organizationService.findAllTeamsByOrganizationId(
+                organizationId, jwt.getSubject(), search, managerId, teamSize, pageable));
     }
 
     @PreAuthorize("@organizationSecurity.canViewUsers(authentication, #organizationId)")
     @GetMapping("/{organizationId}/users")
-    public ResponseEntity<List<UserResponseDto>> getAllUsersByOrganizationId(
+    public ResponseEntity<PageResponseDto<UserResponseDto>> getAllUsersByOrganizationId(
             @PathVariable Integer organizationId,
-            @RequestParam(required = false) Role role
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Role role,
+            @RequestParam(required = false) Boolean active,
+            @PageableDefault(size = 9) Pageable pageable
     ) {
-        return ResponseEntity.ok(organizationService.findAllUsersByOrganizationId(organizationId, role));
+        return ResponseEntity.ok(organizationService.findAllUsersByOrganizationId(organizationId, search, role, active, pageable));
     }
 
     @PreAuthorize("@organizationSecurity.canView(authentication, #organizationId)")
     @GetMapping("/{organizationId}/projects")
-    public ResponseEntity<List<ProjectResponseDto>> getAllProjectsByOrganizationId(
-            @PathVariable Integer organizationId
+    public ResponseEntity<PageResponseDto<ProjectResponseDto>> getAllProjectsByOrganizationId(
+            @PathVariable Integer organizationId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer managerId,
+            @RequestParam(required = false) String deadline,
+            @PageableDefault(size = 6) Pageable pageable,
+            Authentication authentication
     ) {
-        return ResponseEntity.ok(organizationService.findAllProjectsByOrganizationId(organizationId));
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        return ResponseEntity.ok(organizationService.findAllProjectsByOrganizationId(
+                organizationId, jwt.getSubject(), search, managerId, deadline, pageable));
     }
 
     @PreAuthorize("@organizationSecurity.canView(authentication, #organizationId)")

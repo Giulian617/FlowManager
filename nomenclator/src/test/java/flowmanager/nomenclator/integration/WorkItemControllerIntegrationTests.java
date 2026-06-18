@@ -72,7 +72,7 @@ class WorkItemControllerIntegrationTests extends BaseIntegrationTests {
         mockMvc.perform(get("/work-items")
                         .header("Authorization", bearer("kc-wi-1")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)));
+                .andExpect(jsonPath("$.content", hasSize(2)));
     }
 
     @Test
@@ -85,8 +85,8 @@ class WorkItemControllerIntegrationTests extends BaseIntegrationTests {
                         .param("itemType", "Task")
                         .header("Authorization", bearer("kc-wi-2")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].title", is("Task A")));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].title", is("Task A")));
     }
 
     @Test
@@ -99,8 +99,8 @@ class WorkItemControllerIntegrationTests extends BaseIntegrationTests {
                         .param("status", "Done")
                         .header("Authorization", bearer("kc-wi-3")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].title", is("Task B")));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].title", is("Task B")));
     }
 
     @Test
@@ -113,8 +113,8 @@ class WorkItemControllerIntegrationTests extends BaseIntegrationTests {
                         .param("severity", "Critical")
                         .header("Authorization", bearer("kc-wi-4")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].title", is("Critical Item")));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].title", is("Critical Item")));
     }
 
     @Test

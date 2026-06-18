@@ -3,6 +3,7 @@ package flowmanager.nomenclator.service;
 import flowmanager.nomenclator.dto.CommentCreateDto;
 import flowmanager.nomenclator.dto.CommentResponseDto;
 import flowmanager.nomenclator.dto.CommentUpdateDto;
+import flowmanager.nomenclator.dto.PageResponseDto;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.CommentMapper;
 import flowmanager.nomenclator.model.Comment;
@@ -15,9 +16,13 @@ import flowmanager.nomenclator.utils.BuildDtos;
 import flowmanager.nomenclator.utils.BuildInstances;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -56,28 +61,30 @@ public class CommentServiceTests {
                 .map(BuildDtos::buildCommentResponseDto)
                 .toList();
 
-        when(commentRepository.findAll()).thenReturn(comments);
+        when(commentRepository.findAll(ArgumentMatchers.<Specification<Comment>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(comments));
         when(commentMapper.toResponseDto(comments.get(0))).thenReturn(commentsDto.get(0));
         when(commentMapper.toResponseDto(comments.get(1))).thenReturn(commentsDto.get(1));
 
-        List<CommentResponseDto> result = commentService.findAllComments();
+        PageResponseDto<CommentResponseDto> result = commentService.findAllComments(null, null, Pageable.unpaged());
 
-        assertEquals(2, result.size());
-        assertEquals(commentsDto.get(0), result.get(0));
-        assertEquals(commentsDto.get(1), result.get(1));
-        verify(commentRepository, times(1)).findAll();
+        assertEquals(2, result.content().size());
+        assertEquals(commentsDto.get(0), result.content().get(0));
+        assertEquals(commentsDto.get(1), result.content().get(1));
+        verify(commentRepository, times(1))
+                .findAll(ArgumentMatchers.<Specification<Comment>>any(), any(Pageable.class));
         verify(commentMapper, times(1)).toResponseDto(comments.get(0));
         verify(commentMapper, times(1)).toResponseDto(comments.get(1));
     }
 
     @Test
     void testFindAllComments_EmptyList() {
-        when(commentRepository.findAll()).thenReturn(List.of());
+        when(commentRepository.findAll(ArgumentMatchers.<Specification<Comment>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
 
-        List<CommentResponseDto> result = commentService.findAllComments();
+        PageResponseDto<CommentResponseDto> result = commentService.findAllComments(null, null, Pageable.unpaged());
 
-        assertEquals(0, result.size());
-        verify(commentRepository, times(1)).findAll();
+        assertEquals(0, result.content().size());
         verify(commentMapper, never()).toResponseDto(any());
     }
 

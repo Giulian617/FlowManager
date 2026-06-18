@@ -10,9 +10,15 @@ import flowmanager.nomenclator.utils.BuildDtos;
 import flowmanager.nomenclator.utils.BuildInstances;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -59,196 +65,118 @@ public class OrganizationServiceTests {
     }
 
     @Test
-    void testFindAllOrganization_Valid() {
+    void testFindAllOrganizations_Valid() {
         List<Organization> organizations = BuildInstances.buildOrganizations();
         List<OrganizationResponseDto> organizationsDto = organizations.stream()
                 .map(BuildDtos::buildOrganizationResponseDto)
                 .toList();
 
-        when(organizationRepository.findAll()).thenReturn(organizations);
+        when(organizationRepository.findAll(ArgumentMatchers.<Specification<Organization>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(organizations));
         when(organizationMapper.toResponseDto(organizations.get(0))).thenReturn(organizationsDto.get(0));
         when(organizationMapper.toResponseDto(organizations.get(1))).thenReturn(organizationsDto.get(1));
 
-        List<OrganizationResponseDto> result = organizationService.findAllOrganizations();
+        PageResponseDto<OrganizationResponseDto> result =
+                organizationService.findAllOrganizations(null, null, null, Pageable.unpaged());
 
-        assertEquals(2, result.size());
-        assertEquals(organizationsDto.get(0), result.get(0));
-        assertEquals(organizationsDto.get(1), result.get(1));
-        verify(organizationRepository, times(1)).findAll();
-        verify(organizationMapper, times(1)).toResponseDto(organizations.get(0));
-        verify(organizationMapper, times(1)).toResponseDto(organizations.get(1));
+        assertEquals(2, result.content().size());
+        assertEquals(organizationsDto.get(0), result.content().get(0));
+        assertEquals(organizationsDto.get(1), result.content().get(1));
+        verify(organizationRepository, times(1))
+                .findAll(ArgumentMatchers.<Specification<Organization>>any(), any(Pageable.class));
     }
 
     @Test
     void testFindAllOrganizations_EmptyList() {
-        when(organizationRepository.findAll()).thenReturn(List.of());
+        when(organizationRepository.findAll(ArgumentMatchers.<Specification<Organization>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
 
-        List<OrganizationResponseDto> result = organizationService.findAllOrganizations();
+        PageResponseDto<OrganizationResponseDto> result =
+                organizationService.findAllOrganizations(null, null, null, Pageable.unpaged());
 
-        assertEquals(0, result.size());
-        verify(organizationRepository, times(1)).findAll();
+        assertEquals(0, result.content().size());
         verify(organizationMapper, never()).toResponseDto(any());
     }
 
     @Test
-    void testFindAllTeamsByOrganizationId_Valid() {
-        Organization organization = BuildInstances.buildOrganization();
-        List<Team> teams = BuildInstances.buildTeams();
-        List<TeamSummaryOrganizationDto> teamsDto = teams.stream()
-                .map(BuildDtos::buildTeamSummaryOrganizationDto)
+    void testFindAllOrganizations_CountSort() {
+        List<Organization> organizations = BuildInstances.buildOrganizations();
+        List<OrganizationResponseDto> organizationsDto = organizations.stream()
+                .map(BuildDtos::buildOrganizationResponseDto)
                 .toList();
-        organization.setTeams(teams);
 
-        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
-        when(teamMapper.toSummaryOrganizationDto(teams.get(0))).thenReturn(teamsDto.get(0));
-        when(teamMapper.toSummaryOrganizationDto(teams.get(1))).thenReturn(teamsDto.get(1));
+        when(organizationRepository.findAll(ArgumentMatchers.<Specification<Organization>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(organizations));
+        when(organizationMapper.toResponseDto(organizations.get(0))).thenReturn(organizationsDto.get(0));
+        when(organizationMapper.toResponseDto(organizations.get(1))).thenReturn(organizationsDto.get(1));
 
-        List<TeamSummaryOrganizationDto> result = organizationService.findAllTeamsByOrganizationId(organization.getId());
+        Pageable pageable = PageRequest.of(0, 9, Sort.by(Sort.Direction.DESC, "members"));
+        PageResponseDto<OrganizationResponseDto> result =
+                organizationService.findAllOrganizations(null, null, null, pageable);
 
-        assertEquals(2, result.size());
-        assertEquals(teamsDto.get(0), result.get(0));
-        assertEquals(teamsDto.get(1), result.get(1));
-        verify(organizationRepository, times(1)).findById(organization.getId());
-        verify(teamMapper, times(1)).toSummaryOrganizationDto(teams.get(0));
-        verify(teamMapper, times(1)).toSummaryOrganizationDto(teams.get(1));
+        assertEquals(2, result.content().size());
+        verify(organizationRepository, times(1))
+                .findAll(ArgumentMatchers.<Specification<Organization>>any(), any(Pageable.class));
     }
 
     @Test
-    void testFindAllTeamsByOrganizationId_Empty() {
-        Organization organization = BuildInstances.buildOrganization();
+    void testFindAllTeamsByOrganizationId_Delegates() {
+        PageResponseDto<TeamSummaryOrganizationDto> page = new PageResponseDto<>(List.of(), 0, 6, 0, 0);
+        when(teamService.findTeamsByOrganization(1, "kc-1", null, null, null, Pageable.unpaged()))
+                .thenReturn(page);
 
-        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        PageResponseDto<TeamSummaryOrganizationDto> result =
+                organizationService.findAllTeamsByOrganizationId(1, "kc-1", null, null, null, Pageable.unpaged());
 
-        List<TeamSummaryOrganizationDto> result = organizationService.findAllTeamsByOrganizationId(organization.getId());
-
-        assertEquals(0, result.size());
-        verify(organizationRepository, times(1)).findById(organization.getId());
-        verify(teamMapper, never()).toSummaryOrganizationDto(any());
-    }
-
-    @Test
-    void testFindAllTeamsByOrganizationId_NotFound() {
-        when(organizationRepository.findById(1)).thenReturn(Optional.empty());
-
-        NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> organizationService.findAllTeamsByOrganizationId(1));
-
-        assertEquals("Organization with id 1 not found", exception.getMessage());
+        assertSame(page, result);
+        verify(teamService, times(1)).findTeamsByOrganization(1, "kc-1", null, null, null, Pageable.unpaged());
     }
 
     @Test
     void testFindAllUsersByOrganizationId_Valid() {
-        Organization organization = BuildInstances.buildOrganization();
         List<User> members = BuildInstances.buildUsers();
         List<UserResponseDto> membersDto = members.stream()
                 .map(BuildDtos::buildUserResponseDto)
                 .toList();
-        organization.setMembers(members);
 
-        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        when(userRepository.findAll(ArgumentMatchers.<Specification<User>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(members));
         when(userMapper.toResponseDto(members.get(0))).thenReturn(membersDto.get(0));
         when(userMapper.toResponseDto(members.get(1))).thenReturn(membersDto.get(1));
 
-        List<UserResponseDto> result = organizationService.findAllUsersByOrganizationId(organization.getId(), null);
+        PageResponseDto<UserResponseDto> result =
+                organizationService.findAllUsersByOrganizationId(1, null, null, null, Pageable.unpaged());
 
-        assertEquals(2, result.size());
-        assertEquals(membersDto.get(0), result.get(0));
-        assertEquals(membersDto.get(1), result.get(1));
-        verify(organizationRepository, times(1)).findById(organization.getId());
-        verify(userMapper, times(1)).toResponseDto(members.get(0));
-        verify(userMapper, times(1)).toResponseDto(members.get(1));
-    }
-
-    @Test
-    void testFindAllUsersByOrganizationId_WithRole() {
-        Organization organization = BuildInstances.buildOrganization();
-        List<User> members = BuildInstances.buildUsers();
-        List<UserResponseDto> membersDto = members.stream()
-                .map(BuildDtos::buildUserResponseDto)
-                .toList();
-        organization.setMembers(members);
-
-        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
-        when(userMapper.toResponseDto(members.getFirst())).thenReturn(membersDto.getFirst());
-
-        List<UserResponseDto> result = organizationService.findAllUsersByOrganizationId(organization.getId(), Role.MANAGER);
-
-        assertEquals(1, result.size());
-        assertEquals(membersDto.getFirst(), result.getFirst());
-        verify(organizationRepository, times(1)).findById(organization.getId());
-        verify(userMapper, times(1)).toResponseDto(members.get(0));
-        verify(userMapper, never()).toResponseDto(members.get(1));
+        assertEquals(2, result.content().size());
+        assertEquals(membersDto.get(0), result.content().get(0));
+        assertEquals(membersDto.get(1), result.content().get(1));
+        verify(userRepository, times(1))
+                .findAll(ArgumentMatchers.<Specification<User>>any(), any(Pageable.class));
     }
 
     @Test
     void testFindAllUsersByOrganizationId_Empty() {
-        Organization organization = BuildInstances.buildOrganization();
-        organization.setMembers(List.of());
+        when(userRepository.findAll(ArgumentMatchers.<Specification<User>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
 
-        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        PageResponseDto<UserResponseDto> result =
+                organizationService.findAllUsersByOrganizationId(1, null, Role.MANAGER, true, Pageable.unpaged());
 
-        List<UserResponseDto> result = organizationService.findAllUsersByOrganizationId(organization.getId(), null);
-
-        assertEquals(0, result.size());
-        verify(organizationRepository, times(1)).findById(organization.getId());
+        assertEquals(0, result.content().size());
         verify(userMapper, never()).toResponseDto(any());
     }
 
     @Test
-    void testFindAllUsersByOrganizationId_NotFound() {
-        when(organizationRepository.findById(1)).thenReturn(Optional.empty());
+    void testFindAllProjectsByOrganizationId_Delegates() {
+        PageResponseDto<ProjectResponseDto> page = new PageResponseDto<>(List.of(), 0, 6, 0, 0);
+        when(projectService.findProjectsByOrganization(1, "kc-1", null, null, null, Pageable.unpaged()))
+                .thenReturn(page);
 
-        NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> organizationService.findAllUsersByOrganizationId(1, null));
+        PageResponseDto<ProjectResponseDto> result =
+                organizationService.findAllProjectsByOrganizationId(1, "kc-1", null, null, null, Pageable.unpaged());
 
-        assertEquals("Organization with id 1 not found", exception.getMessage());
-    }
-
-    @Test
-    void testFindAllProjectsByOrganizationId_Valid() {
-        Organization organization = BuildInstances.buildOrganization();
-        List<Project> projects = BuildInstances.buildProjects();
-        List<ProjectResponseDto> projectsDto = projects.stream()
-                .map(BuildDtos::buildProjectResponseDto)
-                .toList();
-        organization.setProjects(projects);
-
-        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
-        when(projectMapper.toResponseDto(projects.get(0))).thenReturn(projectsDto.get(0));
-        when(projectMapper.toResponseDto(projects.get(1))).thenReturn(projectsDto.get(1));
-
-        List<ProjectResponseDto> result = organizationService.findAllProjectsByOrganizationId(organization.getId());
-
-        assertEquals(2, result.size());
-        assertEquals(projectsDto.get(0), result.get(0));
-        assertEquals(projectsDto.get(1), result.get(1));
-        verify(organizationRepository, times(1)).findById(organization.getId());
-        verify(projectMapper, times(1)).toResponseDto(projects.get(0));
-        verify(projectMapper, times(1)).toResponseDto(projects.get(1));
-    }
-
-    @Test
-    void testFindAllProjectsByOrganizationId_Empty() {
-        Organization organization = BuildInstances.buildOrganization();
-        organization.setProjects(List.of());
-
-        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
-
-        List<ProjectResponseDto> result = organizationService.findAllProjectsByOrganizationId(organization.getId());
-
-        assertEquals(0, result.size());
-        verify(organizationRepository, times(1)).findById(organization.getId());
-        verify(projectMapper, never()).toResponseDto(any());
-    }
-
-    @Test
-    void testFindAllProjectsByOrganizationId_NotFound() {
-        when(organizationRepository.findById(1)).thenReturn(Optional.empty());
-
-        NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> organizationService.findAllProjectsByOrganizationId(1));
-
-        assertEquals("Organization with id 1 not found", exception.getMessage());
+        assertSame(page, result);
+        verify(projectService, times(1)).findProjectsByOrganization(1, "kc-1", null, null, null, Pageable.unpaged());
     }
 
     @Test
@@ -789,6 +717,46 @@ public class OrganizationServiceTests {
         verify(organizationRepository, times(1)).findById(organization.getId());
         verify(userRepository, never()).findById(any());
         verify(organizationMapper, times(1)).updateEntityFromDto(updateDto, organization, existingManager);
+        verify(organizationRepository, times(1)).save(organization);
+        verify(organizationMapper, times(1)).toResponseDto(updatedOrganization);
+    }
+
+    @Test
+    void testUpdateOrganization_ManagerChanged() {
+        Organization organization = BuildInstances.buildOrganization();
+        User newManager = User.builder()
+                .id(2)
+                .keycloakId("keycloak-uuid-2")
+                .email("user2@example.com")
+                .username("User2")
+                .firstName("Example2")
+                .lastName("User")
+                .active(true)
+                .createdAt(LocalDateTime.of(2025, 9, 22, 19, 41, 3))
+                .build();
+
+        OrganizationUpdateDto updateDto = new OrganizationUpdateDto(
+                "Organizatia 1 actualizata",
+                "Descriere 1",
+                "IT",
+                newManager.getId(),
+                null
+        );
+        Organization updatedOrganization = BuildInstances.buildOrganization();
+        OrganizationResponseDto responseDto = BuildDtos.buildOrganizationResponseDto(updatedOrganization);
+
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        when(userRepository.findById(newManager.getId())).thenReturn(Optional.of(newManager));
+        doNothing().when(organizationMapper).updateEntityFromDto(updateDto, organization, newManager);
+        when(organizationRepository.save(organization)).thenReturn(updatedOrganization);
+        when(organizationMapper.toResponseDto(updatedOrganization)).thenReturn(responseDto);
+
+        OrganizationResponseDto result = organizationService.updateOrganization(organization.getId(), updateDto);
+
+        assertEquals(responseDto, result);
+        verify(organizationRepository, times(1)).findById(organization.getId());
+        verify(userRepository, times(1)).findById(newManager.getId());
+        verify(organizationMapper, times(1)).updateEntityFromDto(updateDto, organization, newManager);
         verify(organizationRepository, times(1)).save(organization);
         verify(organizationMapper, times(1)).toResponseDto(updatedOrganization);
     }

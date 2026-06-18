@@ -2,19 +2,19 @@ import { useEffect, useRef, useState } from "react"
 import { useNavigate} from "react-router"
 import { Calendar, User, Users, Search, Plus, X, ChevronDown, AlertCircle, Pencil, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, ListFilter, ArrowUp, ArrowDown } from "lucide-react"
 import {
+  getUsers,
   getCurrentUser,
-  getManagedProjectsByUserId,
-  getAssignedProjectsByUserId,
   getManagedOrganizationsByUserId
 } from "../api/user"
 import {
   getOrganizations,
-  getProjectsByOrganizationId,
+  getProjectsByOrganizationIdPage,
   getTeamsByOrganizationId,
   getUsersByOrganizationId,
 } from "../api/organization"
 import {
   getProjects,
+  getProjectsPage,
   createProject,
   updateProject,
   deleteProject,
@@ -479,6 +479,17 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
   const [deleteTarget, setDeleteTarget] = useState<ProjectResponseDto | null>(null)
   const [page, setPage] = useState(1)
 
+  const itemsPerPage = 6
+  const [serverTotalElements, setServerTotalElements] = useState(0)
+  const [serverTotalPages, setServerTotalPages] = useState(1)
+  const [adminManagers, setAdminManagers] = useState<UserSummaryDto[]>([])
+  const [debouncedQuery, setDebouncedQuery] = useState("")
+  const [refreshKey, setRefreshKey] = useState(0)
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 300)
+    return () => clearTimeout(t)
+  }, [query])
+
   useEffect(() => {
     const storedOrgId = typeof window !== "undefined" ? Number(localStorage.getItem("selectedOrg")) : 0
     if (!storedOrgId && mode !== "admin") {
@@ -495,35 +506,18 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
         const managedOrgs = await getManagedOrganizationsByUserId(user.id)
         setManagedOrgIds(managedOrgs.map((o: { id: any }) => o.id))
 
-        let projectsData: ProjectResponseDto[] = []
-
         if (mode === "admin") {
-          projectsData = await getProjects()
-          const orgs = await getOrganizations()
+          const [orgs, managersData] = await Promise.all([
+            getOrganizations(),
+            getUsers("MANAGER"),
+          ])
           setOrganizations(orgs)
-        } else if (user.role === "ADMIN") {
-          projectsData = await getProjectsByOrganizationId(storedOrgId)
-        } else if (user.role === "MANAGER") {
-          const [managed, assigned] = await Promise.all([
-            getManagedProjectsByUserId(user.id),
-            getAssignedProjectsByUserId(user.id),
-          ])
-          projectsData = [...(managed ?? []), ...(assigned ?? [])].filter(
-            (p, i, arr) => arr.findIndex((x) => x.id === p.id) === i
-          )
+          setAdminManagers(managersData)
         } else {
-          projectsData = await getAssignedProjectsByUserId(user.id)
-        }
-
-        setProjects(projectsData)
-
-        if ((user.role === "ADMIN" || user.role === "MANAGER") && mode !== "admin") {
-          const [managersData, teamsData] = await Promise.all([
-            getUsersByOrganizationId(storedOrgId, "MANAGER"),
-            getTeamsByOrganizationId(storedOrgId),
-          ])
-          setManagers(managersData)
-          setTeams(teamsData)
+          setManagers(await getUsersByOrganizationId(storedOrgId, "MANAGER"))
+          if (user.role === "ADMIN" || user.role === "MANAGER") {
+            setTeams(await getTeamsByOrganizationId(storedOrgId))
+          }
         }
       } catch (e) {
         setError("Failed to load projects.")
@@ -534,9 +528,32 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
     load()
   }, [])
 
+  useEffect(() => {
+    if (mode !== "admin" && !orgId) return
+    const sort = sortField === "default" ? undefined : [`${sortField},${sortDir}`]
+    const params = {
+      page: page - 1,
+      size: itemsPerPage,
+      sort,
+      search: debouncedQuery || undefined,
+      managerId: managerFilter !== "all" ? Number(managerFilter) : undefined,
+      deadline: deadlineFilter !== "all" ? deadlineFilter : undefined,
+    }
+    const request = mode === "admin"
+      ? getProjectsPage(params)
+      : getProjectsByOrganizationIdPage(orgId, params)
+    request
+      .then((data) => {
+        setProjects(data.content)
+        setServerTotalElements(data.totalElements)
+        setServerTotalPages(data.totalPages)
+      })
+      .catch(() => setError("Failed to load projects."))
+  }, [mode, orgId, page, sortField, sortDir, debouncedQuery, managerFilter, deadlineFilter, refreshKey])
+
   const handleCreate = async (data: ProjectCreateDto) => {
-    const created = await createProject({ ...data, organizationId: data.organizationId || orgId })
-    setProjects((prev) => [...prev, created])
+    await createProject({ ...data, organizationId: data.organizationId || orgId })
+    setRefreshKey((k) => k + 1)
   }
 
   const handleEdit = async (data: ProjectUpdateDto, id?: number) => {
@@ -546,12 +563,12 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
 
   const handleDelete = async (id: number) => {
     await deleteProject(id)
-    setProjects((prev) => prev.filter((p) => p.id !== id))
     if (Number(localStorage.getItem("selectedProject")) === id) {
       localStorage.removeItem("selectedProject")
       localStorage.removeItem("selectedProjectName")
     }
     setDeleteTarget(null)
+    setRefreshKey((k) => k + 1)
   }
 
   const handleSelect = (project: ProjectResponseDto) => {
@@ -564,12 +581,10 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
     navigate("/project/dashboard")
   }
 
-  // Derived manager options from project data
   const managerOptions = Array.from(
     new Map(
-      projects
-        .filter((p) => p.manager)
-        .map((p) => [String(p.manager!.id), p.manager!.username])
+      (mode === "admin" ? adminManagers : managers)
+        .map((m) => [String(m.id), m.username] as [string, string])
     ).entries()
   ).sort((a, b) => a[1].localeCompare(b[1]))
 
@@ -583,45 +598,13 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
     setPage(1)
   }
 
-  const filtered = projects
-    .filter((p) => {
-      const q = query.toLowerCase()
-      const matchesSearch =
-        p.name.toLowerCase().includes(q) ||
-        p.description?.toLowerCase().includes(q) ||
-        p.manager?.username?.toLowerCase().includes(q)
+  const paginated = projects
+  const totalPages = Math.max(1, serverTotalPages)
+  const totalCount = serverTotalElements
+  const noResults = paginated.length === 0
+  const trulyEmpty = totalCount === 0 && !hasActiveFilters && query === ""
 
-      const matchesDeadline =
-        deadlineFilter === "all" ||
-        (deadlineFilter === "overdue" && isOverdue(p.endDate)) ||
-        (deadlineFilter === "nearDeadline" && isNearDeadline(p.endDate)) ||
-        (deadlineFilter === "onTrack" && !isOverdue(p.endDate) && !isNearDeadline(p.endDate))
-
-      const matchesManager =
-        managerFilter === "all" || String(p.manager?.id) === managerFilter
-
-      return matchesSearch && matchesDeadline && matchesManager
-    })
-    .sort((a, b) => {
-      if (sortField === "default") return 0
-      const multiplier = sortDir === "asc" ? 1 : -1
-      switch (sortField) {
-        case "name":
-          return a.name.localeCompare(b.name) * multiplier
-        case "startDate":
-          return (new Date(a.startDate).getTime() - new Date(b.startDate).getTime()) * multiplier
-        case "endDate":
-          return (new Date(a.endDate).getTime() - new Date(b.endDate).getTime()) * multiplier
-        default:
-          return 0
-      }
-    })
-
-  const itemsPerPage = 6
-  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
-  const paginated = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage)
-
-  useEffect(() => { setPage(1) }, [query, deadlineFilter, managerFilter])
+  useEffect(() => { setPage(1) }, [debouncedQuery, deadlineFilter, managerFilter, sortField, sortDir])
 
   if (loading) return (
     <div className="flex items-center justify-center py-24">
@@ -769,12 +752,12 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
         </div>
       </div>
 
-      {projects.length === 0 ? (
+      {trulyEmpty ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-20 shadow-sm text-center gap-2">
-          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No projects for this organization.</p>
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{mode === "admin" ? "No projects yet." : "No projects for this organization."}</p>
           <p className="text-xs text-slate-400 dark:text-slate-500">Create a new project to get started.</p>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : noResults ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-20 shadow-sm text-center gap-2">
           <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No projects match your filters.</p>
           <p className="text-xs text-slate-400 dark:text-slate-500">Try adjusting your search or filters.</p>
@@ -899,7 +882,7 @@ export default function Projects({ mode }: { mode: "org" | "admin" }) {
 
           <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400">
             <span>
-              Showing {(page - 1) * itemsPerPage + 1}–{Math.min(filtered.length, page * itemsPerPage)} of {filtered.length}
+              Showing {totalCount === 0 ? 0 : (page - 1) * itemsPerPage + 1}–{(page - 1) * itemsPerPage + paginated.length} of {totalCount}
             </span>
             <div className="flex items-center gap-1">
               <button onClick={() => setPage(1)} disabled={page === 1}

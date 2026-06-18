@@ -1,11 +1,18 @@
-import apiFetch from "./utils"
+import apiFetch, { buildQuery, fetchAllPages } from "./utils"
 import type {
   TeamCreateDto,
   TeamUpdateDto,
 } from "../types/team"
+import type { Page, PageParams } from "../types/page"
 
 export async function getTeams() {
-  const response = await apiFetch("/teams")
+  return fetchAllPages("/teams")
+}
+
+export async function getTeamsPage(
+  params: PageParams & { managerId?: number; teamSize?: string }
+): Promise<Page<any>> {
+  const response = await apiFetch(`/teams${buildQuery(params)}`)
   if (!response.ok) throw new Error("Failed to fetch teams")
   return response.json()
 }

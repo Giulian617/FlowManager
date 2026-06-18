@@ -44,8 +44,8 @@ class TeamControllerIntegrationTests extends BaseIntegrationTests {
         mockMvc.perform(get("/teams")
                         .header("Authorization", bearer("kc-t1")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].name", is("Team")));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].name", is("Team")));
     }
 
     @Test

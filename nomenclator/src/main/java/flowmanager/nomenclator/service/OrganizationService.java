@@ -8,12 +8,20 @@ import flowmanager.nomenclator.model.Role;
 import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.OrganizationRepository;
 import flowmanager.nomenclator.repository.UserRepository;
+import flowmanager.nomenclator.repository.spec.OrganizationSpecifications;
+import flowmanager.nomenclator.repository.spec.UserSpecifications;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -34,36 +42,52 @@ public class OrganizationService {
         );
     }
 
-    public List<OrganizationResponseDto> findAllOrganizations() {
-        return organizationRepository.findAll()
-                .stream()
-                .map(organizationMapper::toResponseDto)
-                .toList();
+    private static final List<String> COUNT_SORTS = List.of("members", "projects", "teams");
+
+    public PageResponseDto<OrganizationResponseDto> findAllOrganizations(
+            String search, String industry, Integer managerId, Pageable pageable) {
+        List<Specification<Organization>> specs = new ArrayList<>(Stream.of(
+                OrganizationSpecifications.search(search),
+                OrganizationSpecifications.industryEquals(industry),
+                OrganizationSpecifications.managerIdEquals(managerId)
+        ).filter(Objects::nonNull).toList());
+
+        Pageable effective = pageable;
+        for (String countField : COUNT_SORTS) {
+            Sort.Order order = pageable.getSort().getOrderFor(countField);
+            if (order != null) {
+                specs.add(OrganizationSpecifications.orderBySize(countField, order.getDirection()));
+                effective = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+                break;
+            }
+        }
+
+        return PageResponseDto.from(
+                organizationRepository.findAll(Specification.allOf(specs), effective),
+                organizationMapper::toResponseDto);
     }
 
-    public List<TeamSummaryOrganizationDto> findAllTeamsByOrganizationId(Integer organizationId) {
-        return getOrganization(organizationId)
-                .getTeams()
-                .stream()
-                .map(teamMapper::toSummaryOrganizationDto)
-                .toList();
+    public PageResponseDto<TeamSummaryOrganizationDto> findAllTeamsByOrganizationId(
+            Integer organizationId, String keycloakId, String search, Integer managerId, String teamSize, Pageable pageable) {
+        return teamService.findTeamsByOrganization(organizationId, keycloakId, search, managerId, teamSize, pageable);
     }
 
-    public List<UserResponseDto> findAllUsersByOrganizationId(Integer organizationId, Role role) {
-        return getOrganization(organizationId)
-                .getMembers()
-                .stream()
-                .filter(user -> role == null || user.getRole() == role)
-                .map(userMapper::toResponseDto)
-                .toList();
+    public PageResponseDto<UserResponseDto> findAllUsersByOrganizationId(
+            Integer organizationId, String search, Role role, Boolean active, Pageable pageable) {
+        Specification<User> spec = Specification.allOf(
+                Stream.of(
+                        UserSpecifications.memberOfOrganization(organizationId),
+                        UserSpecifications.search(search),
+                        UserSpecifications.roleEquals(role),
+                        UserSpecifications.activeEquals(active)
+                ).filter(Objects::nonNull).toList()
+        );
+        return PageResponseDto.from(userRepository.findAll(spec, pageable), userMapper::toResponseDto);
     }
 
-    public List<ProjectResponseDto> findAllProjectsByOrganizationId(Integer organizationId) {
-        return getOrganization(organizationId)
-                .getProjects()
-                .stream()
-                .map(projectMapper::toResponseDto)
-                .toList();
+    public PageResponseDto<ProjectResponseDto> findAllProjectsByOrganizationId(
+            Integer organizationId, String keycloakId, String search, Integer managerId, String deadline, Pageable pageable) {
+        return projectService.findProjectsByOrganization(organizationId, keycloakId, search, managerId, deadline, pageable);
     }
 
     public List<WorkItemSummaryDto> findAllWorkItemsByOrganizationId(Integer organizationId) {

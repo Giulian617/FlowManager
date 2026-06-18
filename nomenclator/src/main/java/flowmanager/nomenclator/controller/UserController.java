@@ -5,6 +5,8 @@ import flowmanager.nomenclator.model.Role;
 import flowmanager.nomenclator.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,10 +23,13 @@ public class UserController {
 
     @GetMapping("")
     @ResponseBody
-    public ResponseEntity<List<UserResponseDto>> getAllUsers(
-            @RequestParam(required = false) Role role
+    public ResponseEntity<PageResponseDto<UserResponseDto>> getAllUsers(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Role role,
+            @RequestParam(required = false) Boolean active,
+            @PageableDefault(size = 9) Pageable pageable
     ) {
-        return ResponseEntity.ok(userService.findAllUsers(role));
+        return ResponseEntity.ok(userService.findAllUsers(search, role, active, pageable));
     }
 
     @GetMapping("/me")

@@ -1,7 +1,9 @@
 package flowmanager.nomenclator.service;
 
+import flowmanager.nomenclator.dto.PageResponseDto;
 import flowmanager.nomenclator.dto.TeamCreateDto;
 import flowmanager.nomenclator.dto.TeamResponseDto;
+import flowmanager.nomenclator.dto.TeamSummaryOrganizationDto;
 import flowmanager.nomenclator.dto.TeamUpdateDto;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.TeamMapper;
@@ -11,12 +13,20 @@ import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.OrganizationRepository;
 import flowmanager.nomenclator.repository.TeamRepository;
 import flowmanager.nomenclator.repository.UserRepository;
+import flowmanager.nomenclator.repository.spec.TeamSpecifications;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -32,12 +42,49 @@ public class TeamService {
         );
     }
 
-    public List<TeamResponseDto> findAllTeams() {
-        return teamRepository
-                .findAll()
-                .stream()
-                .map(teamMapper::toResponseDto)
-                .toList();
+    private Page<Team> queryTeams(Specification<Team> scope, String search, Integer managerId, String size, Pageable pageable) {
+        List<Specification<Team>> specs = new ArrayList<>(Stream.of(
+                scope,
+                TeamSpecifications.search(search),
+                TeamSpecifications.managerIdEquals(managerId),
+                TeamSpecifications.size(size)
+        ).filter(Objects::nonNull).toList());
+
+        Pageable effective = pageable;
+        Sort.Order memberOrder = pageable.getSort().getOrderFor("members");
+        if (memberOrder != null) {
+            specs.add(TeamSpecifications.orderByMemberCount(memberOrder.getDirection()));
+            effective = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        }
+
+        return teamRepository.findAll(Specification.allOf(specs), effective);
+    }
+
+    public PageResponseDto<TeamResponseDto> findAllTeams(String search, Integer managerId, String size, Pageable pageable) {
+        return PageResponseDto.from(queryTeams(null, search, managerId, size, pageable), teamMapper::toResponseDto);
+    }
+
+    public PageResponseDto<TeamSummaryOrganizationDto> findTeamsByOrganization(
+            Integer organizationId, String keycloakId, String search, Integer managerId, String size, Pageable pageable) {
+        User user = userRepository.findByKeycloakId(keycloakId).orElseThrow(
+                () -> new NotFoundException("User not found")
+        );
+        Specification<Team> scope = Specification.allOf(
+                Stream.of(
+                        TeamSpecifications.organizationIdEquals(organizationId),
+                        TeamSpecifications.visibleTo(user.getRole(), user.getId())
+                ).filter(Objects::nonNull).toList()
+        );
+        return PageResponseDto.from(
+                queryTeams(scope, search, managerId, size, pageable),
+                teamMapper::toSummaryOrganizationDto);
+    }
+
+    public PageResponseDto<TeamSummaryOrganizationDto> findTeamsByProject(
+            Integer projectId, String search, Integer managerId, String size, Pageable pageable) {
+        return PageResponseDto.from(
+                queryTeams(TeamSpecifications.projectIdEquals(projectId), search, managerId, size, pageable),
+                teamMapper::toSummaryOrganizationDto);
     }
 
     @Transactional

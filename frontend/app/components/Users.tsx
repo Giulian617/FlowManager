@@ -3,6 +3,7 @@ import { useNavigate} from "react-router"
 import { Search, X, Plus, Pencil, Trash2, AlertCircle, ChevronDown, Building2, Mail, Phone, EyeOff, Eye, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Shield, ArrowUpDown, ListFilter, ArrowUp, ArrowDown, Users } from "lucide-react"
 import {
   getUsers,
+  getUsersPage,
   getCurrentUser,
   createUser,
   updateUser,
@@ -12,6 +13,7 @@ import {
   getOrganizations,
   getOrganizationById,
   getUsersByOrganizationId,
+  getUsersByOrganizationIdPage,
 } from "../api/organization"
 import type {
   UserCreateDto,
@@ -593,6 +595,17 @@ export default function OrgUsers({ mode = "org" }: { mode: "org" | "admin" }) {
   const [deleteTarget, setDeleteTarget] = useState<UserResponseDto | null>(null)
   const [page, setPage] = useState(1)
 
+  const itemsPerPage = 9
+  const [serverTotalElements, setServerTotalElements] = useState(0)
+  const [serverTotalPages, setServerTotalPages] = useState(1)
+  const [debouncedQuery, setDebouncedQuery] = useState("")
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [allOrgMembers, setAllOrgMembers] = useState<UserResponseDto[]>([])
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 300)
+    return () => clearTimeout(t)
+  }, [query])
+
   useEffect(() => {
     const id = typeof window !== "undefined" ? Number(localStorage.getItem("selectedOrg")) : 0
     if (!id && mode !== "admin") {
@@ -603,16 +616,8 @@ export default function OrgUsers({ mode = "org" }: { mode: "org" | "admin" }) {
 
     async function load() {
       try {
-        let usersData: UserResponseDto[] = []
-        if (mode === "admin") {
-          usersData = await getUsers()
-        } else {
-          usersData = await getUsersByOrganizationId(id)
-        }
-
         const user = await getCurrentUser()
         setCurrentUser(user)
-        setUsers(usersData)
 
         if (mode !== "admin") {
           const org = await getOrganizationById(id)
@@ -632,12 +637,44 @@ export default function OrgUsers({ mode = "org" }: { mode: "org" | "admin" }) {
     load()
   }, [])
 
-  const handleCreate = (u: UserResponseDto) => setUsers((prev) => [...prev, u])
+  useEffect(() => {
+    if (mode !== "admin" && !orgId) return
+    const sort =
+      sortField === "name" ? [`firstName,${sortDir}`, `lastName,${sortDir}`]
+      : sortField === "username" ? [`username,${sortDir}`]
+      : undefined
+    const params = {
+      page: page - 1,
+      size: itemsPerPage,
+      sort,
+      search: debouncedQuery || undefined,
+      role: roleFilter !== "all" ? roleFilter : undefined,
+      active: statusFilter === "all" ? undefined : String(statusFilter === "active"),
+    }
+    const request = mode === "admin"
+      ? getUsersPage(params)
+      : getUsersByOrganizationIdPage(orgId, params)
+    request
+      .then((data) => {
+        setUsers(data.content)
+        setServerTotalElements(data.totalElements)
+        setServerTotalPages(data.totalPages)
+      })
+      .catch(() => setError("Failed to load users."))
+  }, [mode, orgId, page, sortField, sortDir, debouncedQuery, roleFilter, statusFilter, refreshKey])
+
+  useEffect(() => {
+    if (showAddUsers && orgId) {
+      getUsersByOrganizationId(orgId).then(setAllOrgMembers).catch(() => {})
+    }
+  }, [showAddUsers, orgId])
+
+  const handleCreate = (_u: UserResponseDto) => setRefreshKey((k) => k + 1)
   const handleEdit   = (u: UserResponseDto) => setUsers((prev) => prev.map((x) => x.id === u.id ? u : x))
   const handleDelete = async (id: number) => {
     await deleteUser(id)
-    setUsers((prev) => prev.filter((u) => u.id !== id))
     setDeleteTarget(null)
+    setRefreshKey((k) => k + 1)
   }
 
   const hasActiveFilters = roleFilter !== "all" || statusFilter !== "all"
@@ -650,46 +687,13 @@ export default function OrgUsers({ mode = "org" }: { mode: "org" | "admin" }) {
     setPage(1)
   }
 
-  const filtered = users
-    .filter((u) => {
-      const q = query.toLowerCase()
-      const matchesSearch =
-        fullName(u).toLowerCase().includes(q) ||
-        u.username.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        u.role.toLowerCase().includes(q)
+  const paginated = users
+  const totalPages = Math.max(1, serverTotalPages)
+  const totalCount = serverTotalElements
+  const noResults = paginated.length === 0
+  const trulyEmpty = totalCount === 0 && !hasActiveFilters && query === ""
 
-      const matchesRole = roleFilter === "all" || u.role === roleFilter
-
-      const matchesStatus =
-        statusFilter === "all" ||
-        (statusFilter === "active" && u.active) ||
-        (statusFilter === "inactive" && !u.active)
-
-      return matchesSearch && matchesRole && matchesStatus
-    })
-    .sort((a, b) => {
-      if (sortField === "default") return 0
-
-      const multiplier = sortDir === "asc" ? 1 : -1
-
-      switch (sortField) {
-        case "name":
-          return fullName(a).localeCompare(fullName(b)) * multiplier
-
-        case "username":
-          return a.username.localeCompare(b.username) * multiplier
-
-        default:
-          return 0
-      }
-    })
-
-  const itemsPerPage = 9
-  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
-  const paginated = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage)
-
-  useEffect(() => { setPage(1) }, [query, roleFilter, statusFilter])
+  useEffect(() => { setPage(1) }, [debouncedQuery, roleFilter, statusFilter, sortField, sortDir])
 
   if (loading) return (
     <div className="flex items-center justify-center py-24">
@@ -888,11 +892,11 @@ export default function OrgUsers({ mode = "org" }: { mode: "org" | "admin" }) {
         </div>
       </div>
 
-      {users.length === 0 ? (
+      {trulyEmpty ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-20 shadow-sm text-center gap-2">
-          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No users found for this organization.</p>
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{mode === "admin" ? "No users found." : "No users found for this organization."}</p>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : noResults ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-20 shadow-sm text-center gap-2">
           <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No users match your filters.</p>
           <p className="text-xs text-slate-400 dark:text-slate-500">Try adjusting your search or filters.</p>
@@ -984,7 +988,7 @@ export default function OrgUsers({ mode = "org" }: { mode: "org" | "admin" }) {
 
           <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400">
             <span>
-              Showing {(page - 1) * itemsPerPage + 1}–{Math.min(filtered.length, page * itemsPerPage)} of {filtered.length}
+              Showing {totalCount === 0 ? 0 : (page - 1) * itemsPerPage + 1}–{(page - 1) * itemsPerPage + paginated.length} of {totalCount}
             </span>
             <div className="flex items-center gap-1">
               <button onClick={() => setPage(1)} disabled={page === 1}
@@ -1057,12 +1061,9 @@ export default function OrgUsers({ mode = "org" }: { mode: "org" | "admin" }) {
       {showAddUsers && (
         <AddUsersToOrgModal
           orgId={orgId}
-          currentMembers={users}
+          currentMembers={allOrgMembers}
           onClose={() => setShowAddUsers(false)}
-          onSave={async () => {
-            const updated = await getUsersByOrganizationId(orgId)
-            setUsers(updated)
-          }}
+          onSave={() => setRefreshKey((k) => k + 1)}
         />
       )}
     </div>

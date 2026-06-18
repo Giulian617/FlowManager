@@ -10,17 +10,21 @@ import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.CommentRepository;
 import flowmanager.nomenclator.repository.OrganizationRepository;
 import flowmanager.nomenclator.repository.UserRepository;
+import flowmanager.nomenclator.repository.spec.UserSpecifications;
 import flowmanager.nomenclator.security.KeycloakAdminService;
 import flowmanager.nomenclator.security.Utils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -46,18 +50,15 @@ public class UserService {
         );
     }
 
-    public List<UserResponseDto> findAllUsers(Role role) {
-        Specification<User> specs = Specification.allOf();
-
-        if (role != null) {
-            specs = specs.and((root, query, cb) -> cb.equal(root.get("role"), role));
-        }
-
-        return userRepository
-                .findAll(specs)
-                .stream()
-                .map(userMapper::toResponseDto)
-                .toList();
+    public PageResponseDto<UserResponseDto> findAllUsers(String search, Role role, Boolean active, Pageable pageable) {
+        Specification<User> spec = Specification.allOf(
+                Stream.of(
+                        UserSpecifications.search(search),
+                        UserSpecifications.roleEquals(role),
+                        UserSpecifications.activeEquals(active)
+                ).filter(Objects::nonNull).toList()
+        );
+        return PageResponseDto.from(userRepository.findAll(spec, pageable), userMapper::toResponseDto);
     }
 
     public UserResponseDto getCurrentUser(Authentication auth) {

@@ -65,7 +65,7 @@ class CommentControllerIntegrationTests extends BaseIntegrationTests {
         mockMvc.perform(get("/comments")
                         .header("Authorization", bearer("kc-1")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
+                .andExpect(jsonPath("$.content", hasSize(0)));
     }
 
     @Test
@@ -82,8 +82,8 @@ class CommentControllerIntegrationTests extends BaseIntegrationTests {
         mockMvc.perform(get("/comments")
                         .header("Authorization", bearer("kc-2")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].content", is("Hello world")));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].content", is("Hello world")));
     }
 
     @Test

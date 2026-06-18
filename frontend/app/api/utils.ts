@@ -1,4 +1,17 @@
+import type { Page, PageParams } from "../types/page"
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8081"
+
+export function buildQuery(params: PageParams): string {
+  const qs = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === "") continue
+    if (Array.isArray(value)) value.forEach((v) => qs.append(key, String(v)))
+    else qs.append(key, String(value))
+  }
+  const s = qs.toString()
+  return s ? `?${s}` : ""
+}
 
 async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = localStorage.getItem("refreshToken")
@@ -64,4 +77,26 @@ export default async function apiFetch(url: string, options: RequestInit = {}) {
   }
 
   return response
+}
+
+export async function fetchAllPages<T = any>(
+  path: string,
+  params: PageParams = {},
+  pageSize = 200
+): Promise<T[]> {
+  const fetchPage = async (page: number): Promise<Page<T>> => {
+    const response = await apiFetch(`${path}${buildQuery({ ...params, page, size: pageSize })}`)
+    if (!response.ok) throw new Error(`Failed to fetch ${path}`)
+    return response.json()
+  }
+
+  const first = await fetchPage(0)
+  const all = [...first.content]
+  if (first.totalPages > 1) {
+    const rest = await Promise.all(
+      Array.from({ length: first.totalPages - 1 }, (_, i) => fetchPage(i + 1))
+    )
+    rest.forEach((p) => all.push(...p.content))
+  }
+  return all
 }
