@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Search, X, Trash2, Pencil, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MessageSquare, ListFilter, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import {
   getComments,
+  getCommentsPage,
   updateComment,
   deleteComment
 } from "../api/comment"
@@ -61,17 +62,49 @@ export default function AdminComments() {
   const [sortField, setSortField] = useState<SortField>("default")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
 
+  const itemsPerPage = 15
+  const [serverTotalElements, setServerTotalElements] = useState(0)
+  const [serverTotalPages, setServerTotalPages] = useState(1)
+  const [debouncedQuery, setDebouncedQuery] = useState("")
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [allComments, setAllComments] = useState<CommentResponseDto[]>([])
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 300)
+    return () => clearTimeout(t)
+  }, [query])
+
   useEffect(() => {
     getComments()
-      .then(setComments)
+      .then(setAllComments)
+      .catch(() => {})
+  }, [refreshKey])
+
+  useEffect(() => {
+    const sort = sortField === "default" ? undefined
+      : sortField === "author" ? [`author.username,${sortDir}`]
+      : [`createdAt,${sortDir}`]
+    setLoading(true)
+    getCommentsPage({
+      page: page - 1,
+      size: itemsPerPage,
+      sort,
+      search: debouncedQuery || undefined,
+      authorId: authorFilter !== "all" ? Number(authorFilter) : undefined,
+    })
+      .then((data) => {
+        setComments(data.content)
+        setServerTotalElements(data.totalElements)
+        setServerTotalPages(data.totalPages)
+      })
       .catch(() => setError("Failed to load comments."))
       .finally(() => setLoading(false))
-  }, [])
+  }, [page, sortField, sortDir, debouncedQuery, authorFilter, refreshKey])
 
   const handleDelete = async (id: number) => {
     await deleteComment(id)
-    setComments((prev) => prev.filter((c) => c.id !== id))
     setDeleteTarget(null)
+    setRefreshKey((k) => k + 1)
   }
 
   const handleEdit = async (id: number) => {
@@ -87,7 +120,7 @@ export default function AdminComments() {
 
   const authorOptions = Array.from(
     new Map(
-      comments
+      allComments
         .filter((c) => c.author)
         .map((c) => [String(c.author!.id), c.author!.username])
     ).entries()
@@ -102,38 +135,13 @@ export default function AdminComments() {
     setPage(1)
   }
 
-  const filtered = comments
-    .filter((c) => {
-      const q = query.toLowerCase()
-      const matchesSearch =
-        c.content.toLowerCase().includes(q) ||
-        c.author?.username?.toLowerCase().includes(q)
+  const paginated = comments
+  const totalPages = Math.max(1, serverTotalPages)
+  const totalCount = serverTotalElements
+  const noResults = comments.length === 0
+  const trulyEmpty = totalCount === 0 && !hasActiveFilters && query === ""
 
-      const matchesAuthor =
-        authorFilter === "all" || String(c.author?.id) === authorFilter
-
-      return matchesSearch && matchesAuthor
-    })
-    .sort((a, b) => {
-      if (sortField === "default") return 0
-      const dir = sortDir === "asc" ? 1 : -1
-      switch (sortField) {
-        case "author":
-          return (a.author?.username ?? "").localeCompare(b.author?.username ?? "") * dir
-        case "date":
-          const dateA = a.updatedAt ?? a.createdAt;
-          const dateB = b.updatedAt ?? b.createdAt;
-          return (new Date(dateA).getTime() - new Date(dateB).getTime()) * dir
-        default:
-          return 0
-      }
-    })
-
-  const itemsPerPage = 15
-  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
-  const paginated = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage)
-
-  useEffect(() => { setPage(1) }, [query, authorFilter])
+  useEffect(() => { setPage(1) }, [debouncedQuery, authorFilter, sortField, sortDir])
 
   if (loading) return (
     <div className="flex items-center justify-center py-24">
@@ -251,12 +259,12 @@ export default function AdminComments() {
         </div>
       </div>
 
-      {comments.length === 0 ? (
+      {trulyEmpty ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-20 shadow-sm text-center gap-2">
           <MessageSquare className="h-8 w-8 text-slate-300 dark:text-slate-600" />
           <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No comments yet.</p>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : noResults ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-20 shadow-sm text-center gap-2">
           <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No comments match your filters.</p>
           <p className="text-xs text-slate-400 dark:text-slate-500">Try a different author or keyword.</p>
@@ -351,7 +359,7 @@ export default function AdminComments() {
 
           <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400">
             <span>
-              Showing {(page - 1) * itemsPerPage + 1}–{Math.min(filtered.length, page * itemsPerPage)} of {filtered.length}
+              Showing {totalCount === 0 ? 0 : (page - 1) * itemsPerPage + 1}–{(page - 1) * itemsPerPage + paginated.length} of {totalCount}
             </span>
             <div className="flex items-center gap-1">
               <button onClick={() => setPage(1)} disabled={page === 1}

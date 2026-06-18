@@ -1,0 +1,26 @@
+app = "flowmanager-nomenclator"
+primary_region = "fra"
+
+[build]
+
+[env]
+  SPRING_PROFILES_ACTIVE = "dev"
+  SERVER_PORT = "8082"
+  SPRING_DATASOURCE_URL = "jdbc:mysql://flowmanager-mysql.internal:3306/nomenclator"
+  SPRING_DATA_REDIS_HOST = "flowmanager-redis.internal"
+  SPRING_DATA_REDIS_PORT = "6379"
+  KEYCLOAK_ADMIN_URL = "https://flowmanager-keycloak.fly.dev"
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI = "https://flowmanager-keycloak.fly.dev/realms/flowmanager"
+  MANAGEMENT_TRACING_EXPORT_ZIPKIN_ENDPOINT = "http://flowmanager-zipkin.internal:9411/api/v2/spans"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = 1024
+
+[checks]
+  [checks.alive]
+    type = "tcp"
+    port = 8082
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "60s"

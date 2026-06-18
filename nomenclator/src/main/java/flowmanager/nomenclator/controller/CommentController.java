@@ -3,17 +3,18 @@ package flowmanager.nomenclator.controller;
 import flowmanager.nomenclator.dto.CommentCreateDto;
 import flowmanager.nomenclator.dto.CommentResponseDto;
 import flowmanager.nomenclator.dto.CommentUpdateDto;
+import flowmanager.nomenclator.dto.PageResponseDto;
 import flowmanager.nomenclator.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("comments")
@@ -23,8 +24,12 @@ public class CommentController {
 
     @GetMapping("")
     @ResponseBody
-    public ResponseEntity<List<CommentResponseDto>> getAllComments() {
-        return ResponseEntity.ok(commentService.findAllComments());
+    public ResponseEntity<PageResponseDto<CommentResponseDto>> getAllComments(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer authorId,
+            @PageableDefault(size = 15) Pageable pageable
+    ) {
+        return ResponseEntity.ok(commentService.findAllComments(search, authorId, pageable));
     }
 
     @PostMapping("")

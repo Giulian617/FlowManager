@@ -1,0 +1,28 @@
+app = "flowmanager-mysql"
+primary_region = "fra"
+
+[build]
+  image = "mysql:8.0.37"
+
+[processes]
+  app = "--datadir /data/mysql --default-authentication-plugin mysql_native_password"
+
+[mounts]
+  source = "mysql_data"
+  destination = "/data"
+
+[env]
+  MYSQL_DATABASE = "nomenclator"
+  MYSQL_USER = "nomenclator-admin"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = 1024
+
+[checks]
+  [checks.alive]
+    type = "tcp"
+    port = 3306
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "60s"

@@ -2,9 +2,9 @@ import React, { useEffect, useMemo, useState, useRef } from "react"
 import { severityMeta, statusMeta } from "../utils/status"
 import { ListFilter, Search, Plus, X, Bug, CheckSquare, Zap, BookOpen, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, UserCircle, ChevronDown } from "lucide-react"
 import { useNavigate, useSearchParams } from "react-router"
-import { getCurrentUser } from "../api/user"
-import { getWorkItemsByProjectId } from "../api/project"
-import { getWorkItems } from "../api/workItem"
+import { getCurrentUser, getUsers } from "../api/user"
+import { getWorkItemsByProjectIdPage, getMembersByProjectId } from "../api/project"
+import { getWorkItemsPage } from "../api/workItem"
 import NewWorkItemModal from "../components/NewWorkItemModal"
 import type { WorkItemSummaryDto } from "../types/workItem"
 import { getInitials } from "../utils/functions"
@@ -26,6 +26,13 @@ const backendStatusMap: Record<string, keyof typeof statusMeta> = {
   Testing:     "Testing",
   Done:        "Done",
   Closed:      "Closed",
+}
+
+const typeLabelToEnum: Record<string, string> = {
+  "Task": "Task", "Bug": "Bug", "User Story": "User_Story", "Epic": "Epic",
+}
+const statusLabelToEnum: Record<string, string> = {
+  "To Do": "To_do", "In progress": "In_Progress", "Testing": "Testing", "Done": "Done", "Closed": "Closed",
 }
 
 function formatItemType(itemType: string): string {
@@ -258,25 +265,38 @@ export default function WorkItems({ mode }: { mode: "project" | "admin" }) {
   const [page, setPage] = useState(1)
   const itemsPerPage = 12
 
+  const [projectId, setProjectId] = useState(0)
+  const [serverTotalElements, setServerTotalElements] = useState(0)
+  const [serverTotalPages, setServerTotalPages] = useState(1)
+  const [debouncedQuery, setDebouncedQuery] = useState(searchParams.get("search") ?? "")
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [people, setPeople] = useState<{ id: number; username: string }[]>([])
+  const peopleByName = useMemo(
+    () => new Map(people.map((p) => [p.username, p.id])),
+    [people]
+  )
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 300)
+    return () => clearTimeout(t)
+  }, [query])
+
   useEffect(() => {
     async function load() {
       try {
-        setLoading(true)
-        setError(null)
         if (mode === "admin") {
-          setItems(await getWorkItems())
+          setPeople(await getUsers())
         } else {
-          const projectId = localStorage.getItem("selectedProject")
-          if (!projectId) {
-            navigate("/org");
+          const pid = Number(localStorage.getItem("selectedProject"))
+          if (!pid) {
+            navigate("/org")
             return
           }
-          setItems(await getWorkItemsByProjectId(Number(projectId)))
+          setProjectId(pid)
+          setPeople(await getMembersByProjectId(pid))
         }
       } catch {
         setError("Failed to load work items.")
-      } finally {
-        setLoading(false)
       }
     }
     load()
@@ -286,46 +306,54 @@ export default function WorkItems({ mode }: { mode: "project" | "admin" }) {
     setQuery(searchParams.get("search") ?? "")
   }, [searchParams])
 
+  useEffect(() => {
+    if (mode === "project" && !projectId) return
+    const namesToIds = (names: Set<string>) =>
+      Array.from(names)
+        .map((n) => peopleByName.get(n))
+        .filter((id): id is number => id != null)
+        .map(String)
+    const reporterId = namesToIds(createdByFilter)
+    const assigneeId = namesToIds(new Set(Array.from(assignedFilter).filter((n) => n !== "Unassigned")))
+    const params = {
+      page: page - 1,
+      size: itemsPerPage,
+      search: debouncedQuery || undefined,
+      itemType: typeFilter.size ? Array.from(typeFilter).map((l) => typeLabelToEnum[l]) : undefined,
+      status: statusFilter.size ? Array.from(statusFilter).map((l) => statusLabelToEnum[l]) : undefined,
+      severity: severityFilter.size ? Array.from(severityFilter) : undefined,
+      reporterId: reporterId.length ? reporterId : undefined,
+      assigneeId: assigneeId.length ? assigneeId : undefined,
+      unassigned: assignedFilter.has("Unassigned") ? "true" : undefined,
+    }
+    const request = mode === "admin"
+      ? getWorkItemsPage(params)
+      : getWorkItemsByProjectIdPage(projectId, params)
+    setLoading(true)
+    request
+      .then((data) => {
+        setItems(data.content)
+        setServerTotalElements(data.totalElements)
+        setServerTotalPages(data.totalPages)
+      })
+      .catch(() => setError("Failed to load work items."))
+      .finally(() => setLoading(false))
+  }, [mode, projectId, page, debouncedQuery, typeFilter, statusFilter, severityFilter, createdByFilter, assignedFilter, peopleByName, refreshKey])
+
   const handleNewWorkItem = async () => {
     const user = await getCurrentUser()
     user.role === "USER" ? navigate("/project/work-items/new/bug") : setShowModal(true)
   }
-  
-  const reporterList = useMemo(
-    () => Array.from(new Set(items.map((w) => w.reporter?.username).filter(Boolean))) as string[],
-    [items]
-  )
-  const assigneeList = useMemo(() => {
-    const names = items.flatMap((w) => w.assignees?.map((a) => a.username) ?? [])
-    return Array.from(new Set(["Unassigned", ...names]))
-  }, [items])
 
-  const filteredItems = useMemo(() => {
-    return items.filter((item) => {
-      if (typeFilter.size > 0 && !typeFilter.has(formatItemType(item.itemType))) return false
-      if (statusFilter.size > 0 && !statusFilter.has(statusMeta[backendStatusMap[item.status]]?.label)) return false
-      if (severityFilter.size > 0 && !severityFilter.has(item.severity)) return false
-      if (createdByFilter.size > 0 && !createdByFilter.has(item.reporter?.username)) return false
-      if (assignedFilter.size > 0) {
-        const assigneeNames = item.assignees?.map((a) => a.username) ?? []
-        const isUnassigned = assigneeNames.length === 0
-        const matchesUnassigned = assignedFilter.has("Unassigned") && isUnassigned
-        const matchesNamed = assigneeNames.some((n) => assignedFilter.has(n))
-        if (!matchesUnassigned && !matchesNamed) return false
-      }
-      if (query) {
-        const q = query.toLowerCase().replace(/^#/, "")
-        if (!String(item.id).includes(q) && !item.title.toLowerCase().includes(q)) return false
-      }
-      return true
-    })
-  }, [items, typeFilter, statusFilter, severityFilter, createdByFilter, assignedFilter, query])
+  const reporterList = useMemo(() => people.map((p) => p.username).sort(), [people])
+  const assigneeList = useMemo(() => ["Unassigned", ...people.map((p) => p.username).sort()], [people])
 
-  useEffect(() => { setPage(1) }, [typeFilter, statusFilter, severityFilter, createdByFilter, assignedFilter, query])
+  useEffect(() => { setPage(1) }, [typeFilter, statusFilter, severityFilter, createdByFilter, assignedFilter, debouncedQuery])
 
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage))
+  const totalPages = Math.max(1, serverTotalPages)
+  const totalCount = serverTotalElements
   const startIndex = (page - 1) * itemsPerPage
-  const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage)
+  const paginatedItems = items
 
   const hasFilters = typeFilter.size > 0 || statusFilter.size > 0 || severityFilter.size > 0
     || createdByFilter.size > 0 || assignedFilter.size > 0 || query !== ""
@@ -502,7 +530,7 @@ export default function WorkItems({ mode }: { mode: "project" | "admin" }) {
 
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm text-slate-600 dark:text-slate-400">
           <div>
-            Showing {filteredItems.length === 0 ? 0 : Math.min(filteredItems.length, startIndex + 1)}–{Math.min(filteredItems.length, startIndex + itemsPerPage)} of {filteredItems.length}
+            Showing {totalCount === 0 ? 0 : startIndex + 1}–{startIndex + paginatedItems.length} of {totalCount}
           </div>
           <div className="flex items-center gap-1">
             <button onClick={() => setPage(1)} disabled={page === 1} className="inline-flex items-center rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-2 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-700">
@@ -538,7 +566,7 @@ export default function WorkItems({ mode }: { mode: "project" | "admin" }) {
         </div>
       </div>
 
-      {showModal && <NewWorkItemModal onClose={() => setShowModal(false)} mode={mode} />}
+      {showModal && <NewWorkItemModal onClose={() => { setShowModal(false); setRefreshKey((k) => k + 1) }} mode={mode} />}
     </div>
   )
 }

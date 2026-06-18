@@ -1,9 +1,14 @@
 package flowmanager.nomenclator.controller;
 
 import flowmanager.nomenclator.dto.*;
+import flowmanager.nomenclator.model.ItemType;
+import flowmanager.nomenclator.model.Severity;
+import flowmanager.nomenclator.model.Status;
 import flowmanager.nomenclator.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,24 +26,42 @@ public class ProjectController {
 
     @GetMapping("")
     @ResponseBody
-    public ResponseEntity<List<ProjectResponseDto>> getAllProjects() {
-        return ResponseEntity.ok(projectService.findAllProjects());
+    public ResponseEntity<PageResponseDto<ProjectResponseDto>> getAllProjects(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer managerId,
+            @RequestParam(required = false) String deadline,
+            @PageableDefault(size = 6) Pageable pageable
+    ) {
+        return ResponseEntity.ok(projectService.findAllProjects(search, managerId, deadline, pageable));
     }
 
     @PreAuthorize("@projectSecurity.canView(authentication, #projectId)")
     @GetMapping("/{projectId}/work-items")
-    public ResponseEntity<List<WorkItemResponseDto>> getAllWorkItemsByProjectId(
-            @PathVariable Integer projectId
+    public ResponseEntity<PageResponseDto<WorkItemSummaryDto>> getAllWorkItemsByProjectId(
+            @PathVariable Integer projectId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) List<ItemType> itemType,
+            @RequestParam(required = false) List<Status> status,
+            @RequestParam(required = false) List<Severity> severity,
+            @RequestParam(required = false) List<Integer> reporterId,
+            @RequestParam(required = false) List<Integer> assigneeId,
+            @RequestParam(required = false) Boolean unassigned,
+            @PageableDefault(size = 12, sort = "id") Pageable pageable
     ) {
-        return ResponseEntity.ok(projectService.findAllWorkItemsByProjectId(projectId));
+        return ResponseEntity.ok(projectService.findWorkItemsByProject(
+                projectId, search, itemType, status, severity, reporterId, assigneeId, unassigned, pageable));
     }
 
     @PreAuthorize("@projectSecurity.canView(authentication, #projectId)")
     @GetMapping("/{projectId}/teams")
-    public ResponseEntity<List<TeamSummaryOrganizationDto>> getAllTeamsByProjectId(
-            @PathVariable Integer projectId
+    public ResponseEntity<PageResponseDto<TeamSummaryOrganizationDto>> getAllTeamsByProjectId(
+            @PathVariable Integer projectId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer managerId,
+            @RequestParam(required = false) String teamSize,
+            @PageableDefault(size = 6) Pageable pageable
     ) {
-        return ResponseEntity.ok(projectService.findAllTeamsByProjectId(projectId));
+        return ResponseEntity.ok(projectService.findTeamsByProject(projectId, search, managerId, teamSize, pageable));
     }
 
     @PreAuthorize("@projectSecurity.canView(authentication, #projectId)")

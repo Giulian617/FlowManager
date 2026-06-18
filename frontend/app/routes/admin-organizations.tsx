@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Building2, Search, X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Users, User, FolderKanban, UsersRound, Calendar, ListFilter, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import {
   getOrganizations,
+  getOrganizationsPage,
   deleteOrganization
 } from "../api/organization"
 import OrgFormModal from "../components/OrgFormModal"
@@ -134,27 +135,58 @@ export default function AdminOrganizations() {
   const [sortField, setSortField] = useState<SortField>("default")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
 
+  const itemsPerPage = 9
+  const [serverTotalElements, setServerTotalElements] = useState(0)
+  const [serverTotalPages, setServerTotalPages] = useState(1)
+  const [debouncedQuery, setDebouncedQuery] = useState("")
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [allOrgs, setAllOrgs] = useState<OrganizationResponseDto[]>([])
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 300)
+    return () => clearTimeout(t)
+  }, [query])
+
   useEffect(() => {
     getOrganizations()
-      .then(setOrganizations)
+      .then(setAllOrgs)
+      .catch(() => {})
+  }, [refreshKey])
+
+  useEffect(() => {
+    const sortField_ = sortField === "date" ? "createdAt" : sortField
+    const sort = sortField === "default" ? undefined : [`${sortField_},${sortDir}`]
+    setLoading(true)
+    getOrganizationsPage({
+      page: page - 1,
+      size: itemsPerPage,
+      sort,
+      search: debouncedQuery || undefined,
+      industry: industryFilter !== "all" ? industryFilter : undefined,
+      managerId: managerFilter !== "all" ? Number(managerFilter) : undefined,
+    })
+      .then((data) => {
+        setOrganizations(data.content)
+        setServerTotalElements(data.totalElements)
+        setServerTotalPages(data.totalPages)
+      })
       .catch(() => setError("Failed to load organizations."))
       .finally(() => setLoading(false))
-  }, [])
+  }, [page, sortField, sortDir, debouncedQuery, industryFilter, managerFilter, refreshKey])
 
   const handleDelete = async (id: number) => {
     await deleteOrganization(id)
-    setOrganizations((prev) => prev.filter((o) => o.id !== id))
     setDeleteTarget(null)
+    setRefreshKey((k) => k + 1)
   }
 
-  // Derived filter options from data
   const industryOptions = Array.from(
-    new Set(organizations.map((o) => o.industry).filter(Boolean))
+    new Set(allOrgs.map((o) => o.industry).filter(Boolean))
   ).sort((a, b) => a.localeCompare(b))
 
   const managerOptions = Array.from(
     new Map(
-      organizations
+      allOrgs
         .filter((o) => o.manager)
         .map((o) => [String(o.manager.id), o.manager.username])
     ).entries()
@@ -168,47 +200,13 @@ export default function AdminOrganizations() {
     setPage(1)
   }
 
-  const filtered = organizations
-    .filter((o) => {
-      const q = query.toLowerCase()
-      const matchesSearch =
-        o.name.toLowerCase().includes(q) ||
-        o.description?.toLowerCase().includes(q) ||
-        o.industry?.toLowerCase().includes(q) ||
-        o.manager?.username?.toLowerCase().includes(q)
+  const paginated = organizations
+  const totalPages = Math.max(1, serverTotalPages)
+  const totalCount = serverTotalElements
+  const noResults = organizations.length === 0
+  const trulyEmpty = totalCount === 0 && !hasActiveFilters && query === ""
 
-      const matchesIndustry =
-        industryFilter === "all" || o.industry === industryFilter
-
-      const matchesManager =
-        managerFilter === "all" || String(o.manager?.id) === managerFilter
-
-      return matchesSearch && matchesIndustry && matchesManager
-    })
-    .sort((a, b) => {
-      if (sortField === "default") return 0
-      const dir = sortDir === "asc" ? 1 : -1
-      switch (sortField) {
-        case "name":
-          return a.name.localeCompare(b.name) * dir
-        case "members":
-          return (a.memberCount - b.memberCount) * dir
-        case "projects":
-          return (a.projectCount - b.projectCount) * dir
-        case "teams":
-          return (a.teamCount - b.teamCount) * dir
-        case "date":
-          return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * dir
-        default:
-          return 0
-      }
-    })
-
-  const itemsPerPage = 9
-  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
-  const paginated = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage)
-
-  useEffect(() => { setPage(1) }, [query, industryFilter, managerFilter])
+  useEffect(() => { setPage(1) }, [debouncedQuery, industryFilter, managerFilter, sortField, sortDir])
 
   if (loading) return (
     <div className="flex items-center justify-center py-24">
@@ -351,12 +349,12 @@ export default function AdminOrganizations() {
         </div>
       </div>
 
-      {organizations.length === 0 ? (
+      {trulyEmpty ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-20 shadow-sm text-center gap-2">
           <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No organizations yet.</p>
           <p className="text-xs text-slate-400 dark:text-slate-500">Create one to get started.</p>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : noResults ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-20 shadow-sm text-center gap-2">
           <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No organizations match your filters.</p>
           <p className="text-xs text-slate-400 dark:text-slate-500">Try adjusting your search or filters.</p>
@@ -448,7 +446,7 @@ export default function AdminOrganizations() {
 
           <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400">
             <span>
-              Showing {(page - 1) * itemsPerPage + 1}–{Math.min(filtered.length, page * itemsPerPage)} of {filtered.length}
+              Showing {totalCount === 0 ? 0 : (page - 1) * itemsPerPage + 1}–{(page - 1) * itemsPerPage + paginated.length} of {totalCount}
             </span>
             <div className="flex items-center gap-1">
               <button onClick={() => setPage(1)} disabled={page === 1}
@@ -495,7 +493,7 @@ export default function AdminOrganizations() {
       {showCreate && (
         <OrgFormModal
           onClose={() => setShowCreate(false)}
-          onSave={(org) => setOrganizations((prev) => [...prev, org as OrganizationResponseDto])}
+          onSave={() => setRefreshKey((k) => k + 1)}
         />
       )}
       {editOrg && (

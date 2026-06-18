@@ -15,9 +15,13 @@ import flowmanager.nomenclator.utils.BuildDtos;
 import flowmanager.nomenclator.utils.BuildInstances;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -55,6 +59,9 @@ public class ProjectServiceTests {
     @Mock
     private WorkItemService workItemService;
 
+    @Mock
+    private TeamService teamService;
+
     @InjectMocks
     private ProjectService projectService;
 
@@ -70,123 +77,89 @@ public class ProjectServiceTests {
                 .map(BuildDtos::buildProjectResponseDto)
                 .toList();
 
-        when(projectRepository.findAll()).thenReturn(projects);
+        when(projectRepository.findAll(ArgumentMatchers.<Specification<Project>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(projects));
         when(projectMapper.toResponseDto(projects.get(0))).thenReturn(projectsDto.get(0));
         when(projectMapper.toResponseDto(projects.get(1))).thenReturn(projectsDto.get(1));
 
-        List<ProjectResponseDto> result = projectService.findAllProjects();
+        PageResponseDto<ProjectResponseDto> result = projectService.findAllProjects(null, null, null, Pageable.unpaged());
 
-        assertEquals(2, result.size());
-        assertEquals(projectsDto.get(0), result.get(0));
-        assertEquals(projectsDto.get(1), result.get(1));
-        verify(projectRepository, times(1)).findAll();
+        assertEquals(2, result.content().size());
+        assertEquals(projectsDto.get(0), result.content().get(0));
+        assertEquals(projectsDto.get(1), result.content().get(1));
+        verify(projectRepository, times(1)).findAll(ArgumentMatchers.<Specification<Project>>any(), any(Pageable.class));
         verify(projectMapper, times(1)).toResponseDto(projects.get(0));
         verify(projectMapper, times(1)).toResponseDto(projects.get(1));
     }
 
     @Test
     void testFindAllProjects_EmptyList() {
-        when(projectRepository.findAll()).thenReturn(List.of());
+        when(projectRepository.findAll(ArgumentMatchers.<Specification<Project>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
 
-        List<ProjectResponseDto> result = projectService.findAllProjects();
+        PageResponseDto<ProjectResponseDto> result = projectService.findAllProjects(null, null, null, Pageable.unpaged());
 
-        assertEquals(0, result.size());
-        verify(projectRepository, times(1)).findAll();
+        assertEquals(0, result.content().size());
+        verify(projectRepository, times(1)).findAll(ArgumentMatchers.<Specification<Project>>any(), any(Pageable.class));
         verify(projectMapper, never()).toResponseDto(any());
     }
 
     @Test
-    void testFindAllWorkItemsByProjectId_Valid() {
-        Project project = BuildInstances.buildProject();
-        List<WorkItem> workItems = BuildInstances.buildWorkItems();
-        List<WorkItemResponseDto> workItemsDto = workItems.stream()
-                .map(BuildDtos::buildWorkItemResponseDto)
+    void testFindWorkItemsByProject_Delegates() {
+        PageResponseDto<WorkItemSummaryDto> page = new PageResponseDto<>(List.of(), 0, 12, 0, 0);
+        when(workItemService.findAllWorkItems(null, null, null, null, null, null, null, 1, Pageable.unpaged()))
+                .thenReturn(page);
+
+        PageResponseDto<WorkItemSummaryDto> result = projectService.findWorkItemsByProject(
+                1, null, null, null, null, null, null, null, Pageable.unpaged());
+
+        assertSame(page, result);
+        verify(workItemService, times(1))
+                .findAllWorkItems(null, null, null, null, null, null, null, 1, Pageable.unpaged());
+    }
+
+    @Test
+    void testFindTeamsByProject_Delegates() {
+        PageResponseDto<TeamSummaryOrganizationDto> page = new PageResponseDto<>(List.of(), 0, 6, 0, 0);
+        when(teamService.findTeamsByProject(1, null, null, null, Pageable.unpaged())).thenReturn(page);
+
+        PageResponseDto<TeamSummaryOrganizationDto> result =
+                projectService.findTeamsByProject(1, null, null, null, Pageable.unpaged());
+
+        assertSame(page, result);
+        verify(teamService, times(1)).findTeamsByProject(1, null, null, null, Pageable.unpaged());
+    }
+
+    @Test
+    void testFindProjectsByOrganization_Valid() {
+        User user = BuildInstances.buildUser();
+        List<Project> projects = BuildInstances.buildProjects();
+        List<ProjectResponseDto> projectsDto = projects.stream()
+                .map(BuildDtos::buildProjectResponseDto)
                 .toList();
-        project.setWorkItems(workItems);
 
-        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
-        when(workItemMapper.toResponseDto(workItems.get(0))).thenReturn(workItemsDto.get(0));
-        when(workItemMapper.toResponseDto(workItems.get(1))).thenReturn(workItemsDto.get(1));
+        when(userRepository.findByKeycloakId(user.getKeycloakId())).thenReturn(Optional.of(user));
+        when(projectRepository.findAll(ArgumentMatchers.<Specification<Project>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(projects));
+        when(projectMapper.toResponseDto(projects.get(0))).thenReturn(projectsDto.get(0));
+        when(projectMapper.toResponseDto(projects.get(1))).thenReturn(projectsDto.get(1));
 
-        List<WorkItemResponseDto> result = projectService.findAllWorkItemsByProjectId(project.getId());
+        PageResponseDto<ProjectResponseDto> result = projectService.findProjectsByOrganization(
+                1, user.getKeycloakId(), null, null, null, Pageable.unpaged());
 
-        assertEquals(2, result.size());
-        assertEquals(workItemsDto.get(0), result.get(0));
-        assertEquals(workItemsDto.get(1), result.get(1));
-        verify(projectRepository, times(1)).findById(project.getId());
-        verify(workItemMapper, times(1)).toResponseDto(workItems.get(0));
-        verify(workItemMapper, times(1)).toResponseDto(workItems.get(1));
+        assertEquals(2, result.content().size());
+        verify(projectRepository, times(1))
+                .findAll(ArgumentMatchers.<Specification<Project>>any(), any(Pageable.class));
     }
 
     @Test
-    void testFindAllWorkItemsByProjectId_Empty() {
-        Project project = BuildInstances.buildProject();
-        project.setWorkItems(List.of());
-
-        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
-
-        List<WorkItemResponseDto> result = projectService.findAllWorkItemsByProjectId(project.getId());
-
-        assertEquals(0, result.size());
-        verify(projectRepository, times(1)).findById(project.getId());
-        verify(workItemMapper, never()).toResponseDto(any());
-    }
-
-    @Test
-    void testFindAllWorkItemsByProjectId_NotFound() {
-        when(projectRepository.findById(1)).thenReturn(Optional.empty());
+    void testFindProjectsByOrganization_UserNotFound() {
+        when(userRepository.findByKeycloakId("kc-x")).thenReturn(Optional.empty());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> projectService.findAllWorkItemsByProjectId(1));
+                () -> projectService.findProjectsByOrganization(1, "kc-x", null, null, null, Pageable.unpaged()));
 
-        assertEquals("Project with id 1 not found", exception.getMessage());
-    }
-
-    @Test
-    void testFindAllTeamsByProjectId_Valid() {
-        Project project = BuildInstances.buildProject();
-        List<Team> teams = BuildInstances.buildTeams();
-        List<TeamSummaryOrganizationDto> teamsDto = teams.stream()
-                .map(BuildDtos::buildTeamSummaryOrganizationDto)
-                .toList();
-        project.setTeams(teams);
-
-        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
-        when(teamMapper.toSummaryOrganizationDto(teams.get(0))).thenReturn(teamsDto.get(0));
-        when(teamMapper.toSummaryOrganizationDto(teams.get(1))).thenReturn(teamsDto.get(1));
-
-        List<TeamSummaryOrganizationDto> result = projectService.findAllTeamsByProjectId(project.getId());
-
-        assertEquals(2, result.size());
-        assertEquals(teamsDto.get(0), result.get(0));
-        assertEquals(teamsDto.get(1), result.get(1));
-        verify(projectRepository, times(1)).findById(project.getId());
-        verify(teamMapper, times(1)).toSummaryOrganizationDto(teams.get(0));
-        verify(teamMapper, times(1)).toSummaryOrganizationDto(teams.get(1));
-    }
-
-    @Test
-    void testFindAllTeamsByProjectId_Empty() {
-        Project project = BuildInstances.buildProject();
-        project.setTeams(List.of());
-
-        when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
-
-        List<TeamSummaryOrganizationDto> result = projectService.findAllTeamsByProjectId(project.getId());
-
-        assertEquals(0, result.size());
-        verify(projectRepository, times(1)).findById(project.getId());
-        verify(teamMapper, never()).toSummaryOrganizationDto(any());
-    }
-
-    @Test
-    void testFindAllTeamsByProjectId_NotFound() {
-        when(projectRepository.findById(1)).thenReturn(Optional.empty());
-
-        NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> projectService.findAllWorkItemsByProjectId(1));
-
-        assertEquals("Project with id 1 not found", exception.getMessage());
+        assertEquals("User not found", exception.getMessage());
     }
 
     @Test
@@ -366,6 +339,54 @@ public class ProjectServiceTests {
         verify(userRepository, times(1)).findByKeycloakId(manager.getKeycloakId());
         verify(projectMapper, times(1)).toEntity(createDto, organization, manager);
         verify(teamRepository, times(1)).findAllById(teamsIds);
+        verify(projectRepository, times(1)).save(project);
+        verify(projectMapper, times(1)).toResponseDto(savedProject);
+    }
+
+    @Test
+    void testCreateProject_Valid_SavedProjectAlreadyInTeam() {
+        Organization organization = BuildInstances.buildOrganization();
+        User manager = BuildInstances.buildUser();
+        List<Team> teams = BuildInstances.buildTeams();
+        List<Integer> teamsIds = List.of(teams.get(0).getId(), teams.get(1).getId());
+
+        Project project = Project.builder()
+                .name("Proiectul 1")
+                .description("Descriere 1")
+                .startDate(LocalDate.of(2026, 7, 1))
+                .endDate(LocalDate.of(2026, 12, 31))
+                .manager(manager)
+                .teams(new ArrayList<>())
+                .workItems(new ArrayList<>())
+                .build();
+        Project savedProject = BuildInstances.buildProject();
+        teams.get(0).getProjects().add(savedProject);
+
+        ProjectCreateDto createDto = new ProjectCreateDto(
+                "Proiectul 1",
+                "Descriere 1",
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 12, 31),
+                1,
+                teamsIds
+        );
+        ProjectResponseDto responseDto = BuildDtos.buildProjectResponseDto(savedProject);
+
+        when(organizationRepository.findById(organization.getId())).thenReturn(Optional.of(organization));
+        when(userRepository.findByKeycloakId(manager.getKeycloakId())).thenReturn(Optional.of(manager));
+        when(projectMapper.toEntity(createDto, organization, manager)).thenReturn(project);
+        when(teamRepository.findAllById(teamsIds)).thenReturn(teams);
+        teams.forEach(t -> when(teamRepository.save(t)).thenReturn(t));
+        when(projectRepository.save(project)).thenReturn(savedProject);
+        when(projectMapper.toResponseDto(savedProject)).thenReturn(responseDto);
+
+        ProjectResponseDto result = projectService.createProject(createDto, manager.getKeycloakId());
+
+        assertEquals(responseDto, result);
+        assertEquals(1, teams.get(0).getProjects().stream()
+                .filter(p -> p == savedProject).count());
+        assertTrue(teams.get(1).getProjects().contains(savedProject));
+        teams.forEach(t -> verify(teamRepository, times(1)).save(t));
         verify(projectRepository, times(1)).save(project);
         verify(projectMapper, times(1)).toResponseDto(savedProject);
     }

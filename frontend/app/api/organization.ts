@@ -1,4 +1,4 @@
-import apiFetch from "./utils"
+import apiFetch, { buildQuery, fetchAllPages } from "./utils"
 import type {
   OrganizationCreateDto,
   OrganizationUpdateDto,
@@ -9,30 +9,55 @@ import type { TeamSummaryOrganizationDto } from "../types/team"
 import type { WorkItemSummaryDto } from "../types/workItem"
 import type { UserResponseDto } from "../types/user"
 import type { Role } from "../types/enums"
+import type { Page, PageParams } from "../types/page"
 
 export async function getOrganizations() {
-  const response = await apiFetch("/organizations")
+  return fetchAllPages("/organizations")
+}
+
+export async function getOrganizationsPage(
+  params: PageParams & { industry?: string; managerId?: number }
+): Promise<Page<any>> {
+  const response = await apiFetch(`/organizations${buildQuery(params)}`)
   if (!response.ok) throw new Error("Failed to fetch organizations")
   return response.json()
 }
 
 export async function getTeamsByOrganizationId(orgId: number) {
-  const response = await apiFetch(`/organizations/${orgId}/teams`)
+  return fetchAllPages(`/organizations/${orgId}/teams`)
+}
+
+export async function getTeamsByOrganizationIdPage(
+  orgId: number,
+  params: PageParams & { managerId?: number; teamSize?: string }
+): Promise<Page<any>> {
+  const response = await apiFetch(`/organizations/${orgId}/teams${buildQuery(params)}`)
   if (!response.ok) throw new Error("Failed to fetch teams")
   return response.json()
 }
 
 export async function getUsersByOrganizationId(orgId: number, role?: Role) {
-  const url = role
-    ? `/organizations/${orgId}/users?role=${role}`
-    : `/organizations/${orgId}/users`
-  const response = await apiFetch(url)
+  return fetchAllPages(`/organizations/${orgId}/users`, { role })
+}
+
+export async function getUsersByOrganizationIdPage(
+  orgId: number,
+  params: PageParams & { role?: string; active?: string }
+): Promise<Page<any>> {
+  const response = await apiFetch(`/organizations/${orgId}/users${buildQuery(params)}`)
   if (!response.ok) throw new Error("Failed to fetch users")
   return response.json()
 }
 
 export async function getProjectsByOrganizationId(orgId: number) {
-  const response = await apiFetch(`/organizations/${orgId}/projects`)
+  return fetchAllPages(`/organizations/${orgId}/projects`)
+}
+
+export async function getProjectsByOrganizationIdPage(
+  orgId: number,
+  params: PageParams & { managerId?: number; deadline?: string }
+): Promise<Page<any>> {
+  const response = await apiFetch(`/organizations/${orgId}/projects${buildQuery(params)}`)
   if (!response.ok) throw new Error("Failed to fetch projects")
   return response.json()
 }

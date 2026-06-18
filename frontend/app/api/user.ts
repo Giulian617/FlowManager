@@ -1,13 +1,19 @@
-import apiFetch from "./utils"
+import apiFetch, { buildQuery, fetchAllPages } from "./utils"
 import type {
   UserCreateDto,
   UserUpdateDto,
 } from "../types/user"
 import type { Role } from "../types/enums"
+import type { Page, PageParams } from "../types/page"
 
 export async function getUsers(role?: Role) {
-  const url = role ? `/users?role=${role}` : "/users"
-  const response = await apiFetch(url)
+  return fetchAllPages("/users", { role })
+}
+
+export async function getUsersPage(
+  params: PageParams & { role?: string; active?: string }
+): Promise<Page<any>> {
+  const response = await apiFetch(`/users${buildQuery(params)}`)
   if (!response.ok) throw new Error("Failed to fetch users")
   return response.json()
 }

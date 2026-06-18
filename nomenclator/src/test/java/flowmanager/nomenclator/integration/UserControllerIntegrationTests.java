@@ -38,7 +38,8 @@ class UserControllerIntegrationTests extends BaseIntegrationTests {
         mockMvc.perform(get("/users")
                         .header("Authorization", bearer("kc-u1")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)));
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.totalElements", is(2)));
     }
 
     @Test
@@ -50,8 +51,8 @@ class UserControllerIntegrationTests extends BaseIntegrationTests {
                         .param("role", "ADMIN")
                         .header("Authorization", bearer("kc-u2")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].username", is("admin_kc-u2b")));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].username", is("admin_kc-u2b")));
     }
 
     @Test
@@ -355,6 +356,7 @@ class UserControllerIntegrationTests extends BaseIntegrationTests {
                 .andExpect(status().isNoContent());
 
         assertFalse(userRepository.findById(user.getId()).isPresent());
+        verify(keycloakAdminService, times(1)).deleteUser(user.getKeycloakId());
     }
 
     @Test
@@ -364,5 +366,7 @@ class UserControllerIntegrationTests extends BaseIntegrationTests {
         mockMvc.perform(delete("/users/99999")
                         .header("Authorization", bearer("kc-u18")))
                 .andExpect(status().isNoContent());
+
+        verify(keycloakAdminService, never()).deleteUser(any());
     }
 }

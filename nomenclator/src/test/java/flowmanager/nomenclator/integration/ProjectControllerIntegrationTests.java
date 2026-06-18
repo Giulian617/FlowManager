@@ -52,8 +52,8 @@ class ProjectControllerIntegrationTests extends BaseIntegrationTests {
         mockMvc.perform(get("/projects")
                         .header("Authorization", bearer("kc-p1")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].name", is("Project")));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].name", is("Project")));
     }
 
     @Test
@@ -68,7 +68,7 @@ class ProjectControllerIntegrationTests extends BaseIntegrationTests {
         mockMvc.perform(get("/projects/" + project.getId() + "/work-items")
                         .header("Authorization", bearer("kc-p8")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)));
+                .andExpect(jsonPath("$.content", hasSize(1)));
     }
 
     @Test
@@ -93,7 +93,7 @@ class ProjectControllerIntegrationTests extends BaseIntegrationTests {
         mockMvc.perform(get("/projects/" + project.getId() + "/teams")
                         .header("Authorization", bearer("kc-p9")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)));
+                .andExpect(jsonPath("$.content", hasSize(1)));
     }
 
     @Test

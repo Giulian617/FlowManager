@@ -1,22 +1,25 @@
-import apiFetch from "./utils"
+import apiFetch, { buildQuery, fetchAllPages } from "./utils"
 import type {
   WorkItemCreateDto,
   WorkItemUpdateDto,
 } from "../types/workItem"
-import type { ItemType, Severity, Status } from "../types/enums"
+import type { Page, PageParams } from "../types/page"
 
-export async function getWorkItems(filters?: {
-  itemType?: ItemType
-  status?: Status
-  severity?: Severity
-}) {
-  const params = new URLSearchParams()
-  if (filters?.itemType) params.append("itemType", filters.itemType)
-  if (filters?.status)   params.append("status", filters.status)
-  if (filters?.severity) params.append("severity", filters.severity)
+export type WorkItemPageParams = PageParams & {
+  itemType?: string[]
+  status?: string[]
+  severity?: string[]
+  reporterId?: string[]
+  assigneeId?: string[]
+  unassigned?: string
+}
 
-  const query = params.toString() ? `?${params.toString()}` : ""
-  const response = await apiFetch(`/work-items${query}`)
+export async function getWorkItems() {
+  return fetchAllPages("/work-items")
+}
+
+export async function getWorkItemsPage(params: WorkItemPageParams): Promise<Page<any>> {
+  const response = await apiFetch(`/work-items${buildQuery(params)}`)
   if (!response.ok) throw new Error("Failed to fetch work items")
   return response.json()
 }

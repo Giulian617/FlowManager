@@ -49,7 +49,7 @@ class OrganizationControllerIntegrationTests extends BaseIntegrationTests {
         mockMvc.perform(get("/organizations")
                         .header("Authorization", bearer("kc-org-1")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
+                .andExpect(jsonPath("$.content", hasSize(0)));
     }
 
     @Test
@@ -60,8 +60,8 @@ class OrganizationControllerIntegrationTests extends BaseIntegrationTests {
         mockMvc.perform(get("/organizations")
                         .header("Authorization", bearer("kc-org-2")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].name", is("Org Alpha")));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].name", is("Org Alpha")));
     }
 
     @Test
@@ -78,8 +78,8 @@ class OrganizationControllerIntegrationTests extends BaseIntegrationTests {
         mockMvc.perform(get("/organizations/" + org.getId() + "/teams")
                         .header("Authorization", bearer("kc-org-10")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].name", is("Team A")));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].name", is("Team A")));
     }
 
     @Test
@@ -99,7 +99,7 @@ class OrganizationControllerIntegrationTests extends BaseIntegrationTests {
                         .param("role", "MANAGER")
                         .header("Authorization", bearer("kc-org-11")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].username", is(mgr.getUsername())));
+                .andExpect(jsonPath("$.content[0].username", is(mgr.getUsername())));
     }
 
     @Test

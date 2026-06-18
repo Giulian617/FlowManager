@@ -141,7 +141,7 @@ export default function Login() {
           <div className="flex justify-end">
             <button
               type="button"
-              onClick={() => window.location.href = "http://localhost:8080/realms/flowmanager/login-actions/reset-credentials"}
+              onClick={() => window.location.href = `${import.meta.env.VITE_KEYCLOAK_URL ?? "http://localhost:8080"}/realms/flowmanager/login-actions/reset-credentials`}
               className="text-xs text-slate-400 dark:text-slate-500 transition hover:text-slate-700 dark:hover:text-slate-300"
             >
               Forgot password?

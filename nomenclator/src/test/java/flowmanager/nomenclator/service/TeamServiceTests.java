@@ -1,7 +1,9 @@
 package flowmanager.nomenclator.service;
 
+import flowmanager.nomenclator.dto.PageResponseDto;
 import flowmanager.nomenclator.dto.TeamCreateDto;
 import flowmanager.nomenclator.dto.TeamResponseDto;
+import flowmanager.nomenclator.dto.TeamSummaryOrganizationDto;
 import flowmanager.nomenclator.dto.TeamUpdateDto;
 import flowmanager.nomenclator.exception.NotFoundException;
 import flowmanager.nomenclator.mapper.ProjectMapper;
@@ -9,6 +11,7 @@ import flowmanager.nomenclator.mapper.TeamMapper;
 import flowmanager.nomenclator.mapper.UserMapper;
 import flowmanager.nomenclator.mapper.WorkItemMapper;
 import flowmanager.nomenclator.model.Organization;
+import flowmanager.nomenclator.model.Project;
 import flowmanager.nomenclator.model.Team;
 import flowmanager.nomenclator.model.User;
 import flowmanager.nomenclator.repository.OrganizationRepository;
@@ -18,9 +21,15 @@ import flowmanager.nomenclator.utils.BuildDtos;
 import flowmanager.nomenclator.utils.BuildInstances;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -68,29 +77,118 @@ public class TeamServiceTests {
                 .map(BuildDtos::buildTeamResponseDto)
                 .toList();
 
-        when(teamRepository.findAll()).thenReturn(teams);
+        when(teamRepository.findAll(ArgumentMatchers.<Specification<Team>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(teams));
         when(teamMapper.toResponseDto(teams.get(0))).thenReturn(teamsDto.get(0));
         when(teamMapper.toResponseDto(teams.get(1))).thenReturn(teamsDto.get(1));
 
-        List<TeamResponseDto> result = teamService.findAllTeams();
+        PageResponseDto<TeamResponseDto> result = teamService.findAllTeams(null, null, null, Pageable.unpaged());
 
-        assertEquals(2, result.size());
-        assertEquals(teamsDto.get(0), result.get(0));
-        assertEquals(teamsDto.get(1), result.get(1));
-        verify(teamRepository, times(1)).findAll();
+        assertEquals(2, result.content().size());
+        assertEquals(teamsDto.get(0), result.content().get(0));
+        assertEquals(teamsDto.get(1), result.content().get(1));
+        verify(teamRepository, times(1)).findAll(ArgumentMatchers.<Specification<Team>>any(), any(Pageable.class));
         verify(teamMapper, times(1)).toResponseDto(teams.get(0));
         verify(teamMapper, times(1)).toResponseDto(teams.get(1));
     }
 
     @Test
     void testFindAllTeams_EmptyList() {
-        when(teamRepository.findAll()).thenReturn(List.of());
+        when(teamRepository.findAll(ArgumentMatchers.<Specification<Team>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
 
-        List<TeamResponseDto> result = teamService.findAllTeams();
+        PageResponseDto<TeamResponseDto> result = teamService.findAllTeams(null, null, null, Pageable.unpaged());
 
-        assertEquals(0, result.size());
-        verify(teamRepository, times(1)).findAll();
+        assertEquals(0, result.content().size());
+        verify(teamRepository, times(1)).findAll(ArgumentMatchers.<Specification<Team>>any(), any(Pageable.class));
         verify(teamMapper, never()).toSummaryDto(any());
+    }
+
+    @Test
+    void testFindAllTeams_MemberCountSort() {
+        List<Team> teams = BuildInstances.buildTeams();
+        List<TeamResponseDto> teamsDto = teams.stream()
+                .map(BuildDtos::buildTeamResponseDto)
+                .toList();
+
+        when(teamRepository.findAll(ArgumentMatchers.<Specification<Team>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(teams));
+        when(teamMapper.toResponseDto(teams.get(0))).thenReturn(teamsDto.get(0));
+        when(teamMapper.toResponseDto(teams.get(1))).thenReturn(teamsDto.get(1));
+
+        Pageable pageable = PageRequest.of(0, 6, Sort.by(Sort.Direction.DESC, "members"));
+        PageResponseDto<TeamResponseDto> result = teamService.findAllTeams(null, null, null, pageable);
+
+        assertEquals(2, result.content().size());
+        verify(teamRepository, times(1)).findAll(ArgumentMatchers.<Specification<Team>>any(), any(Pageable.class));
+    }
+
+    @Test
+    void testFindTeamsByOrganization_Valid() {
+        User user = BuildInstances.buildUser();
+        List<Team> teams = BuildInstances.buildTeams();
+        List<TeamSummaryOrganizationDto> teamsDto = teams.stream()
+                .map(BuildDtos::buildTeamSummaryOrganizationDto)
+                .toList();
+
+        when(userRepository.findByKeycloakId(user.getKeycloakId())).thenReturn(Optional.of(user));
+        when(teamRepository.findAll(ArgumentMatchers.<Specification<Team>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(teams));
+        when(teamMapper.toSummaryOrganizationDto(teams.get(0))).thenReturn(teamsDto.get(0));
+        when(teamMapper.toSummaryOrganizationDto(teams.get(1))).thenReturn(teamsDto.get(1));
+
+        PageResponseDto<TeamSummaryOrganizationDto> result = teamService.findTeamsByOrganization(
+                1, user.getKeycloakId(), null, null, null, Pageable.unpaged());
+
+        assertEquals(2, result.content().size());
+        assertEquals(teamsDto.get(0), result.content().get(0));
+        assertEquals(teamsDto.get(1), result.content().get(1));
+        verify(userRepository, times(1)).findByKeycloakId(user.getKeycloakId());
+        verify(teamRepository, times(1)).findAll(ArgumentMatchers.<Specification<Team>>any(), any(Pageable.class));
+    }
+
+    @Test
+    void testFindTeamsByOrganization_UserNotFound() {
+        when(userRepository.findByKeycloakId("kc-x")).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> teamService.findTeamsByOrganization(1, "kc-x", null, null, null, Pageable.unpaged()));
+
+        assertEquals("User not found", exception.getMessage());
+        verify(teamRepository, never()).findAll(ArgumentMatchers.<Specification<Team>>any(), any(Pageable.class));
+    }
+
+    @Test
+    void testFindTeamsByProject_Valid() {
+        List<Team> teams = BuildInstances.buildTeams();
+        List<TeamSummaryOrganizationDto> teamsDto = teams.stream()
+                .map(BuildDtos::buildTeamSummaryOrganizationDto)
+                .toList();
+
+        when(teamRepository.findAll(ArgumentMatchers.<Specification<Team>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(teams));
+        when(teamMapper.toSummaryOrganizationDto(teams.get(0))).thenReturn(teamsDto.get(0));
+        when(teamMapper.toSummaryOrganizationDto(teams.get(1))).thenReturn(teamsDto.get(1));
+
+        PageResponseDto<TeamSummaryOrganizationDto> result =
+                teamService.findTeamsByProject(1, null, null, null, Pageable.unpaged());
+
+        assertEquals(2, result.content().size());
+        assertEquals(teamsDto.get(0), result.content().get(0));
+        assertEquals(teamsDto.get(1), result.content().get(1));
+        verify(teamRepository, times(1)).findAll(ArgumentMatchers.<Specification<Team>>any(), any(Pageable.class));
+    }
+
+    @Test
+    void testFindTeamsByProject_Empty() {
+        when(teamRepository.findAll(ArgumentMatchers.<Specification<Team>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        PageResponseDto<TeamSummaryOrganizationDto> result =
+                teamService.findTeamsByProject(1, null, null, null, Pageable.unpaged());
+
+        assertEquals(0, result.content().size());
+        verify(teamMapper, never()).toSummaryOrganizationDto(any());
     }
 
     @Test
@@ -679,6 +777,29 @@ public class TeamServiceTests {
         assertFalse(team.getManager().getManagedTeams().contains(team));
         team.getMembers().forEach(m -> assertFalse(m.getAssignedTeams().contains(team)));
         team.getProjects().forEach(project -> project.getTeams().remove(team));
+        verify(teamRepository, times(1)).deleteById(team.getId());
+    }
+
+    @Test
+    void testDeleteTeam_WithMembersAndProjects() {
+        Team team = BuildInstances.buildTeam();
+        List<User> members = BuildInstances.buildUsers();
+        List<Project> projects = BuildInstances.buildProjects();
+
+        members.forEach(m -> m.getAssignedTeams().add(team));
+        projects.forEach(p -> p.getTeams().add(team));
+        team.setMembers(new ArrayList<>(members));
+        team.setProjects(new ArrayList<>(projects));
+        team.getManager().getManagedTeams().add(team);
+
+        when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
+
+        teamService.deleteTeam(team.getId());
+
+        assertFalse(team.getManager().getManagedTeams().contains(team));
+        members.forEach(m -> assertFalse(m.getAssignedTeams().contains(team)));
+        projects.forEach(p -> assertFalse(p.getTeams().contains(team)));
+        verify(teamRepository, times(1)).findById(team.getId());
         verify(teamRepository, times(1)).deleteById(team.getId());
     }
 

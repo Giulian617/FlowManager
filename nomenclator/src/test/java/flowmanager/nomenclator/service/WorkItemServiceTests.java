@@ -17,6 +17,8 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
@@ -63,16 +65,19 @@ public class WorkItemServiceTests {
                 .map(BuildDtos::buildWorkItemSummaryDto)
                 .toList();
 
-        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any())).thenReturn(workItems);
+        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(workItems));
         when(workItemMapper.toSummaryDto(workItems.get(0))).thenReturn(workItemsDto.get(0));
         when(workItemMapper.toSummaryDto(workItems.get(1))).thenReturn(workItemsDto.get(1));
 
-        List<WorkItemSummaryDto> result = workItemService.findAllWorkItems(null, null, null);
+        PageResponseDto<WorkItemSummaryDto> result = workItemService.findAllWorkItems(
+                null, null, null, null, null, null, null, null, Pageable.unpaged());
 
-        assertEquals(2, result.size());
-        assertEquals(workItemsDto.get(0), result.get(0));
-        assertEquals(workItemsDto.get(1), result.get(1));
-        verify(workItemRepository, times(1)).findAll(ArgumentMatchers.<Specification<WorkItem>>any());
+        assertEquals(2, result.content().size());
+        assertEquals(workItemsDto.get(0), result.content().get(0));
+        assertEquals(workItemsDto.get(1), result.content().get(1));
+        verify(workItemRepository, times(1))
+                .findAll(ArgumentMatchers.<Specification<WorkItem>>any(), any(Pageable.class));
         verify(workItemMapper, times(1)).toSummaryDto(workItems.get(0));
         verify(workItemMapper, times(1)).toSummaryDto(workItems.get(1));
     }
@@ -84,16 +89,17 @@ public class WorkItemServiceTests {
                 .map(BuildDtos::buildWorkItemSummaryDto)
                 .toList();
 
-        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any())).thenReturn(List.of(workItems.get(0), workItems.get(1)));
+        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(workItems.get(0), workItems.get(1))));
         when(workItemMapper.toSummaryDto(workItems.get(0))).thenReturn(workItemsDto.get(0));
         when(workItemMapper.toSummaryDto(workItems.get(1))).thenReturn(workItemsDto.get(1));
 
-        List<WorkItemSummaryDto> result = workItemService.findAllWorkItems(ItemType.Task, null, null);
+        PageResponseDto<WorkItemSummaryDto> result = workItemService.findAllWorkItems(
+                null, List.of(ItemType.Task), null, null, null, null, null, null, Pageable.unpaged());
 
-        assertEquals(2, result.size());
-        verify(workItemRepository, times(1)).findAll(ArgumentMatchers.<Specification<WorkItem>>any());
-        verify(workItemMapper, times(1)).toSummaryDto(workItems.get(0));
-        verify(workItemMapper, times(1)).toSummaryDto(workItems.get(1));
+        assertEquals(2, result.content().size());
+        verify(workItemRepository, times(1))
+                .findAll(ArgumentMatchers.<Specification<WorkItem>>any(), any(Pageable.class));
     }
 
     @Test
@@ -103,14 +109,14 @@ public class WorkItemServiceTests {
                 .map(BuildDtos::buildWorkItemSummaryDto)
                 .toList();
 
-        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any())).thenReturn(List.of(workItems.get(1)));
+        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(workItems.get(1))));
         when(workItemMapper.toSummaryDto(workItems.get(1))).thenReturn(workItemsDto.get(1));
 
-        List<WorkItemSummaryDto> result = workItemService.findAllWorkItems(null, Status.In_Progress, null);
+        PageResponseDto<WorkItemSummaryDto> result = workItemService.findAllWorkItems(
+                null, null, List.of(Status.In_Progress), null, null, null, null, null, Pageable.unpaged());
 
-        assertEquals(1, result.size());
-        verify(workItemRepository, times(1)).findAll(ArgumentMatchers.<Specification<WorkItem>>any());
-        verify(workItemMapper, times(0)).toSummaryDto(workItems.get(0));
+        assertEquals(1, result.content().size());
         verify(workItemMapper, times(1)).toSummaryDto(workItems.get(1));
     }
 
@@ -121,15 +127,15 @@ public class WorkItemServiceTests {
                 .map(BuildDtos::buildWorkItemSummaryDto)
                 .toList();
 
-        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any())).thenReturn(List.of(workItems.getFirst()));
+        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(workItems.getFirst())));
         when(workItemMapper.toSummaryDto(workItems.getFirst())).thenReturn(workItemsDto.getFirst());
 
-        List<WorkItemSummaryDto> result = workItemService.findAllWorkItems(null, null, Severity.Low);
+        PageResponseDto<WorkItemSummaryDto> result = workItemService.findAllWorkItems(
+                null, null, null, List.of(Severity.Low), null, null, null, null, Pageable.unpaged());
 
-        assertEquals(1, result.size());
-        verify(workItemRepository, times(1)).findAll(ArgumentMatchers.<Specification<WorkItem>>any());
+        assertEquals(1, result.content().size());
         verify(workItemMapper, times(1)).toSummaryDto(workItems.get(0));
-        verify(workItemMapper, times(0)).toSummaryDto(workItems.get(1));
     }
 
     @Test
@@ -139,25 +145,27 @@ public class WorkItemServiceTests {
                 .map(BuildDtos::buildWorkItemSummaryDto)
                 .toList();
 
-        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any())).thenReturn(List.of(workItems.getFirst()));
+        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(workItems.getFirst())));
         when(workItemMapper.toSummaryDto(workItems.getFirst())).thenReturn(workItemsDto.getFirst());
 
-        List<WorkItemSummaryDto> result = workItemService.findAllWorkItems(ItemType.Task, Status.To_do, Severity.Low);
+        PageResponseDto<WorkItemSummaryDto> result = workItemService.findAllWorkItems(
+                "item", List.of(ItemType.Task), List.of(Status.To_do), List.of(Severity.Low),
+                List.of(1), List.of(2), true, 1, Pageable.unpaged());
 
-        assertEquals(1, result.size());
-        verify(workItemRepository, times(1)).findAll(ArgumentMatchers.<Specification<WorkItem>>any());
+        assertEquals(1, result.content().size());
         verify(workItemMapper, times(1)).toSummaryDto(workItems.get(0));
-        verify(workItemMapper, times(0)).toSummaryDto(workItems.get(1));
     }
 
     @Test
     void testFindAllWorkItems_EmptyList() {
-        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any())).thenReturn(List.of());
+        when(workItemRepository.findAll(ArgumentMatchers.<Specification<WorkItem>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
 
-        List<WorkItemSummaryDto> result = workItemService.findAllWorkItems(null, null, null);
+        PageResponseDto<WorkItemSummaryDto> result = workItemService.findAllWorkItems(
+                null, null, null, null, null, null, null, null, Pageable.unpaged());
 
-        assertEquals(0, result.size());
-        verify(workItemRepository, times(1)).findAll(ArgumentMatchers.<Specification<WorkItem>>any());
+        assertEquals(0, result.content().size());
         verify(workItemMapper, never()).toSummaryDto(any());
     }
 

@@ -1,7 +1,14 @@
-import apiFetch from "./utils"
+import apiFetch, { buildQuery, fetchAllPages } from "./utils"
+import type { Page, PageParams } from "../types/page"
 
 export async function getComments() {
-  const response = await apiFetch("/comments")
+  return fetchAllPages("/comments")
+}
+
+export async function getCommentsPage(
+  params: PageParams & { authorId?: number }
+): Promise<Page<any>> {
+  const response = await apiFetch(`/comments${buildQuery(params)}`)
   if (!response.ok) throw new Error("Failed to fetch comments")
   return response.json()
 }

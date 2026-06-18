@@ -1,11 +1,14 @@
 package flowmanager.nomenclator.controller;
 
+import flowmanager.nomenclator.dto.PageResponseDto;
 import flowmanager.nomenclator.dto.TeamCreateDto;
 import flowmanager.nomenclator.dto.TeamResponseDto;
 import flowmanager.nomenclator.dto.TeamUpdateDto;
 import flowmanager.nomenclator.service.TeamService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,8 +26,13 @@ public class TeamController {
 
     @GetMapping("")
     @ResponseBody
-    public ResponseEntity<List<TeamResponseDto>> getAllTeams() {
-        return ResponseEntity.ok(teamService.findAllTeams());
+    public ResponseEntity<PageResponseDto<TeamResponseDto>> getAllTeams(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer managerId,
+            @RequestParam(required = false) String teamSize,
+            @PageableDefault(size = 6) Pageable pageable
+    ) {
+        return ResponseEntity.ok(teamService.findAllTeams(search, managerId, teamSize, pageable));
     }
 
     @PostMapping("")

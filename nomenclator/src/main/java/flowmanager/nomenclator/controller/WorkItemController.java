@@ -7,6 +7,8 @@ import flowmanager.nomenclator.model.Status;
 import flowmanager.nomenclator.service.WorkItemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,12 +27,18 @@ public class WorkItemController {
 
     @GetMapping("")
     @ResponseBody
-    public ResponseEntity<List<WorkItemSummaryDto>> getAllWorkItems(
-            @RequestParam(required = false) ItemType itemType,
-            @RequestParam(required = false) Status status,
-            @RequestParam(required = false) Severity severity
-            ) {
-        return ResponseEntity.ok(workItemService.findAllWorkItems(itemType, status, severity));
+    public ResponseEntity<PageResponseDto<WorkItemSummaryDto>> getAllWorkItems(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) List<ItemType> itemType,
+            @RequestParam(required = false) List<Status> status,
+            @RequestParam(required = false) List<Severity> severity,
+            @RequestParam(required = false) List<Integer> reporterId,
+            @RequestParam(required = false) List<Integer> assigneeId,
+            @RequestParam(required = false) Boolean unassigned,
+            @PageableDefault(size = 12, sort = "id") Pageable pageable
+    ) {
+        return ResponseEntity.ok(workItemService.findAllWorkItems(
+                search, itemType, status, severity, reporterId, assigneeId, unassigned, null, pageable));
     }
 
     @PreAuthorize("@workItemSecurity.canView(authentication, #workItemId)")

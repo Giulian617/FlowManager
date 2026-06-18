@@ -1,0 +1,17 @@
+app = "flowmanager-zipkin"
+primary_region = "fra"
+
+[build]
+  image = "openzipkin/zipkin:latest"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = 512
+
+[checks]
+  [checks.alive]
+    type = "tcp"
+    port = 9411
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "30s"

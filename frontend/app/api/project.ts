@@ -1,23 +1,51 @@
-import apiFetch from "./utils"
+import apiFetch, { buildQuery, fetchAllPages } from "./utils"
 import type {
   ProjectCreateDto,
   ProjectUpdateDto,
 } from "../types/project"
+import type { Page, PageParams } from "../types/page"
 
 export async function getProjects() {
-  const response = await apiFetch("/projects")
+  return fetchAllPages("/projects")
+}
+
+export async function getProjectsPage(
+  params: PageParams & { managerId?: number; deadline?: string }
+): Promise<Page<any>> {
+  const response = await apiFetch(`/projects${buildQuery(params)}`)
   if (!response.ok) throw new Error("Failed to fetch projects")
   return response.json()
 }
 
 export async function getWorkItemsByProjectId(projectId: number) {
-  const response = await apiFetch(`/projects/${projectId}/work-items`)
+  return fetchAllPages(`/projects/${projectId}/work-items`)
+}
+
+export async function getWorkItemsByProjectIdPage(
+  projectId: number,
+  params: PageParams & {
+    itemType?: string[]
+    status?: string[]
+    severity?: string[]
+    reporterId?: string[]
+    assigneeId?: string[]
+    unassigned?: string
+  }
+): Promise<Page<any>> {
+  const response = await apiFetch(`/projects/${projectId}/work-items${buildQuery(params)}`)
   if (!response.ok) throw new Error("Failed to fetch work items")
   return response.json()
 }
 
 export async function getTeamsByProjectId(projectId: number) {
-  const response = await apiFetch(`/projects/${projectId}/teams`)
+  return fetchAllPages(`/projects/${projectId}/teams`)
+}
+
+export async function getTeamsByProjectIdPage(
+  projectId: number,
+  params: PageParams & { managerId?: number; teamSize?: string }
+): Promise<Page<any>> {
+  const response = await apiFetch(`/projects/${projectId}/teams${buildQuery(params)}`)
   if (!response.ok) throw new Error("Failed to fetch teams")
   return response.json()
 }

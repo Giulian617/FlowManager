@@ -2,24 +2,24 @@ import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router"
 import { User, Calendar, Users, Search, X, Plus, Pencil, Trash2, ChevronDown, AlertCircle, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, SlidersHorizontal, ArrowUpDown, ListFilter, ArrowUp, ArrowDown } from "lucide-react"
 import {
+  getUsers,
   getCurrentUser,
-  getManagedTeamsByUserId,
-  getAssignedTeamsByUserId,
   getManagedOrganizationsByUserId,
 } from "../api/user"
 import {
   getTeams,
+  getTeamsPage,
   createTeam,
   updateTeam,
   deleteTeam,
 } from "../api/team"
 import {
   getOrganizations,
-  getTeamsByOrganizationId,
+  getTeamsByOrganizationIdPage,
   getUsersByOrganizationId,
 } from "../api/organization"
 import {
-    getTeamsByProjectId
+    getTeamsByProjectIdPage,
 } from "../api/project"
 import type {
   TeamResponseDto,
@@ -263,13 +263,14 @@ function ConfirmDeleteModal({ team, onConfirm, onClose }: {
   )
 }
 
-function TeamFormModal({ initial, currentUser, managers, users, orgId, organizations = [], onClose, onSave }: {
+function TeamFormModal({ initial, currentUser, managers, users, orgId, organizations = [], mode, onClose, onSave }: {
   initial?: TeamResponseDto
   currentUser: UserSummaryDto | null
   managers: UserSummaryDto[]
   users: UserSummaryDto[]
   orgId: number
   organizations?: OrganizationResponseDto[]
+  mode: "org" | "project" | "admin"
   onClose: () => void
   onSave: (data: TeamCreateDto | TeamUpdateDto, id?: number) => Promise<void>
 }) {
@@ -337,26 +338,33 @@ function TeamFormModal({ initial, currentUser, managers, users, orgId, organizat
             <textarea value={description} onChange={(e) => setDesc(e.target.value)} rows={3}
               placeholder="What does this team do?" className={inputCls(descOk) + " resize-none"} />
           </div>
-          {organizations.length > 0 && !isEdit && (
+          {mode === "admin" && !isEdit && (
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                 Organization <span className={selectedOrgId !== 0 ? "text-slate-300 dark:text-slate-600" : "text-rose-500 dark:text-rose-400"}>*</span>
               </label>
-              <SelectDropdown
-                value={selectedOrgId !== 0 ? String(selectedOrgId) : ""}
-                options={organizations.map((o) => String(o.id))}
-                onChange={(v) => setSelectedOrgId(Number(v))}
-                placeholder="Select organization…"
-                error={selectedOrgId === 0}
-                renderOption={(v) => {
-                  const o = organizations.find((o) => String(o.id) === v)
-                  return <span>{o?.name ?? v}</span>
-                }}
-                renderSelected={(v) => {
-                  const o = organizations.find((o) => String(o.id) === v)
-                  return <span>{o?.name ?? v}</span>
-                }}
-              />
+              {organizations.length > 0 ? (
+                <SelectDropdown
+                  value={selectedOrgId !== 0 ? String(selectedOrgId) : ""}
+                  options={organizations.map((o) => String(o.id))}
+                  onChange={(v) => setSelectedOrgId(Number(v))}
+                  placeholder="Select organization…"
+                  error={selectedOrgId === 0}
+                  renderOption={(v) => {
+                    const o = organizations.find((o) => String(o.id) === v)
+                    return <span>{o?.name ?? v}</span>
+                  }}
+                  renderSelected={(v) => {
+                    const o = organizations.find((o) => String(o.id) === v)
+                    return <span>{o?.name ?? v}</span>
+                  }}
+                />
+              ) : (
+                <div className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-4 py-3 text-xs text-amber-700 dark:text-amber-300">
+                  <AlertCircle className="h-4 w-4 flex-none" />
+                  No organizations exist yet. Create an organization first before you can create a team.
+                </div>
+              )}
             </div>
           )}
           <div>
@@ -394,9 +402,12 @@ function TeamFormModal({ initial, currentUser, managers, users, orgId, organizat
               <AlertCircle className="h-4 w-4 flex-none" />{error}
             </div>
           )}
-          {!canSave && (
+          {!canSave && !(mode === "admin" && !isEdit && organizations.length === 0) && (
             <div className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
-              <AlertCircle className="h-4 w-4 flex-none" />Name and description are required.
+              <AlertCircle className="h-4 w-4 flex-none" />
+              {mode === "admin" && !isEdit && selectedOrgId === 0
+                ? "Name, description and organization are required."
+                : "Name and description are required."}
             </div>
           )}
         </div>
@@ -437,6 +448,18 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
   const [viewTeam, setViewTeam] = useState<TeamResponseDto | null>(null)
   const [page, setPage] = useState(1)
 
+  const itemsPerPage = 6
+  const [projectId, setProjectId] = useState(0)
+  const [serverTotalElements, setServerTotalElements] = useState(0)
+  const [serverTotalPages, setServerTotalPages] = useState(1)
+  const [adminManagers, setAdminManagers] = useState<UserSummaryDto[]>([])
+  const [debouncedQuery, setDebouncedQuery] = useState("")
+  const [refreshKey, setRefreshKey] = useState(0)
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 300)
+    return () => clearTimeout(t)
+  }, [query])
+
   useEffect(() => {
     const storedOrgId = Number(localStorage.getItem("selectedOrg"))
     const storedProjectId = Number(localStorage.getItem("selectedProject"))
@@ -449,6 +472,7 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
       return
     }
     setOrgId(storedOrgId)
+    setProjectId(storedProjectId)
 
     async function load() {
       try {
@@ -458,41 +482,22 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
         const managedOrgs = await getManagedOrganizationsByUserId(user.id)
         setManagedOrgIds(managedOrgs.map((o: { id: any }) => o.id))
 
-        let teamsData: TeamResponseDto[] = []
-
         if (mode === "admin") {
-          teamsData = await getTeams()
-          const orgs = await getOrganizations()
-          setOrganizations(orgs)
-        } else if (mode === "project") {
-          teamsData = await getTeamsByProjectId(storedProjectId)
-        } else {
-          if (user.role === "ADMIN") {
-            teamsData = await getTeamsByOrganizationId(storedOrgId)
-          } else if (user.role === "MANAGER") {
-            const [managed, assigned] = await Promise.all([
-              getManagedTeamsByUserId(user.id),
-              getAssignedTeamsByUserId(user.id),
-            ])
-            teamsData = [...(managed ?? []), ...(assigned ?? [])].filter(
-              (t, i, arr) => arr.findIndex((x) => x.id === t.id) === i
-            )
-          } else {
-            teamsData = await getAssignedTeamsByUserId(user.id)
-          }
-        }
-
-        setTeams(teamsData)
-
-        if ((user.role === "ADMIN" || user.role === "MANAGER") && mode !== "admin") {
-          const [managersData, regularUsersData] = await Promise.all([
-            getUsersByOrganizationId(storedOrgId, "MANAGER"),
-            getUsersByOrganizationId(storedOrgId, "USER"),
+          const [orgs, managersData] = await Promise.all([
+            getOrganizations(),
+            getUsers("MANAGER"),
           ])
+          setOrganizations(orgs)
+          setAdminManagers(managersData)
+        } else if (storedOrgId) {
+          const managersData = await getUsersByOrganizationId(storedOrgId, "MANAGER")
           setManagers(managersData)
-          setUsers([...(managersData ?? []), ...(regularUsersData ?? [])].filter(
-            (u, i, arr) => arr.findIndex((x) => x.id === u.id) === i
-          ))
+          if (user.role === "ADMIN" || user.role === "MANAGER") {
+            const regularUsersData = await getUsersByOrganizationId(storedOrgId, "USER")
+            setUsers([...(managersData ?? []), ...(regularUsersData ?? [])].filter(
+              (u, i, arr) => arr.findIndex((x) => x.id === u.id) === i
+            ))
+          }
         }
       } catch {
         setError("Failed to load teams.")
@@ -503,9 +508,37 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
     load()
   }, [])
 
+  useEffect(() => {
+    if (mode === "org" && !orgId) return
+    if (mode === "project" && !projectId) return
+    const sortKey = sortField === "members" ? "members"
+      : sortField === "date" ? "createdAt"
+      : sortField === "name" ? "name"
+      : undefined
+    const params = {
+      page: page - 1,
+      size: itemsPerPage,
+      sort: sortKey ? [`${sortKey},${sortDir}`] : undefined,
+      search: debouncedQuery || undefined,
+      managerId: managerFilter !== "all" ? Number(managerFilter) : undefined,
+      teamSize: sizeFilter !== "all" ? sizeFilter : undefined,
+    }
+    const request =
+      mode === "admin" ? getTeamsPage(params)
+      : mode === "project" ? getTeamsByProjectIdPage(projectId, params)
+      : getTeamsByOrganizationIdPage(orgId, params)
+    request
+      .then((data) => {
+        setTeams(data.content)
+        setServerTotalElements(data.totalElements)
+        setServerTotalPages(data.totalPages)
+      })
+      .catch(() => setError("Failed to load teams."))
+  }, [mode, orgId, projectId, page, sortField, sortDir, debouncedQuery, managerFilter, sizeFilter, refreshKey])
+
   const handleCreate = async (data: TeamCreateDto) => {
-    const created = await createTeam(data)
-    setTeams((prev) => [...prev, created])
+    await createTeam(data)
+    setRefreshKey((k) => k + 1)
   }
 
   const handleEdit = async (data: TeamUpdateDto, id?: number) => {
@@ -515,15 +548,14 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
 
   const handleDelete = async (id: number) => {
     await deleteTeam(id)
-    setTeams((prev) => prev.filter((t) => t.id !== id))
     setDeleteTarget(null)
+    setRefreshKey((k) => k + 1)
   }
 
   const managerOptions = Array.from(
     new Map(
-      teams
-        .filter((t) => t.manager)
-        .map((t) => [String(t.manager!.id), t.manager!.username])
+      (mode === "admin" ? adminManagers : managers)
+        .map((m) => [String(m.id), m.username] as [string, string])
     ).entries()
   ).sort((a, b) => a[1].localeCompare(b[1]))
 
@@ -535,52 +567,13 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
     setPage(1)
   }
 
-  const filtered = teams
-    .filter((t) => {
-      const q = query.toLowerCase()
-      const matchesSearch =
-        t.name.toLowerCase().includes(q) ||
-        t.description?.toLowerCase().includes(q) ||
-        t.manager?.username?.toLowerCase().includes(q) ||
-        t.members?.some((m) => m.username.toLowerCase().includes(q))
+  const paginated = teams
+  const totalPages = Math.max(1, serverTotalPages)
+  const totalCount = serverTotalElements
+  const noResults = paginated.length === 0
+  const trulyEmpty = totalCount === 0 && !hasActiveFilters && query === ""
 
-      const matchesManager =
-        managerFilter === "all" || String(t.manager?.id) === managerFilter
-
-      const memberCount = t.members?.length ?? 0
-      const matchesSize =
-        sizeFilter === "all" ||
-        (sizeFilter === "small" && memberCount >= 1 && memberCount <= 3) ||
-        (sizeFilter === "medium" && memberCount >= 4 && memberCount <= 7) ||
-        (sizeFilter === "large" && memberCount >= 8)
-
-      return matchesSearch && matchesManager && matchesSize
-    })
-    .sort((a, b) => {
-      if (sortField === "default") return 0
-
-      const dir = sortDir === "asc" ? 1 : -1
-
-      switch (sortField) {
-        case "name":
-          return a.name.localeCompare(b.name) * dir
-
-        case "members":
-          return ((a.members?.length ?? 0) - (b.members?.length ?? 0)) * dir
-
-        case "date":
-          return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * dir
-
-        default:
-          return 0
-      }
-    })
-
-  const itemsPerPage = 6
-  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
-  const paginated = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage)
-
-  useEffect(() => { setPage(1) }, [query, managerFilter, sizeFilter])
+  useEffect(() => { setPage(1) }, [debouncedQuery, managerFilter, sizeFilter, sortField, sortDir])
 
   if (loading) return (
     <div className="flex items-center justify-center py-24">
@@ -754,14 +747,14 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
         </div>
       </div>
 
-      {teams.length === 0 ? (
+      {trulyEmpty ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-20 shadow-sm text-center gap-2">
           <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-            {mode === "project" ? "No teams for this project." : "No teams for this organization."}
+            {mode === "project" ? "No teams for this project." : mode === "admin" ? "No teams yet." : "No teams for this organization."}
           </p>
           <p className="text-xs text-slate-400 dark:text-slate-500">Create a new team to get started.</p>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : noResults ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-20 shadow-sm text-center gap-2">
           <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No teams match your filters.</p>
           <p className="text-xs text-slate-400 dark:text-slate-500">Try adjusting your search or filters.</p>
@@ -864,7 +857,7 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
 
           <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400">
             <span>
-              Showing {(page - 1) * itemsPerPage + 1}–{Math.min(filtered.length, page * itemsPerPage)} of {filtered.length}
+              Showing {totalCount === 0 ? 0 : (page - 1) * itemsPerPage + 1}–{(page - 1) * itemsPerPage + paginated.length} of {totalCount}
             </span>
             <div className="flex items-center gap-1">
               <button onClick={() => setPage(1)} disabled={page === 1}
@@ -915,6 +908,7 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
           users={users}
           orgId={orgId}
           organizations={mode === "admin" ? organizations : []}
+          mode={mode}
           onClose={() => setShowCreate(false)}
           onSave={(data) => handleCreate(data as TeamCreateDto)}
         />
@@ -926,6 +920,7 @@ export default function Teams({ mode }: { mode: "org" | "project" | "admin" }) {
           managers={managers}
           users={users}
           orgId={orgId}
+          mode={mode}
           onClose={() => setEditTeam(null)}
           onSave={(data, id) => handleEdit(data as TeamUpdateDto, id)}
         />
